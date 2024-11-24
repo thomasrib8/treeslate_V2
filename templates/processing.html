@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traduction en cours...</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #8ed3a2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 40px 20px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 16px;
+            color: #555;
+            margin: 0;
+        }
+        .error {
+            color: red;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        .spinner {
+            margin: 20px auto;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #ccc;
+            border-top: 4px solid #8ed3a2;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+    <script>
+        async function checkStatus() {
+            try {
+                const response = await fetch("/check_status");
+                const status = await response.json();
+
+                if (status.status === "done") {
+                    // Rediriger vers la page finale
+                    window.location.href = "/done";
+                } else if (status.status === "error") {
+                    // Afficher le message d'erreur
+                    document.getElementById("status-message").innerHTML = `<span class="error">${status.message}</span>`;
+                    document.getElementById("spinner").style.display = "none";
+                } else {
+                    // Mettre à jour le message de progression
+                    document.getElementById("status-message").innerText = status.message;
+                    setTimeout(checkStatus, 1000); // Réessayer après 1 seconde
+                }
+            } catch (error) {
+                console.error("Erreur lors de la vérification du statut :", error);
+            }
+        }
+
+        // Lancer la vérification dès que la page est chargée
+        window.onload = checkStatus;
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Traduction en cours...</h1>
+        <div id="spinner" class="spinner"></div>
+        <p id="status-message">Veuillez patienter pendant le traitement de votre document.</p>
+    </div>
+</body>
+</html>

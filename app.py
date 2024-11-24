@@ -1,4 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, send_from_directory
+from flask_httpauth import HTTPBasicAuth
+from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import threading
 from your_script import translate_docx_with_deepl, improve_translation, create_glossary
@@ -13,13 +15,27 @@ os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["DOWNLOAD_FOLDER"] = DOWNLOAD_FOLDER
 
-DEEPL_API_KEY = os.environ.get("DEEPL_API_KEY")
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+# Authentification HTTP
+auth = HTTPBasicAuth()
+
+# Utilisateurs autorisés
+users = {
+    "admin": generate_password_hash("Roue2021*"),  # Remplacez par votre mot de passe
+}
+
+@auth.verify_password
+def verify_password(username, password):
+    """
+    Vérifie si le nom d'utilisateur et le mot de passe sont corrects.
+    """
+    if username in users and check_password_hash(users.get(username), password):
+        return username
 
 # Variable globale pour suivre le statut du traitement
 progress = {"status": "idle", "message": ""}
 
 @app.route("/")
+@auth.login_required
 def index():
     """
     Page principale affichant le formulaire de téléchargement et les options.
@@ -27,6 +43,7 @@ def index():
     return render_template("index.html")
 
 @app.route("/processing")
+@auth.login_required
 def processing():
     """
     Page intermédiaire affichant "Traduction en cours...".
@@ -34,6 +51,7 @@ def processing():
     return render_template("processing.html")
 
 @app.route("/done")
+@auth.login_required
 def done():
     """
     Page finale affichant "Traduction terminée".
@@ -42,6 +60,7 @@ def done():
     return render_template("done.html", output_file_name=output_file_name)
 
 @app.route("/check_status")
+@auth.login_required
 def check_status():
     """
     Vérifie le statut du traitement en cours.
@@ -49,6 +68,7 @@ def check_status():
     return jsonify(progress)
 
 @app.route("/downloads/<filename>")
+@auth.login_required
 def download_file(filename):
     """
     Permet à l'utilisateur de télécharger le fichier traduit.
@@ -56,6 +76,7 @@ def download_file(filename):
     return send_from_directory(app.config["DOWNLOAD_FOLDER"], filename, as_attachment=True)
 
 @app.route("/process", methods=["POST"])
+@auth.login_required
 def process():
     """
     Démarre le processus principal de traitement en arrière-plan.

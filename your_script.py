@@ -5,6 +5,7 @@ import openai
 from docx import Document
 from tqdm import tqdm
 import time
+import os
 
 # Remplacez par vos clés API
 DEEPL_API_KEY = os.environ.get("DEEPL_API_KEY")

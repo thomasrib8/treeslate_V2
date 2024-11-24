@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, send_from_directory
 import os
 import threading
 from your_script import translate_docx_with_deepl, improve_translation, create_glossary
@@ -7,8 +7,11 @@ app = Flask(__name__)
 
 # Configuration des dossiers
 UPLOAD_FOLDER = "uploads"
+DOWNLOAD_FOLDER = "downloads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["DOWNLOAD_FOLDER"] = DOWNLOAD_FOLDER
 
 DEEPL_API_KEY = os.environ.get("DEEPL_API_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
@@ -35,7 +38,8 @@ def done():
     """
     Page finale affichant "Traduction terminée".
     """
-    return render_template("done.html")
+    output_file_name = progress.get("output_file_name", "improved_output.docx")
+    return render_template("done.html", output_file_name=output_file_name)
 
 @app.route("/check_status")
 def check_status():
@@ -43,6 +47,13 @@ def check_status():
     Vérifie le statut du traitement en cours.
     """
     return jsonify(progress)
+
+@app.route("/downloads/<filename>")
+def download_file(filename):
+    """
+    Permet à l'utilisateur de télécharger le fichier traduit.
+    """
+    return send_from_directory(app.config["DOWNLOAD_FOLDER"], filename, as_attachment=True)
 
 @app.route("/process", methods=["POST"])
 def process():
@@ -94,7 +105,8 @@ def process():
 
             # Mise à jour pour indiquer que le traitement est terminé
             progress["status"] = "done"
-            progress["message"] = f"Traitement terminé avec succès. Le fichier est enregistré dans {final_output_path}"
+            progress["message"] = "Traitement terminé avec succès."
+            progress["output_file_name"] = os.path.basename(final_output_path)
 
         except Exception as e:
             # Mise à jour en cas d'erreur
@@ -120,10 +132,7 @@ def process():
 
     # Récupération du nom de fichier de sortie depuis le formulaire
     output_file_name = request.form.get("output_file_name", "improved_output.docx")
-
-    # Identifier le dossier Téléchargements de l'utilisateur
-    downloads_folder = os.path.join(os.path.expanduser("~"), "Downloads")
-    final_output_path = os.path.join(downloads_folder, output_file_name)
+    final_output_path = os.path.join(app.config["DOWNLOAD_FOLDER"], output_file_name)
 
     # Paramètres pour le traitement en arrière-plan
     thread_args = {
@@ -145,4 +154,3 @@ def process():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Utiliser le port fourni par Render
     app.run(debug=True, host="0.0.0.0", port=port)
-

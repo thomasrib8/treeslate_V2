@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Écran d'accueil</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #8ed3a2;
+        }
+        .logo-container {
+            text-align: center;
+        }
+        .logo-container img {
+            width: 200px; /* Taille du logo */
+        }
+    </style>
+    <script>
+        // Redirection automatique après 3 secondes
+        setTimeout(function() {
+            window.location.href = "/index";
+        }, 3000);
+    </script>
+</head>
+<body>
+    <div class="logo-container">
+        <img src="/uploads/logo.svg" alt="Logo">
+    </div>
+</body>
+</html>

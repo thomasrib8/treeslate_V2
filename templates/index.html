@@ -126,7 +126,7 @@
 
             <!-- Niveau de langue -->
             <label for="language_level">Niveau de langue :</label>
-            <select id="language_level" name="language_level" required>
+            <select id="language_level" name="language_level" onchange="updateLevelLabel('language_level', 'language_level_label')" required>
                 <option value="" disabled selected>Choisir un niveau</option>
                 <option value="soutenu">Soutenu</option>
                 <option value="normal">Normal</option>
@@ -139,7 +139,8 @@
                 <option value="créatif">Créatif</option>
                 <option value="humoristique">Humoristique</option>
             </select>
-
+            <div id="language_level_label">Sélectionnez un niveau pour voir la description.</div>
+            
             <!-- Nom du fichier de sortie -->
             <label for="output_file_name">Nom du fichier de sortie (avec l'extension .docx) : </label>
             <input type="text" id="output_file_name" name="output_file_name" placeholder="improved_output.docx">
@@ -163,5 +164,29 @@
             </div>
         </form>
     </div>
+
+     <!-- Script JavaScript -->
+    <script>
+        function updateLevelLabel(selectId, labelId) {
+            const levelDescriptions = {
+                "soutenu": "Style formel et rigoureux, adapté à des contextes professionnels ou académiques.",
+                "normal": "Langue standard, adaptée à des contextes neutres.",
+                "cool": "Langue décontractée et moderne, souvent plus conviviale.",
+                "academique": "Style formel et technique, adapté à des articles scientifiques.",
+                "professionnel": "Langue claire et directe, idéale pour des rapports ou courriers.",
+                "juridique": "Langue précise, adaptée aux documents légaux ou contractuels.",
+                "technique": "Style spécialisé, pour des manuels ou documents techniques.",
+                "conversationnel": "Ton naturel et fluide, proche d'une discussion orale.",
+                "créatif": "Langue imaginative, adaptée aux contenus marketing ou artistiques.",
+                "humoristique": "Style léger et humoristique."
+            };
+
+            const selectedValue = document.getElementById(selectId).value;
+            const label = document.getElementById(labelId);
+
+            // Mettre à jour le contenu avec la description ou un message par défaut
+            label.innerText = levelDescriptions[selectedValue] || "Sélectionnez un niveau pour voir la description.";
+        }
+    </script>
 </body>
 </html>

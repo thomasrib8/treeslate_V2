@@ -61,7 +61,7 @@ def redirect_to_splash():
     return redirect(url_for("splash"))
 #fin de l'ajout
 
-@app.route("/")
+@app.route("/index")
 @auth.login_required
 def index():
     """

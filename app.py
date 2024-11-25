@@ -15,6 +15,9 @@ os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["DOWNLOAD_FOLDER"] = DOWNLOAD_FOLDER
 
+DEEPL_API_KEY = os.environ.get("DEEPL_API_KEY")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+
 # Authentification HTTP
 auth = HTTPBasicAuth()
 

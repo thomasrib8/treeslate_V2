@@ -37,6 +37,30 @@ def verify_password(username, password):
 # Variable globale pour suivre le statut du traitement
 progress = {"status": "idle", "message": ""}
 
+#ajout pour l'écran flash
+
+@app.route("/uploads/<filename>")
+def serve_uploads(filename):
+    """
+    Sert les fichiers du dossier uploads, y compris le logo.
+    """
+    return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
+
+@app.route("/splash")
+def splash():
+    """
+    Écran d'accueil temporaire avec un logo.
+    """
+    return render_template("splash.html")
+
+@app.route("/")
+def redirect_to_splash():
+    """
+    Redirige vers l'écran d'accueil.
+    """
+    return redirect(url_for("splash"))
+#fin de l'ajout
+
 @app.route("/")
 @auth.login_required
 def index():

@@ -96,14 +96,15 @@ def process_paragraphs(paragraphs, glossary, language_level, source_language, ta
     print(f"Sending the following paragraphs to ChatGPT:\n{paragraphs}\n")
 
     # Construire l'invite
-    prompt = (
-        f"Improve the following text translated from {source_language} to {target_language}.\n"
-        f"Language level: {language_level}.\n"
-        f"Glossary to respect: {glossary}.\n"
-        f"Here is the text:\n\n"
-    )
-    for para in paragraphs:
-        prompt += f"{para}\n\n"
+  prompt = (
+    f"Translate the following text from {source_language} to {target_language} "
+    f"and improve its quality to match the '{language_level}' language level.\n"
+    f"Use the glossary strictly when applicable: {glossary}.\n"
+    f"Return only the improved translation, without any additional comments, explanations, or introductory phrases.\n\n"
+)
+
+for para in paragraphs:
+    prompt += f"{para}\n\n"
 
     try:
         # Utilisation du modèle sélectionné par l'utilisateur

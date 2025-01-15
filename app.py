@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, send_from_directory
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
@@ -75,6 +75,22 @@ def done():
     """
     output_file_name = progress.get("output_file_name", "improved_output.docx")
     return render_template("done.html", output_file_name=output_file_name)
+
+@app.route("/downloads/<filename>")
+@auth.login_required
+def download_file(filename):
+    """
+    Permet à l'utilisateur de télécharger le fichier traduit.
+    """
+    download_path = app.config["DOWNLOAD_FOLDER"]
+    file_path = os.path.join(download_path, filename)
+    logger.debug(f"Request to download file: {file_path}")
+
+    if not os.path.exists(file_path):
+        logger.error(f"File not found: {file_path}")
+        return "File not found", 404
+
+    return send_from_directory(download_path, filename, as_attachment=True)
 
 @app.route("/check_status")
 @auth.login_required

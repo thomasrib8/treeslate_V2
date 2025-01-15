@@ -1,0 +1,135 @@
+/* General styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #8ed3a2;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* Container styling */
+.container {
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px 40px;
+    max-width: 800px;
+    width: 100%;
+    text-align: center;
+}
+
+/* Titles and labels */
+h1 {
+    color: #333;
+    font-size: 28px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+p {
+    font-size: 16px;
+    margin-bottom: 15px;
+    color: #555;
+    line-height: 1.6;
+}
+
+label {
+    display: block;
+    font-size: 14px;
+    margin: 10px 0 5px;
+    text-align: left;
+}
+
+/* Inputs and selects */
+input[type="file"],
+select,
+input[type="text"],
+input[type="number"],
+textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+textarea {
+    resize: none;
+}
+
+/* Buttons */
+button,
+a.button {
+    display: inline-block;
+    background: #000000;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    font-size: 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.3s ease;
+}
+
+button:hover,
+a.button:hover {
+    background: #333333;
+}
+
+/* Forms and buttons alignment */
+form {
+    margin-bottom: 20px;
+}
+
+.button-container {
+    margin-top: 20px;
+    text-align: center;
+}
+
+/* Table styles */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+th, td {
+    text-align: left;
+    padding: 10px;
+    border: 1px solid #ddd;
+}
+
+th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+/* Spinner for loading */
+.spinner {
+    margin: 20px auto;
+    width: 40px;
+    height: 40px;
+    border: 4px solid #ccc;
+    border-top: 4px solid #8ed3a2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}

@@ -69,24 +69,21 @@
 <body>
     <div class="container">
         <h1>3 MONKEYS TRANSLATION</h1>
-        <form id="translation-form" action="/process" method="post" enctype="multipart/form-data">
+        <form id="translation-form" action="/translation/process" method="post" enctype="multipart/form-data">
             <!-- Fichier principal -->
             <p class="info-text">Chargez le document à traduire</p>
             <label for="input_file">Fichier principal (.docx) :</label>
             <input type="file" id="input_file" name="input_file" required>
-            
 
             <!-- Glossaire DeepL -->
             <p class="info-text">Optionnel : Glossaire personnalisé pour DeepL</p>
             <label for="glossary_csv">Glossaire pour DeepL (.xlsx ou .csv) :</label>
             <input type="file" id="glossary_csv" name="glossary_csv">
-            
 
             <!-- Glossaire ChatGPT -->
             <p class="info-text">Optionnel : Glossaire personnalisé pour ChatGPT</p>
             <label for="glossary_gpt">Glossaire pour ChatGPT (.docx) :</label>
             <input type="file" id="glossary_gpt" name="glossary_gpt">
-            
 
             <!-- Langue source -->
             <label for="source_language">Langue source :</label>

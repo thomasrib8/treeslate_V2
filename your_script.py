@@ -64,7 +64,15 @@ def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target
     status_url = f"{api_url}/{document_id}"
     status_params = {"auth_key": api_key, "document_key": document_key}
     while True:
-        status_response = requests.get(status_url, params=status_params)
+        status_response = requests.post(
+    status_url,
+    headers={
+        "Authorization": f"Bearer {api_key}"
+    },
+    data={
+        "document_key": document_key
+    }
+)
         if status_response.status_code != 200:
             raise Exception(f"Failed to check translation status: {status_response.text}")
         status_data = status_response.json()
@@ -93,8 +101,17 @@ def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target
             break
         time.sleep(5)
         
+    # Téléchargement du document avec POST    
     download_url = f"{api_url}/{document_id}/result"
-    download_response = requests.get(download_url, params=status_params)
+    download_response = requests.post(
+        download_url,
+        headers={
+            "Authorization": f"Bearer {api_key}"
+        },
+        data={
+            "document_key": document_key
+        }
+    )
     if download_response.status_code == 200:
         with open(output_file_path, "wb") as output_file:
             output_file.write(download_response.content)

@@ -51,81 +51,69 @@ def create_glossary(api_key, name, source_lang, target_lang, glossary_path):
         raise Exception(f"Failed to create glossary: {response.text}")
 
 
+# Section de traduction avec DeepL
 def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target_language, source_language, glossary_id=None):
-    """
-    Traduit un document DOCX en utilisant l'API DeepL.
-    """
     api_url = "https://api.deepl.com/v2/document"
     headers = {
         "Authorization": f"Bearer {api_key}"
     }
-    
+    # Validation de l'API Key
+    if not api_key or not api_key.startswith("3c"):
+        raise ValueError("Invalid DEEPL_API_KEY. Please check the environment variable.")
+
+    # Préparation des données pour la requête
+    data = {
+        "target_lang": target_language,
+        "source_lang": source_language
+    }
+    if glossary_id:
+        data["glossary_id"] = glossary_id
+
+    print(f"Uploading document with headers: {headers}")  # Debugging
+    print(f"Data being sent (excluding file): {data}")  # Debugging
+
+    # Téléversement du document
     with open(input_file_path, 'rb') as file:
-        data = {
-            "target_lang": target_language,
-            "source_lang": source_language
-        }
-        if glossary_id:
-            data["glossary_id"] = glossary_id
-        
-        # Upload du document
-        logger.debug("Uploading document to DeepL API...")
-        logger.debug(f"Headers: {headers}")
-        logger.debug(f"Data (without file): {data}")
-        
-        upload_response = requests.post(
-            api_url,
-            headers=headers,
-            data=data,
-            files={"file": file}
-        )
-        
-        logger.debug(f"Upload response status code: {upload_response.status_code}")
-        logger.debug(f"Upload response content: {upload_response.text}")
-    
+        upload_response = requests.post(api_url, headers=headers, data=data, files={"file": file})
+
+    print(f"Upload response status code: {upload_response.status_code}")  # Debugging
+    print(f"Upload response content: {upload_response.text}")  # Debugging
+
     if upload_response.status_code != 200:
         raise Exception(f"Failed to upload document: {upload_response.text}")
-    
+
     upload_data = upload_response.json()
     document_id = upload_data["document_id"]
     document_key = upload_data["document_key"]
-    logger.info("Document uploaded successfully.")
-    
-    # Vérification du statut
-    status_url = f"{api_url}/{document_id}"
+
+    print("Document uploaded successfully.")
+    print(f"Document ID: {document_id}, Document Key: {document_key}")
+
+    # Vérification de l'état
     while True:
-        logger.debug("Checking translation status...")
-        status_response = requests.post(
-            status_url,
-            headers=headers,
-            data={"document_key": document_key}
-        )
-        logger.debug(f"Status response status code: {status_response.status_code}")
-        logger.debug(f"Status response content: {status_response.text}")
-        
+        status_url = f"{api_url}/{document_id}"
+        status_response = requests.post(status_url, headers=headers, data={"document_key": document_key})
+        print(f"Status response: {status_response.status_code}, {status_response.text}")  # Debugging
+
         if status_response.status_code != 200:
             raise Exception(f"Failed to check translation status: {status_response.text}")
-        
+
         status_data = status_response.json()
         if status_data["status"] == "done":
-            logger.info("Translation completed successfully.")
+            print("Translation completed successfully.")
             break
-        time.sleep(5)
-    
-    # Téléchargement du document
+        elif status_data["status"] == "error":
+            raise Exception(f"Translation error: {status_data}")
+
+    # Téléchargement du fichier traduit
     download_url = f"{api_url}/{document_id}/result"
-    logger.debug("Downloading translated document...")
-    download_response = requests.post(
-        download_url,
-        headers=headers,
-        data={"document_key": document_key}
-    )
-    logger.debug(f"Download response status code: {download_response.status_code}")
-    
+    download_response = requests.post(download_url, headers=headers, data={"document_key": document_key})
+
+    print(f"Download response status code: {download_response.status_code}")  # Debugging
     if download_response.status_code == 200:
         with open(output_file_path, "wb") as output_file:
             output_file.write(download_response.content)
-        logger.info(f"Translated document saved to: {output_file_path}")
+        print(f"Translated document saved to: {output_file_path}")
     else:
         raise Exception(f"Failed to download translated document: {download_response.text}")
 

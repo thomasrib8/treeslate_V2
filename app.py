@@ -28,6 +28,9 @@ users = {
 
 @auth.verify_password
 def verify_password(username, password):
+    """
+    Vérifie si le nom d'utilisateur et le mot de passe sont corrects.
+    """
     if username in users and check_password_hash(users.get(username), password):
         return username
 
@@ -37,7 +40,7 @@ progress = {"status": "idle", "message": ""}
 @app.route("/uploads/<filename>")
 def serve_uploads(filename):
     """
-    Sert les fichiers du dossier uploads.
+    Sert les fichiers du dossier uploads, y compris le logo.
     """
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
@@ -131,11 +134,13 @@ def process():
                 model=kwargs["gpt_model"],
             )
 
+            # Mise à jour pour indiquer que le traitement est terminé
             progress["status"] = "done"
             progress["message"] = "Traitement terminé avec succès."
             progress["output_file_name"] = os.path.basename(final_output_path)
 
         except Exception as e:
+            # Mise à jour en cas d'erreur
             progress["status"] = "error"
             progress["message"] = f"Une erreur est survenue : {str(e)}"
 
@@ -144,37 +149,26 @@ def process():
     input_path = os.path.join(app.config["UPLOAD_FOLDER"], input_file.filename)
     input_file.save(input_path)
 
-    # Gestion du glossaire
     glossary_file = request.files.get("glossary_file")
     glossary_csv_path = None
     if glossary_file:
-        glossary_extension = os.path.splitext(glossary_file.filename)[1].lower()
-        glossary_path = os.path.join(app.config["UPLOAD_FOLDER"], glossary_file.filename)
-        glossary_file.save(glossary_path)
-
-        if glossary_extension == ".xlsx":
-            glossary_csv_path = os.path.join(app.config["UPLOAD_FOLDER"], "converted_glossary.csv")
-            convert_excel_to_csv(glossary_path, glossary_csv_path)
-        elif glossary_extension == ".csv":
-            glossary_csv_path = glossary_path
-        else:
-            progress["status"] = "error"
-            progress["message"] = "Format de glossaire non supporté (uniquement .csv ou .xlsx)."
-            return redirect(url_for("processing"))
-
-    glossary_gpt = request.files.get("glossary_gpt")
-    glossary_gpt_path = None
-    if glossary_gpt:
-        glossary_gpt_path = os.path.join(app.config["UPLOAD_FOLDER"], glossary_gpt.filename)
-        glossary_gpt.save(glossary_gpt_path)
+        # Vérification du type de fichier
+        if glossary_file.filename.endswith(".xlsx"):
+            glossary_csv_path = os.path.join(app.config["UPLOAD_FOLDER"], "glossary_converted.csv")
+            glossary_xlsx_path = os.path.join(app.config["UPLOAD_FOLDER"], glossary_file.filename)
+            glossary_file.save(glossary_xlsx_path)
+            convert_excel_to_csv(glossary_xlsx_path, glossary_csv_path)
+        elif glossary_file.filename.endswith(".csv"):
+            glossary_csv_path = os.path.join(app.config["UPLOAD_FOLDER"], glossary_file.filename)
+            glossary_file.save(glossary_csv_path)
 
     # Récupération du nom de fichier de sortie depuis le formulaire
     output_file_name = request.form.get("output_file_name", "improved_output.docx")
     final_output_path = os.path.join(app.config["DOWNLOAD_FOLDER"], output_file_name)
 
+    # Paramètres pour le traitement en arrière-plan
     thread_args = {
         "glossary_csv_path": glossary_csv_path,
-        "glossary_gpt_path": glossary_gpt_path,
         "source_language": request.form["source_language"],
         "target_language": request.form["target_language"],
         "language_level": request.form["language_level"],
@@ -182,10 +176,12 @@ def process():
         "gpt_model": request.form["gpt_model"],
     }
 
+    # Lancer le traitement en arrière-plan
     threading.Thread(target=background_process, args=(input_path, final_output_path), kwargs=thread_args).start()
 
+    # Rediriger vers la page "Traduction en cours..."
     return redirect(url_for("processing"))
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 5000))  # Utiliser le port fourni par Render
     app.run(debug=True, host="0.0.0.0", port=port)

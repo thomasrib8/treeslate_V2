@@ -3,9 +3,19 @@ from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import threading
-from your_script import translate_docx_with_deepl, improve_translation, create_glossary, convert_excel_to_csv
+from your_script import (
+    translate_docx_with_deepl,
+    improve_translation,
+    create_glossary,
+    convert_excel_to_csv
+)
+import logging
 
+# Configuration de Flask et des logs
 app = Flask(__name__)
+
+logging.basicConfig(level=logging.DEBUG)
+app.logger.setLevel(logging.DEBUG)
 
 # Configuration des dossiers
 UPLOAD_FOLDER = "uploads"
@@ -18,6 +28,10 @@ app.config["DOWNLOAD_FOLDER"] = DOWNLOAD_FOLDER
 DEEPL_API_KEY = os.environ.get("DEEPL_API_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
+# Journalisation pour vérifier les clés API
+app.logger.debug(f"DeepL API Key: {DEEPL_API_KEY}")
+app.logger.debug(f"OpenAI API Key: {OPENAI_API_KEY}")
+
 # Authentification HTTP
 auth = HTTPBasicAuth()
 
@@ -28,9 +42,6 @@ users = {
 
 @auth.verify_password
 def verify_password(username, password):
-    """
-    Vérifie si le nom d'utilisateur et le mot de passe sont corrects.
-    """
     if username in users and check_password_hash(users.get(username), password):
         return username
 
@@ -39,65 +50,43 @@ progress = {"status": "idle", "message": ""}
 
 @app.route("/uploads/<filename>")
 def serve_uploads(filename):
-    """
-    Sert les fichiers du dossier uploads, y compris le logo.
-    """
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
+
+@app.route("/downloads/<filename>")
+@auth.login_required
+def download_file(filename):
+    return send_from_directory(app.config["DOWNLOAD_FOLDER"], filename, as_attachment=True)
 
 @app.route("/")
 @auth.login_required
 def index():
-    """
-    Page principale affichant le formulaire de téléchargement et les options.
-    """
     return render_template("index.html")
 
 @app.route("/processing")
 @auth.login_required
 def processing():
-    """
-    Page intermédiaire affichant "Traduction en cours...".
-    """
     return render_template("processing.html")
 
 @app.route("/done")
 @auth.login_required
 def done():
-    """
-    Page finale affichant "Traduction terminée".
-    """
     output_file_name = progress.get("output_file_name", "improved_output.docx")
     return render_template("done.html", output_file_name=output_file_name)
 
 @app.route("/check_status")
 @auth.login_required
 def check_status():
-    """
-    Vérifie le statut du traitement en cours.
-    """
     return jsonify(progress)
-
-@app.route("/downloads/<filename>")
-@auth.login_required
-def download_file(filename):
-    """
-    Permet à l'utilisateur de télécharger le fichier traduit.
-    """
-    return send_from_directory(app.config["DOWNLOAD_FOLDER"], filename, as_attachment=True)
 
 @app.route("/process", methods=["POST"])
 @auth.login_required
 def process():
-    """
-    Démarre le processus principal de traitement en arrière-plan.
-    """
     def background_process(input_path, final_output_path, **kwargs):
         global progress
         try:
             progress["status"] = "in_progress"
             progress["message"] = "Traitement en cours..."
 
-            # Gestion du glossaire DeepL
             glossary_id = None
             if kwargs.get("glossary_csv_path"):
                 progress["message"] = "Création du glossaire..."
@@ -109,7 +98,6 @@ def process():
                     glossary_path=kwargs["glossary_csv_path"],
                 )
 
-            # Traduction avec DeepL
             progress["message"] = "Traduction avec DeepL..."
             translated_output_path = os.path.join(app.config["UPLOAD_FOLDER"], "translated.docx")
             translate_docx_with_deepl(
@@ -121,7 +109,6 @@ def process():
                 glossary_id=glossary_id,
             )
 
-            # Amélioration avec ChatGPT
             progress["message"] = "Amélioration avec ChatGPT..."
             improve_translation(
                 input_file=translated_output_path,
@@ -134,41 +121,42 @@ def process():
                 model=kwargs["gpt_model"],
             )
 
-            # Mise à jour pour indiquer que le traitement est terminé
             progress["status"] = "done"
             progress["message"] = "Traitement terminé avec succès."
             progress["output_file_name"] = os.path.basename(final_output_path)
 
         except Exception as e:
-            # Mise à jour en cas d'erreur
             progress["status"] = "error"
             progress["message"] = f"Une erreur est survenue : {str(e)}"
+            app.logger.error(f"Erreur dans le processus : {e}")
 
-    # Récupération des fichiers et paramètres du formulaire
     input_file = request.files["input_file"]
     input_path = os.path.join(app.config["UPLOAD_FOLDER"], input_file.filename)
     input_file.save(input_path)
 
-    glossary_file = request.files.get("glossary_file")
+    glossary_csv = request.files.get("glossary_csv")
     glossary_csv_path = None
-    if glossary_file:
-        # Vérification du type de fichier
-        if glossary_file.filename.endswith(".xlsx"):
-            glossary_csv_path = os.path.join(app.config["UPLOAD_FOLDER"], "glossary_converted.csv")
-            glossary_xlsx_path = os.path.join(app.config["UPLOAD_FOLDER"], glossary_file.filename)
-            glossary_file.save(glossary_xlsx_path)
-            convert_excel_to_csv(glossary_xlsx_path, glossary_csv_path)
-        elif glossary_file.filename.endswith(".csv"):
-            glossary_csv_path = os.path.join(app.config["UPLOAD_FOLDER"], glossary_file.filename)
-            glossary_file.save(glossary_csv_path)
+    if glossary_csv:
+        if glossary_csv.filename.endswith(".xlsx"):
+            glossary_csv_path = os.path.join(app.config["UPLOAD_FOLDER"], glossary_csv.filename)
+            glossary_csv.save(glossary_csv_path)
+            glossary_csv_path = convert_excel_to_csv(glossary_csv_path)
+        else:
+            glossary_csv_path = os.path.join(app.config["UPLOAD_FOLDER"], glossary_csv.filename)
+            glossary_csv.save(glossary_csv_path)
 
-    # Récupération du nom de fichier de sortie depuis le formulaire
+    glossary_gpt = request.files.get("glossary_gpt")
+    glossary_gpt_path = None
+    if glossary_gpt:
+        glossary_gpt_path = os.path.join(app.config["UPLOAD_FOLDER"], glossary_gpt.filename)
+        glossary_gpt.save(glossary_gpt_path)
+
     output_file_name = request.form.get("output_file_name", "improved_output.docx")
     final_output_path = os.path.join(app.config["DOWNLOAD_FOLDER"], output_file_name)
 
-    # Paramètres pour le traitement en arrière-plan
     thread_args = {
         "glossary_csv_path": glossary_csv_path,
+        "glossary_gpt_path": glossary_gpt_path,
         "source_language": request.form["source_language"],
         "target_language": request.form["target_language"],
         "language_level": request.form["language_level"],
@@ -176,12 +164,10 @@ def process():
         "gpt_model": request.form["gpt_model"],
     }
 
-    # Lancer le traitement en arrière-plan
     threading.Thread(target=background_process, args=(input_path, final_output_path), kwargs=thread_args).start()
 
-    # Rediriger vers la page "Traduction en cours..."
     return redirect(url_for("processing"))
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Utiliser le port fourni par Render
+    port = int(os.environ.get("PORT", 5000))
     app.run(debug=True, host="0.0.0.0", port=port)

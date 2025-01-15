@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Translation Results</h1>
+        <p><strong>Words:</strong> {{ words }}</p>
+        <p><strong>Characters:</strong> {{ characters }}</p>
+        <p><strong>Paragraphs:</strong> {{ paragraphs }}</p>
+        <p><strong>Translation Time:</strong> {{ translation_time }}</p>
+        <p><strong>Translation Cost:</strong> ${{ translation_cost }}</p>
+        <p><strong>Review Cost:</strong> ${{ review_cost }}</p>
+        <p><strong>Total Cost:</strong> ${{ total_cost }}</p>
+        
+        <a href="/home" class="button">Back</a>
+        <a href="/logout" class="button">Logout</a>
+        <a href="https://three-monkeys-traduction.onrender.com" target="_blank" class="button">Translate</a>
+    </div>
+</body>
+</html>

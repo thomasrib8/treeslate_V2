@@ -57,6 +57,7 @@ def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target
     headers = {
         "Authorization": f"Bearer {api_key}"
     }
+
     # Validation de l'API Key
     if not api_key or not api_key.startswith("3c"):
         raise ValueError("Invalid DEEPL_API_KEY. Please check the environment variable.")
@@ -116,6 +117,7 @@ def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target
         print(f"Translated document saved to: {output_file_path}")
     else:
         raise Exception(f"Failed to download translated document: {download_response.text}")
+
 
 
 def convert_excel_to_csv(excel_path, csv_path):

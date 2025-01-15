@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tree'slate - Menu principal</title>
+    <title>Menu Principal</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -18,51 +18,59 @@
         .container {
             background: #ffffff;
             border-radius: 10px;
-            padding: 40px;
+            padding: 30px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            max-width: 600px;
+            max-width: 800px;
             width: 100%;
         }
         h1 {
-            font-size: 28px;
-            font-weight: bold;
+            text-align: center;
+            color: #333;
             margin-bottom: 20px;
-            color: black;
         }
-        a {
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .buttons a {
             display: inline-block;
-            margin: 10px;
-            padding: 15px 30px;
             text-decoration: none;
-            background-color: #000;
-            color: #fff;
+            background: #000000;
+            color: #ffffff;
+            padding: 10px 20px;
             border-radius: 5px;
-            font-size: 16px;
-            transition: background-color 0.3s;
+            transition: background 0.3s;
         }
-        a:hover {
-            background-color: #333;
+        .buttons a:hover {
+            background: #333333;
         }
         table {
             width: 100%;
-            margin-top: 20px;
             border-collapse: collapse;
         }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
+        table th, table td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
         }
-        th {
-            background-color: #f4f4f4;
+        table th {
+            background: #f4f4f4;
+        }
+        table tr:nth-child(even) {
+            background: #f9f9f9;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>TREE'SLATE</h1>
-        <a href="/translation">Traduire un nouveau fichier</a>
-        <a href="/calculator">Calculer un coût de traduction</a>
+        <div class="buttons">
+            <a href="/translation">Traduire un nouveau fichier</a>
+            <a href="/calculator">Calculer un coût de traduction</a>
+        </div>
+        <h2>Fichiers traduits</h2>
         <table>
             <thead>
                 <tr>
@@ -71,12 +79,16 @@
                 </tr>
             </thead>
             <tbody>
-                <!-- Exemple d'entrée statique -->
+                {% for file in translated_files %}
                 <tr>
-                    <td><a href="/downloads/example.docx">example.docx</a></td>
-                    <td>15/01/2025</td>
+                    <td><a href="/translation/downloads/{{ file['filename'] }}">{{ file['filename'] }}</a></td>
+                    <td>{{ file['created_at'] }}</td>
                 </tr>
-                <!-- Entrées dynamiques ajoutées côté backend -->
+                {% else %}
+                <tr>
+                    <td colspan="2" style="text-align: center;">Aucun fichier traduit disponible.</td>
+                </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>

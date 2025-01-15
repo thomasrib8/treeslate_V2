@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tree'slate - Menu principal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #8ed3a2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: black;
+        }
+        a {
+            display: inline-block;
+            margin: 10px;
+            padding: 15px 30px;
+            text-decoration: none;
+            background-color: #000;
+            color: #fff;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        a:hover {
+            background-color: #333;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>TREE'SLATE</h1>
+        <a href="/translation">Traduire un nouveau fichier</a>
+        <a href="/calculator">Calculer un coût de traduction</a>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nom du fichier</th>
+                    <th>Date de création</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Exemple d'entrée statique -->
+                <tr>
+                    <td><a href="/downloads/example.docx">example.docx</a></td>
+                    <td>15/01/2025</td>
+                </tr>
+                <!-- Entrées dynamiques ajoutées côté backend -->
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

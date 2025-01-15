@@ -3,7 +3,7 @@ from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import threading
-from your_script import translate_docx_with_deepl, improve_translation, create_glossary
+from your_script import translate_docx_with_deepl, improve_translation, create_glossary, convert_excel_to_csv
 
 app = Flask(__name__)
 
@@ -28,40 +28,20 @@ users = {
 
 @auth.verify_password
 def verify_password(username, password):
-    """
-    Vérifie si le nom d'utilisateur et le mot de passe sont corrects.
-    """
     if username in users and check_password_hash(users.get(username), password):
         return username
 
 # Variable globale pour suivre le statut du traitement
 progress = {"status": "idle", "message": ""}
 
-#ajout pour l'écran flash
-
 @app.route("/uploads/<filename>")
 def serve_uploads(filename):
     """
-    Sert les fichiers du dossier uploads, y compris le logo.
+    Sert les fichiers du dossier uploads.
     """
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
-@app.route("/splash")
-def splash():
-    """
-    Écran d'accueil temporaire avec un logo.
-    """
-    return render_template("splash.html")
-
 @app.route("/")
-def redirect_to_splash():
-    """
-    Redirige vers l'écran d'accueil.
-    """
-    return redirect(url_for("splash"))
-#fin de l'ajout
-
-@app.route("/index")
 @auth.login_required
 def index():
     """
@@ -151,13 +131,11 @@ def process():
                 model=kwargs["gpt_model"],
             )
 
-            # Mise à jour pour indiquer que le traitement est terminé
             progress["status"] = "done"
             progress["message"] = "Traitement terminé avec succès."
             progress["output_file_name"] = os.path.basename(final_output_path)
 
         except Exception as e:
-            # Mise à jour en cas d'erreur
             progress["status"] = "error"
             progress["message"] = f"Une erreur est survenue : {str(e)}"
 
@@ -166,11 +144,23 @@ def process():
     input_path = os.path.join(app.config["UPLOAD_FOLDER"], input_file.filename)
     input_file.save(input_path)
 
-    glossary_csv = request.files.get("glossary_csv")
+    # Gestion du glossaire
+    glossary_file = request.files.get("glossary_file")
     glossary_csv_path = None
-    if glossary_csv:
-        glossary_csv_path = os.path.join(app.config["UPLOAD_FOLDER"], glossary_csv.filename)
-        glossary_csv.save(glossary_csv_path)
+    if glossary_file:
+        glossary_extension = os.path.splitext(glossary_file.filename)[1].lower()
+        glossary_path = os.path.join(app.config["UPLOAD_FOLDER"], glossary_file.filename)
+        glossary_file.save(glossary_path)
+
+        if glossary_extension == ".xlsx":
+            glossary_csv_path = os.path.join(app.config["UPLOAD_FOLDER"], "converted_glossary.csv")
+            convert_excel_to_csv(glossary_path, glossary_csv_path)
+        elif glossary_extension == ".csv":
+            glossary_csv_path = glossary_path
+        else:
+            progress["status"] = "error"
+            progress["message"] = "Format de glossaire non supporté (uniquement .csv ou .xlsx)."
+            return redirect(url_for("processing"))
 
     glossary_gpt = request.files.get("glossary_gpt")
     glossary_gpt_path = None
@@ -182,7 +172,6 @@ def process():
     output_file_name = request.form.get("output_file_name", "improved_output.docx")
     final_output_path = os.path.join(app.config["DOWNLOAD_FOLDER"], output_file_name)
 
-    # Paramètres pour le traitement en arrière-plan
     thread_args = {
         "glossary_csv_path": glossary_csv_path,
         "glossary_gpt_path": glossary_gpt_path,
@@ -193,12 +182,10 @@ def process():
         "gpt_model": request.form["gpt_model"],
     }
 
-    # Lancer le traitement en arrière-plan
     threading.Thread(target=background_process, args=(input_path, final_output_path), kwargs=thread_args).start()
 
-    # Rediriger vers la page "Traduction en cours..."
     return redirect(url_for("processing"))
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Utiliser le port fourni par Render
+    port = int(os.environ.get("PORT", 5000))
     app.run(debug=True, host="0.0.0.0", port=port)

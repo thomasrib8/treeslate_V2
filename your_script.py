@@ -17,33 +17,32 @@ openai.api_key = OPENAI_API_KEY
 
 
 def create_glossary(api_key, name, source_lang, target_lang, glossary_path):
-    """
-    Crée un glossaire sur DeepL en utilisant les nouvelles spécifications.
-    """
     api_url = "https://api.deepl.com/v2/glossaries"
     with open(glossary_path, "r") as glossary_file:
         glossary_content = glossary_file.read()
     
-    response = requests.post(
-        api_url,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/x-www-form-urlencoded",
-        },
-        data={
-            "name": name,
-            "source_lang": source_lang,
-            "target_lang": target_lang,
-            "entries_format": "csv",
-            "entries": glossary_content,
-        },
-    )
+    headers = {
+        "Authorization": f"DeepL-Auth-Key {api_key}",
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+    
+    data = {
+        "name": name,
+        "source_lang": source_lang,
+        "target_lang": target_lang,
+        "entries_format": "csv",
+        "entries": glossary_content
+    }
+    
+    response = requests.post(api_url, headers=headers, data=data)
     response_data = response.json()
+    
     if response.status_code in (200, 201) and "glossary_id" in response_data:
         glossary_id = response_data["glossary_id"]
         print("Glossary created successfully.")
         return glossary_id
     else:
+        print(f"Failed to create glossary: {response.text}")
         raise Exception(f"Failed to create glossary: {response.text}")
 
 

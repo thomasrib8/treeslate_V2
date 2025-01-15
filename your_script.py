@@ -48,9 +48,13 @@ def create_glossary(api_key, name, source_lang, target_lang, glossary_path):
 
 def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target_language, source_language, glossary_id=None):
     """
-    Traduit un document Word (.docx) en utilisant l'API DeepL.
+    Traduit un document DOCX en utilisant l'API DeepL.
     """
     api_url = "https://api.deepl.com/v2/document"
+    headers = {
+        "Authorization": f"Bearer {api_key}"
+    }
+    
     with open(input_file_path, 'rb') as file:
         data = {
             "target_lang": target_language,
@@ -59,41 +63,45 @@ def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target
         if glossary_id:
             data["glossary_id"] = glossary_id
         
-        response = requests.post(
+        # Upload du document
+        upload_response = requests.post(
             api_url,
-            headers={"Authorization": f"Bearer {api_key}"},
+            headers=headers,
             data=data,
-            files={"file": file},
+            files={"file": file}
         )
-    if response.status_code != 200:
-        raise Exception(f"Failed to upload document: {response.text}")
-    upload_data = response.json()
+    
+    if upload_response.status_code != 200:
+        raise Exception(f"Failed to upload document: {upload_response.text}")
+    
+    upload_data = upload_response.json()
     document_id = upload_data["document_id"]
     document_key = upload_data["document_key"]
     print("Document uploaded successfully.")
-
-    # Polling for translation status
+    
+    # Vérification du statut
     status_url = f"{api_url}/{document_id}"
     while True:
         status_response = requests.post(
             status_url,
-            headers={"Authorization": f"Bearer {api_key}"},
-            data={"document_key": document_key},
+            headers=headers,
+            data={"document_key": document_key}
         )
         if status_response.status_code != 200:
             raise Exception(f"Failed to check translation status: {status_response.text}")
+        
         status_data = status_response.json()
         if status_data["status"] == "done":
             print("Translation completed successfully.")
             break
         time.sleep(5)
-
-    # Downloading the translated document
+    
+    # Téléchargement du document
     download_url = f"{api_url}/{document_id}/result"
     download_response = requests.post(
         download_url,
-        headers={"Authorization": f"Bearer {api_key}"},
-        data={"document_key": document_key},
+        headers=headers,
+        data={"document_key": document_key}
     )
     if download_response.status_code == 200:
         with open(output_file_path, "wb") as output_file:
@@ -101,6 +109,7 @@ def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target
         print(f"Translated document saved to: {output_file_path}")
     else:
         raise Exception(f"Failed to download translated document: {download_response.text}")
+
 
 
 def convert_excel_to_csv(excel_path, csv_path):

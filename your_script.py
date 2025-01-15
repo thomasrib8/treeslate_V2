@@ -20,10 +20,10 @@ def create_glossary(api_key, name, source_lang, target_lang, glossary_path):
         glossary_content = glossary_file.read()
     response = requests.post(
         api_url,
-      headers={
-    "Authorization": f"Bearer {api_key}",
-    "Content-Type": "application/x-www-form-urlencoded"
-}
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
         data={
             "name": name,
             "source_lang": source_lang,
@@ -44,7 +44,6 @@ def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target
     api_url = "https://api.deepl.com/v2/document"
     with open(input_file_path, 'rb') as file:
         data = {
-            "auth_key": api_key,
             "target_lang": target_language,
             "source_lang": source_language
         }
@@ -53,7 +52,10 @@ def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target
         upload_response = requests.post(
             api_url,
             data=data,
-            files={"file": file}
+            files={"file": file},
+            headers={
+                "Authorization": f"Bearer {api_key}"
+            }
         )
     if upload_response.status_code != 200:
         raise Exception(f"Failed to upload document: {upload_response.text}")
@@ -61,28 +63,9 @@ def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target
     document_id = upload_data["document_id"]
     document_key = upload_data["document_key"]
     print("Document uploaded successfully.")
-    status_url = f"{api_url}/{document_id}"
-    status_params = {"auth_key": api_key, "document_key": document_key}
-    while True:
-        status_response = requests.post(
-    status_url,
-    headers={
-        "Authorization": f"Bearer {api_key}"
-    },
-    data={
-        "document_key": document_key
-    }
-)
-        if status_response.status_code != 200:
-            raise Exception(f"Failed to check translation status: {status_response.text}")
-        status_data = status_response.json()
-        if status_data["status"] == "done":
-            print("Translation completed successfully.")
-            break
 
-    # Vérification de l'état avec POST
+    # Vérification de l'état
     status_url = f"{api_url}/{document_id}"
-    status_params = {"auth_key": api_key, "document_key": document_key}
     while True:
         status_response = requests.post(
             status_url,
@@ -100,8 +83,8 @@ def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target
             print("Translation completed successfully.")
             break
         time.sleep(5)
-        
-    # Téléchargement du document avec POST    
+
+    # Téléchargement
     download_url = f"{api_url}/{document_id}/result"
     download_response = requests.post(
         download_url,
@@ -148,7 +131,7 @@ def process_paragraphs(paragraphs, glossary, language_level, source_language, ta
     try:
         # Utilisation du modèle sélectionné par l'utilisateur
         response = openai.ChatCompletion.create(
-            model=model,  # Utilisez le modèle choisi par l'utilisateur
+            model=model,
             messages=[
                 {"role": "system", "content": "You are a skilled translator and editor."},
                 {"role": "user", "content": prompt},
@@ -159,7 +142,7 @@ def process_paragraphs(paragraphs, glossary, language_level, source_language, ta
         return response["choices"][0]["message"]["content"].strip()
     except openai.error.RateLimitError as e:
         print(f"Rate limit reached: {e}. Adding delay before retrying.")
-        time.sleep(15)  # Délai de 15 secondes
+        time.sleep(15)
         return None
     except Exception as e:
         print(f"An error occurred with OpenAI API: {e}")
@@ -222,7 +205,7 @@ if __name__ == "__main__":
             source_language=args.source_language,
             target_language=args.target_language,
             group_size=args.group_size,
-            model=args.gpt_model  # Pass the selected model here
+            model=args.gpt_model
         )
     except Exception as e:
         print(f"An error occurred: {e}")

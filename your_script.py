@@ -20,12 +20,29 @@ print(f"OpenAI API Key: {OPENAI_API_KEY}")  # Vérifie que la clé est récupér
 openai.api_key = OPENAI_API_KEY
 
 
-def convert_excel_to_csv(xlsx_path, csv_path):
+import pandas as pd
+
+def convert_excel_to_csv(excel_path, output_folder):
     """
-    Convertit un fichier Excel en CSV.
+    Convertit un fichier Excel en fichier CSV.
+    :param excel_path: Chemin du fichier Excel.
+    :param output_folder: Dossier où enregistrer le fichier CSV.
+    :return: Chemin du fichier CSV généré.
     """
-    df = pd.read_excel(xlsx_path)
-    df.to_csv(csv_path, index=False, header=False)
+    try:
+        # Chargement du fichier Excel
+        df = pd.read_excel(excel_path)
+        
+        # Générer le chemin de sortie
+        csv_filename = os.path.splitext(os.path.basename(excel_path))[0] + ".csv"
+        csv_path = os.path.join(output_folder, csv_filename)
+        
+        # Enregistrer au format CSV
+        df.to_csv(csv_path, index=False, encoding="utf-8-sig")
+        return csv_path
+    except Exception as e:
+        raise Exception(f"Erreur lors de la conversion Excel en CSV : {e}")
+
 
 
 def create_glossary(api_key, name, source_lang, target_lang, glossary_path):

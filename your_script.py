@@ -8,47 +8,22 @@ import time
 import os
 import pandas as pd
 
-# Récupération des clés API à partir des variables d'environnement
+# Remplacez par vos clés API
 DEEPL_API_KEY = os.environ.get("DEEPL_API_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-
-# Vérification de la clé API pour le débogage
-print(f"DeepL API Key: {DEEPL_API_KEY}")  # Vérifie que la clé est récupérée
-print(f"OpenAI API Key: {OPENAI_API_KEY}")  # Vérifie que la clé est récupérée
 
 # Configurez l'accès à OpenAI
 openai.api_key = OPENAI_API_KEY
 
 
-import pandas as pd
-
-def convert_excel_to_csv(excel_path, output_folder):
-    """
-    Convertit un fichier Excel en fichier CSV.
-    :param excel_path: Chemin du fichier Excel.
-    :param output_folder: Dossier où enregistrer le fichier CSV.
-    :return: Chemin du fichier CSV généré.
-    """
-    try:
-        # Chargement du fichier Excel
-        df = pd.read_excel(excel_path)
-        
-        # Générer le chemin de sortie
-        csv_filename = os.path.splitext(os.path.basename(excel_path))[0] + ".csv"
-        csv_path = os.path.join(output_folder, csv_filename)
-        
-        # Enregistrer au format CSV
-        df.to_csv(csv_path, index=False, encoding="utf-8-sig")
-        return csv_path
-    except Exception as e:
-        raise Exception(f"Erreur lors de la conversion Excel en CSV : {e}")
-
-
-
 def create_glossary(api_key, name, source_lang, target_lang, glossary_path):
+    """
+    Crée un glossaire sur DeepL en utilisant les nouvelles spécifications.
+    """
     api_url = "https://api.deepl.com/v2/glossaries"
     with open(glossary_path, "r") as glossary_file:
         glossary_content = glossary_file.read()
+    
     response = requests.post(
         api_url,
         headers={
@@ -73,28 +48,32 @@ def create_glossary(api_key, name, source_lang, target_lang, glossary_path):
 
 
 def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target_language, source_language, glossary_id=None):
+    """
+    Traduit un document Word (.docx) en utilisant l'API DeepL.
+    """
     api_url = "https://api.deepl.com/v2/document"
-    with open(input_file_path, "rb") as file:
+    with open(input_file_path, 'rb') as file:
         data = {
             "target_lang": target_language,
-            "source_lang": source_language,
+            "source_lang": source_language
         }
         if glossary_id:
             data["glossary_id"] = glossary_id
-        upload_response = requests.post(
+        
+        response = requests.post(
             api_url,
             headers={"Authorization": f"Bearer {api_key}"},
             data=data,
             files={"file": file},
         )
-    if upload_response.status_code != 200:
-        raise Exception(f"Failed to upload document: {upload_response.text}")
-    upload_data = upload_response.json()
+    if response.status_code != 200:
+        raise Exception(f"Failed to upload document: {response.text}")
+    upload_data = response.json()
     document_id = upload_data["document_id"]
     document_key = upload_data["document_key"]
     print("Document uploaded successfully.")
 
-    # Vérification de l'état avec POST
+    # Polling for translation status
     status_url = f"{api_url}/{document_id}"
     while True:
         status_response = requests.post(
@@ -110,7 +89,7 @@ def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target
             break
         time.sleep(5)
 
-    # Téléchargement du document avec POST
+    # Downloading the translated document
     download_url = f"{api_url}/{document_id}/result"
     download_response = requests.post(
         download_url,
@@ -125,6 +104,15 @@ def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target
         raise Exception(f"Failed to download translated document: {download_response.text}")
 
 
+def convert_excel_to_csv(excel_path, csv_path):
+    """
+    Convertit un fichier Excel (.xlsx) en CSV pour DeepL.
+    """
+    df = pd.read_excel(excel_path, header=None)
+    df.to_csv(csv_path, index=False, header=False)
+    return csv_path
+
+
 def read_glossary(glossary_path):
     glossary = {}
     doc = Document(glossary_path)
@@ -137,11 +125,10 @@ def read_glossary(glossary_path):
 
 def process_paragraphs(paragraphs, glossary, language_level, source_language, target_language, model):
     """
-    Sends paragraphs to ChatGPT for translation improvement.
+    Envoie les paragraphes à ChatGPT pour amélioration de la traduction.
     """
     print(f"Sending the following paragraphs to ChatGPT:\n{paragraphs}\n")
 
-    # Construire l'invite
     prompt = (
         f"Translate the following text from {source_language} to {target_language} "
         f"and improve its quality to match the '{language_level}' language level.\n"
@@ -153,9 +140,8 @@ def process_paragraphs(paragraphs, glossary, language_level, source_language, ta
         prompt += f"{para}\n\n"
 
     try:
-        # Utilisation du modèle sélectionné par l'utilisateur
         response = openai.ChatCompletion.create(
-            model=model,  # Utilisez le modèle choisi par l'utilisateur
+            model=model,
             messages=[
                 {"role": "system", "content": "You are a skilled translator and editor."},
                 {"role": "user", "content": prompt},
@@ -166,7 +152,7 @@ def process_paragraphs(paragraphs, glossary, language_level, source_language, ta
         return response["choices"][0]["message"]["content"].strip()
     except openai.error.RateLimitError as e:
         print(f"Rate limit reached: {e}. Adding delay before retrying.")
-        time.sleep(15)  # Délai de 15 secondes
+        time.sleep(15)
         return None
     except Exception as e:
         print(f"An error occurred with OpenAI API: {e}")
@@ -205,6 +191,7 @@ if __name__ == "__main__":
     parser.add_argument("--glossary_gpt", help="Path to glossary Word for ChatGPT.", default=None)
     parser.add_argument("--gpt_model", choices=["gpt-3.5-turbo", "gpt-4"], default="gpt-3.5-turbo", help="Choose the GPT model to use.")
     args = parser.parse_args()
+
     try:
         glossary_id = None
         if args.glossary_csv:

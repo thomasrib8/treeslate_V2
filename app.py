@@ -140,10 +140,11 @@ def process():
         if glossary_csv.filename.endswith(".xlsx"):
             glossary_csv_path = os.path.join(app.config["UPLOAD_FOLDER"], glossary_csv.filename)
             glossary_csv.save(glossary_csv_path)
-            glossary_csv_path = convert_excel_to_csv(glossary_csv_path)
+            glossary_csv_path = convert_excel_to_csv(glossary_csv_path, app.config["UPLOAD_FOLDER"])  # Correction ici
         else:
             glossary_csv_path = os.path.join(app.config["UPLOAD_FOLDER"], glossary_csv.filename)
             glossary_csv.save(glossary_csv_path)
+
 
     glossary_gpt = request.files.get("glossary_gpt")
     glossary_gpt_path = None

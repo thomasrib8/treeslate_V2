@@ -122,7 +122,7 @@ def process_paragraphs(paragraphs, glossary, language_level, source_language, ta
     prompt = (
         f"Translate the following text from {source_language} to {target_language} "
         f"and improve its quality to match the '{language_level}' language level.\n"
-        f"Use the glossary when applicable: {glossary}.\n"
+        f"Use the glossary strictly when applicable: {glossary}.\n"
         f"Return only the improved translation, without any additional comments, explanations, or introductory phrases.\n\n"
     )
 

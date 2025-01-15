@@ -54,35 +54,36 @@ def create_glossary(api_key, name, source_lang, target_lang, glossary_path):
 # Section de traduction avec DeepL
 def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target_language, source_language, glossary_id=None):
     api_url = "https://api.deepl.com/v2/document"
+    
+    # En-têtes avec Bearer token
     headers = {
         "Authorization": f"Bearer {api_key}"
     }
 
-    # Validation de l'API Key
-    if not api_key or not api_key.startswith("3c"):
-        raise ValueError("Invalid DEEPL_API_KEY. Please check the environment variable.")
-
-    # Préparation des données pour la requête
+    # Données pour la requête
     data = {
+        "auth_key": api_key,  # Inclure explicitement l'auth_key
         "target_lang": target_language,
         "source_lang": source_language
     }
     if glossary_id:
         data["glossary_id"] = glossary_id
 
-    print(f"Uploading document with headers: {headers}")  # Debugging
-    print(f"Data being sent (excluding file): {data}")  # Debugging
+    # Journalisation pour débogage
+    print(f"Uploading document with headers: {headers}")
+    print(f"Data being sent (excluding file): {data}")
 
     # Téléversement du document
     with open(input_file_path, 'rb') as file:
         upload_response = requests.post(api_url, headers=headers, data=data, files={"file": file})
 
-    print(f"Upload response status code: {upload_response.status_code}")  # Debugging
-    print(f"Upload response content: {upload_response.text}")  # Debugging
+    print(f"Upload response status code: {upload_response.status_code}")
+    print(f"Upload response content: {upload_response.text}")
 
     if upload_response.status_code != 200:
         raise Exception(f"Failed to upload document: {upload_response.text}")
 
+    # Analyse de la réponse
     upload_data = upload_response.json()
     document_id = upload_data["document_id"]
     document_key = upload_data["document_key"]
@@ -90,11 +91,11 @@ def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target
     print("Document uploaded successfully.")
     print(f"Document ID: {document_id}, Document Key: {document_key}")
 
-    # Vérification de l'état
+    # Suivi du statut
+    status_url = f"{api_url}/{document_id}"
     while True:
-        status_url = f"{api_url}/{document_id}"
-        status_response = requests.post(status_url, headers=headers, data={"document_key": document_key})
-        print(f"Status response: {status_response.status_code}, {status_response.text}")  # Debugging
+        status_response = requests.post(status_url, headers=headers, data={"auth_key": api_key, "document_key": document_key})
+        print(f"Status response: {status_response.status_code}, {status_response.text}")
 
         if status_response.status_code != 200:
             raise Exception(f"Failed to check translation status: {status_response.text}")
@@ -106,17 +107,18 @@ def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target
         elif status_data["status"] == "error":
             raise Exception(f"Translation error: {status_data}")
 
-    # Téléchargement du fichier traduit
+    # Téléchargement du document traduit
     download_url = f"{api_url}/{document_id}/result"
-    download_response = requests.post(download_url, headers=headers, data={"document_key": document_key})
+    download_response = requests.post(download_url, headers=headers, data={"auth_key": api_key, "document_key": document_key})
 
-    print(f"Download response status code: {download_response.status_code}")  # Debugging
+    print(f"Download response status code: {download_response.status_code}")
     if download_response.status_code == 200:
         with open(output_file_path, "wb") as output_file:
             output_file.write(download_response.content)
         print(f"Translated document saved to: {output_file_path}")
     else:
         raise Exception(f"Failed to download translated document: {download_response.text}")
+
 
 
 

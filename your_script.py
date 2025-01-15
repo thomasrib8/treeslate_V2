@@ -4,6 +4,7 @@ import requests
 import openai
 from docx import Document
 from tqdm import tqdm
+import pandas as pd
 import time
 import os
 
@@ -13,6 +14,19 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
 # Configurez l'accès à OpenAI
 openai.api_key = OPENAI_API_KEY
+
+def convert_excel_to_csv(excel_path, csv_path):
+    """
+    Convertit un fichier Excel (.xlsx) en un fichier CSV exploitable.
+    """
+    try:
+        df = pd.read_excel(excel_path, header=None)  # Pas d'en-têtes
+        if df.shape[1] < 2:
+            raise ValueError("Le fichier Excel doit contenir au moins deux colonnes.")
+        df.iloc[:, :2].to_csv(csv_path, index=False, header=False, encoding="utf-8")
+        print(f"Fichier Excel converti en CSV : {csv_path}")
+    except Exception as e:
+        raise Exception(f"Erreur lors de la conversion de l'Excel en CSV : {e}")
 
 def create_glossary(api_key, name, source_lang, target_lang, glossary_path):
     api_url = "https://api.deepl.com/v2/glossaries"
@@ -44,6 +58,7 @@ def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target
     api_url = "https://api.deepl.com/v2/document"
     with open(input_file_path, 'rb') as file:
         data = {
+            "auth_key": api_key,
             "target_lang": target_language,
             "source_lang": source_language
         }
@@ -52,10 +67,7 @@ def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target
         upload_response = requests.post(
             api_url,
             data=data,
-            files={"file": file},
-            headers={
-                "Authorization": f"Bearer {api_key}"
-            }
+            files={"file": file}
         )
     if upload_response.status_code != 200:
         raise Exception(f"Failed to upload document: {upload_response.text}")
@@ -63,18 +75,12 @@ def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target
     document_id = upload_data["document_id"]
     document_key = upload_data["document_key"]
     print("Document uploaded successfully.")
-
-    # Vérification de l'état
     status_url = f"{api_url}/{document_id}"
     while True:
         status_response = requests.post(
             status_url,
-            headers={
-                "Authorization": f"Bearer {api_key}"
-            },
-            data={
-                "document_key": document_key
-            }
+            headers={"Authorization": f"Bearer {api_key}"},
+            data={"document_key": document_key}
         )
         if status_response.status_code != 200:
             raise Exception(f"Failed to check translation status: {status_response.text}")
@@ -83,17 +89,11 @@ def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target
             print("Translation completed successfully.")
             break
         time.sleep(5)
-
-    # Téléchargement
     download_url = f"{api_url}/{document_id}/result"
     download_response = requests.post(
         download_url,
-        headers={
-            "Authorization": f"Bearer {api_key}"
-        },
-        data={
-            "document_key": document_key
-        }
+        headers={"Authorization": f"Bearer {api_key}"},
+        data={"document_key": document_key}
     )
     if download_response.status_code == 200:
         with open(output_file_path, "wb") as output_file:
@@ -112,24 +112,16 @@ def read_glossary(glossary_path):
     return glossary
 
 def process_paragraphs(paragraphs, glossary, language_level, source_language, target_language, model):
-    """
-    Sends paragraphs to ChatGPT for translation improvement.
-    """
-    print(f"Sending the following paragraphs to ChatGPT:\n{paragraphs}\n")
-
-    # Construire l'invite
     prompt = (
         f"Translate the following text from {source_language} to {target_language} "
         f"and improve its quality to match the '{language_level}' language level.\n"
         f"Use the glossary strictly when applicable: {glossary}.\n"
-        f"Return only the improved translation, without any additional comments, explanations, or introductory phrases.\n\n"
+        f"Return only the improved translation.\n\n"
     )
-
     for para in paragraphs:
         prompt += f"{para}\n\n"
 
     try:
-        # Utilisation du modèle sélectionné par l'utilisateur
         response = openai.ChatCompletion.create(
             model=model,
             messages=[
@@ -175,20 +167,26 @@ if __name__ == "__main__":
     parser.add_argument("target_language", help="Target language code (e.g., 'EN', 'FR').")
     parser.add_argument("language_level", help="Language level for improved translation (e.g., 'soutenu').")
     parser.add_argument("group_size", type=int, help="Number of paragraphs to process together.")
-    parser.add_argument("--glossary_csv", help="Path to glossary CSV for DeepL.", default=None)
-    parser.add_argument("--glossary_gpt", help="Path to glossary Word for ChatGPT.", default=None)
+    parser.add_argument("--glossary_excel", help="Path to glossary Excel file.", default=None)
     parser.add_argument("--gpt_model", choices=["gpt-3.5-turbo", "gpt-4"], default="gpt-3.5-turbo", help="Choose the GPT model to use.")
     args = parser.parse_args()
+
     try:
+        glossary_csv = None
+        if args.glossary_excel:
+            glossary_csv = "converted_glossary.csv"
+            convert_excel_to_csv(args.glossary_excel, glossary_csv)
+
         glossary_id = None
-        if args.glossary_csv:
+        if glossary_csv:
             glossary_id = create_glossary(
                 api_key=DEEPL_API_KEY,
                 name="MyGlossary",
                 source_lang=args.source_language,
                 target_lang=args.target_language,
-                glossary_path=args.glossary_csv,
+                glossary_path=glossary_csv,
             )
+
         translate_docx_with_deepl(
             api_key=DEEPL_API_KEY,
             input_file_path=args.input_file,
@@ -197,15 +195,16 @@ if __name__ == "__main__":
             source_language=args.source_language,
             glossary_id=glossary_id,
         )
+
         improve_translation(
             input_file=args.translated_file,
-            glossary_path=args.glossary_gpt,
+            glossary_path=glossary_csv,
             output_file=args.improved_file,
             language_level=args.language_level,
             source_language=args.source_language,
             target_language=args.target_language,
             group_size=args.group_size,
-            model=args.gpt_model
+            model=args.gpt_model,
         )
     except Exception as e:
         print(f"An error occurred: {e}")

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Calculette traduction 3 Monkeys</h1>
+        <form action="/" method="get">
+            <a href="/logout" class="button">Logout</a>
+        </form>
+        <form method="post" enctype="multipart/form-data">
+            <label for="file">Upload a .docx file:</label>
+            <input type="file" id="file" name="file" required>
+            
+            <label for="group_size">Choose Group Size:</label>
+            <select id="group_size" name="group_size" required>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+            </select>
+            
+            <label for="reviewer">Choose Reviewer:</label>
+            <select id="reviewer" name="reviewer" required>
+                <option value="TOBY">TOBY</option>
+                <option value="TOBY+MIKE">TOBY+MIKE</option>
+                <option value="MIKE">MIKE</option>
+            </select>
+            
+            <button type="submit" class="button">Calculate</button>
+        </form>
+    </div>
+</body>
+</html>

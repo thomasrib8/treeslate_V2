@@ -24,7 +24,7 @@ def index():
     Page principale de l'application de traduction.
     """
     logger.debug("Page principale (index) affichée.")
-    return render_template("index.html")
+    return render_template("translation/index.html")
 
 
 @translation_bp.route("/processing")
@@ -33,7 +33,7 @@ def processing():
     Page intermédiaire affichant "Traduction en cours...".
     """
     logger.debug("Page de traitement en cours affichée.")
-    return render_template("processing.html")
+    return render_template("translation/processing.html")
 
 
 @translation_bp.route("/done")
@@ -42,7 +42,7 @@ def done():
     Page finale affichant "Traduction terminée".
     """
     output_file_name = progress.get("output_file_name", "improved_output.docx")
-    return render_template("done.html", output_file_name=output_file_name)
+    return render_template("translation/done.html", output_file_name=output_file_name)
 
 
 @translation_bp.route("/downloads/<filename>")

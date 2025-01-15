@@ -8,9 +8,13 @@ import time
 import os
 import pandas as pd
 
-# Remplacez par vos clés API
+# Récupération des clés API à partir des variables d'environnement
 DEEPL_API_KEY = os.environ.get("DEEPL_API_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+
+# Vérification de la clé API
+print(f"DeepL API Key: {DEEPL_API_KEY}")  # Ajout pour débogage
+print(f"OpenAI API Key: {OPENAI_API_KEY}")  # Ajout pour débogage
 
 # Configurez l'accès à OpenAI
 openai.api_key = OPENAI_API_KEY
@@ -51,9 +55,7 @@ def create_glossary(api_key, name, source_lang, target_lang, glossary_path):
         raise Exception(f"Failed to create glossary: {response.text}")
 
 
-def translate_docx_with_deepl(
-    api_key, input_file_path, output_file_path, target_language, source_language, glossary_id=None
-):
+def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target_language, source_language, glossary_id=None):
     api_url = "https://api.deepl.com/v2/document"
     with open(input_file_path, "rb") as file:
         data = {
@@ -117,7 +119,12 @@ def read_glossary(glossary_path):
 
 
 def process_paragraphs(paragraphs, glossary, language_level, source_language, target_language, model):
+    """
+    Sends paragraphs to ChatGPT for translation improvement.
+    """
     print(f"Sending the following paragraphs to ChatGPT:\n{paragraphs}\n")
+
+    # Construire l'invite
     prompt = (
         f"Translate the following text from {source_language} to {target_language} "
         f"and improve its quality to match the '{language_level}' language level.\n"
@@ -129,8 +136,9 @@ def process_paragraphs(paragraphs, glossary, language_level, source_language, ta
         prompt += f"{para}\n\n"
 
     try:
+        # Utilisation du modèle sélectionné par l'utilisateur
         response = openai.ChatCompletion.create(
-            model=model,
+            model=model,  # Utilisez le modèle choisi par l'utilisateur
             messages=[
                 {"role": "system", "content": "You are a skilled translator and editor."},
                 {"role": "user", "content": prompt},
@@ -141,16 +149,14 @@ def process_paragraphs(paragraphs, glossary, language_level, source_language, ta
         return response["choices"][0]["message"]["content"].strip()
     except openai.error.RateLimitError as e:
         print(f"Rate limit reached: {e}. Adding delay before retrying.")
-        time.sleep(15)
+        time.sleep(15)  # Délai de 15 secondes
         return None
     except Exception as e:
         print(f"An error occurred with OpenAI API: {e}")
         return None
 
 
-def improve_translation(
-    input_file, glossary_path, output_file, language_level, source_language, target_language, group_size, model
-):
+def improve_translation(input_file, glossary_path, output_file, language_level, source_language, target_language, group_size, model):
     doc = Document(input_file)
     glossary = read_glossary(glossary_path)
     output_doc = Document()
@@ -208,7 +214,7 @@ if __name__ == "__main__":
             source_language=args.source_language,
             target_language=args.target_language,
             group_size=args.group_size,
-            model=args.gpt_model,
+            model=args.gpt_model,  # Pass the selected model here
         )
     except Exception as e:
         print(f"An error occurred: {e}")

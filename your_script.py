@@ -20,10 +20,10 @@ def create_glossary(api_key, name, source_lang, target_lang, glossary_path):
         glossary_content = glossary_file.read()
     response = requests.post(
         api_url,
-        headers={
-            "Authorization": f"DeepL-Auth-Key {api_key}",
-            "Content-Type": "application/x-www-form-urlencoded"
-        },
+      headers={
+    "Authorization": f"Bearer {api_key}",
+    "Content-Type": "application/x-www-form-urlencoded"
+}
         data={
             "name": name,
             "source_lang": source_lang,

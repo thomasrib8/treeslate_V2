@@ -12,9 +12,9 @@ import pandas as pd
 DEEPL_API_KEY = os.environ.get("DEEPL_API_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
-# Vérification de la clé API
-print(f"DeepL API Key: {DEEPL_API_KEY}")  # Ajout pour débogage
-print(f"OpenAI API Key: {OPENAI_API_KEY}")  # Ajout pour débogage
+# Vérification de la clé API pour le débogage
+print(f"DeepL API Key: {DEEPL_API_KEY}")  # Vérifie que la clé est récupérée
+print(f"OpenAI API Key: {OPENAI_API_KEY}")  # Vérifie que la clé est récupérée
 
 # Configurez l'accès à OpenAI
 openai.api_key = OPENAI_API_KEY
@@ -214,7 +214,7 @@ if __name__ == "__main__":
             source_language=args.source_language,
             target_language=args.target_language,
             group_size=args.group_size,
-            model=args.gpt_model,  # Pass the selected model here
+            model=args.gpt_model,
         )
     except Exception as e:
         print(f"An error occurred: {e}")

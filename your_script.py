@@ -12,24 +12,22 @@ import pandas as pd
 DEEPL_API_KEY = os.environ.get("DEEPL_API_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
+# Configurez l'accès à OpenAI
+openai.api_key = OPENAI_API_KEY
+
 # Vérification des clés API
 if not DEEPL_API_KEY:
     raise Exception("DEEPL_API_KEY is not set. Please configure it in your environment variables.")
 if not OPENAI_API_KEY:
     raise Exception("OPENAI_API_KEY is not set. Please configure it in your environment variables.")
 
-# Configurez l'accès à OpenAI
-openai.api_key = OPENAI_API_KEY
-
-
 def convert_excel_to_csv(excel_path, csv_path):
     """
-    Convertit un fichier Excel en fichier CSV compatible avec DeepL.
+    Convertit un fichier Excel en CSV pour DeepL.
     """
     df = pd.read_excel(excel_path, header=None)
-    df.to_csv(csv_path, index=False, header=False)
-    print(f"Converted {excel_path} to {csv_path}")
-
+    df.to_csv(csv_path, index=False, header=False, encoding="utf-8")
+    print(f"Converted Excel file '{excel_path}' to CSV format at '{csv_path}'.")
 
 def create_glossary(api_key, name, source_lang, target_lang, glossary_path):
     api_url = "https://api.deepl.com/v2/glossaries"
@@ -57,7 +55,6 @@ def create_glossary(api_key, name, source_lang, target_lang, glossary_path):
     else:
         raise Exception(f"Failed to create glossary: {response.text}")
 
-
 def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target_language, source_language, glossary_id=None):
     api_url = "https://api.deepl.com/v2/document"
     with open(input_file_path, 'rb') as file:
@@ -69,8 +66,8 @@ def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target
         if glossary_id:
             data["glossary_id"] = glossary_id
         upload_response = requests.post(api_url, headers=headers, data=data, files={"file": file})
-    if upload_response.status_code != 200:
-        raise Exception(f"Failed to upload document: {upload_response.text}")
+        if upload_response.status_code != 200:
+            raise Exception(f"Failed to upload document: {upload_response.text}")
     upload_data = upload_response.json()
     document_id = upload_data["document_id"]
     document_key = upload_data["document_key"]
@@ -106,7 +103,6 @@ def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target
     else:
         raise Exception(f"Failed to download translated document: {download_response.text}")
 
-
 def read_glossary(glossary_path):
     glossary = {}
     doc = Document(glossary_path)
@@ -116,11 +112,13 @@ def read_glossary(glossary_path):
             glossary[source.strip()] = target.strip()
     return glossary
 
-
 def process_paragraphs(paragraphs, glossary, language_level, source_language, target_language, model):
     """
     Sends paragraphs to ChatGPT for translation improvement.
     """
+    print(f"Sending the following paragraphs to ChatGPT:\n{paragraphs}\n")
+
+    # Construire l'invite
     prompt = (
         f"Translate the following text from {source_language} to {target_language} "
         f"and improve its quality to match the '{language_level}' language level.\n"
@@ -132,8 +130,9 @@ def process_paragraphs(paragraphs, glossary, language_level, source_language, ta
         prompt += f"{para}\n\n"
 
     try:
+        # Utilisation du modèle sélectionné par l'utilisateur
         response = openai.ChatCompletion.create(
-            model=model,
+            model=model,  # Utilisez le modèle choisi par l'utilisateur
             messages=[
                 {"role": "system", "content": "You are a skilled translator and editor."},
                 {"role": "user", "content": prompt},
@@ -144,12 +143,11 @@ def process_paragraphs(paragraphs, glossary, language_level, source_language, ta
         return response["choices"][0]["message"]["content"].strip()
     except openai.error.RateLimitError as e:
         print(f"Rate limit reached: {e}. Adding delay before retrying.")
-        time.sleep(15)
+        time.sleep(15)  # Délai de 15 secondes
         return None
     except Exception as e:
         print(f"An error occurred with OpenAI API: {e}")
         return None
-
 
 def improve_translation(input_file, glossary_path, output_file, language_level, source_language, target_language, group_size, model):
     doc = Document(input_file)
@@ -159,7 +157,7 @@ def improve_translation(input_file, glossary_path, output_file, language_level, 
     print(f"Loaded {len(paragraphs)} paragraphs from the translated document.")
     with tqdm(total=len(paragraphs), desc="Processing paragraphs") as pbar:
         for i in range(0, len(paragraphs), group_size):
-            group = paragraphs[i: i + group_size]
+            group = paragraphs[i : i + group_size]
             improved_text = process_paragraphs(group, glossary, language_level, source_language, target_language, model)
             if improved_text:
                 output_doc.add_paragraph(improved_text)
@@ -168,7 +166,6 @@ def improve_translation(input_file, glossary_path, output_file, language_level, 
             pbar.update(len(group))
     output_doc.save(output_file)
     print(f"Improved document saved to: {output_file}")
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Translate and improve documents using DeepL and ChatGPT.")
@@ -180,12 +177,15 @@ if __name__ == "__main__":
     parser.add_argument("language_level", help="Language level for improved translation (e.g., 'soutenu').")
     parser.add_argument("group_size", type=int, help="Number of paragraphs to process together.")
     parser.add_argument("--glossary_csv", help="Path to glossary CSV for DeepL.", default=None)
+    parser.add_argument("--glossary_excel", help="Path to glossary Excel file.", default=None)
     parser.add_argument("--glossary_gpt", help="Path to glossary Word for ChatGPT.", default=None)
     parser.add_argument("--gpt_model", choices=["gpt-3.5-turbo", "gpt-4"], default="gpt-3.5-turbo", help="Choose the GPT model to use.")
     args = parser.parse_args()
-
     try:
         glossary_id = None
+        if args.glossary_excel:
+            args.glossary_csv = "glossary_converted.csv"
+            convert_excel_to_csv(args.glossary_excel, args.glossary_csv)
         if args.glossary_csv:
             glossary_id = create_glossary(
                 api_key=DEEPL_API_KEY,
@@ -210,7 +210,7 @@ if __name__ == "__main__":
             source_language=args.source_language,
             target_language=args.target_language,
             group_size=args.group_size,
-            model=args.gpt_model
+            model=args.gpt_model  # Pass the selected model here
         )
     except Exception as e:
         print(f"An error occurred: {e}")

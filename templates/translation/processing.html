@@ -73,35 +73,34 @@
         }
     </style>
     <script>
-        async function checkStatus() {
-            try {
-                const response = await fetch("/check_status");
+    async function checkStatus() {
+        try {
+            const response = await fetch("/check_status");
+            if (!response.ok) {
+                throw new Error("Erreur lors de la récupération du statut.");
+            }
 
-                if (!response.ok) {
-                    throw new Error("Erreur dans la réponse du serveur.");
-                }
+            const status = await response.json();
 
-                const status = await response.json();
-                console.log("Statut :", status);
-
-                if (status.status === "done") {
-                    window.location.href = "/done";
-                } else if (status.status === "processing") {
-                    document.getElementById("status-message").innerText = status.message;
-                    setTimeout(checkStatus, 2000); // Vérification toutes les 2 secondes
-                } else {
-                    document.getElementById("status-message").innerHTML = `<span class="error">${status.message}</span>`;
-                    document.getElementById("spinner").style.display = "none";
-                }
-            } catch (error) {
-                console.error("Erreur lors de la vérification du statut :", error);
-                document.getElementById("status-message").innerHTML = `<span class="error">Une erreur est survenue. Veuillez réessayer plus tard.</span>`;
+            if (status.status === "done") {
+                window.location.href = "/done";
+            } else if (status.status === "in_progress") {
+                document.getElementById("status-message").innerText = status.message;
+                setTimeout(checkStatus, 2000);
+            } else if (status.status === "error") {
+                document.getElementById("status-message").innerHTML = `<span class="error">${status.message}</span>`;
                 document.getElementById("spinner").style.display = "none";
             }
+        } catch (error) {
+            console.error(error);
+            document.getElementById("status-message").innerHTML = `<span class="error">Erreur lors de la vérification du statut. Veuillez réessayer plus tard.</span>`;
+            document.getElementById("spinner").style.display = "none";
         }
+    }
 
-        window.onload = checkStatus;
-    </script>
+    window.onload = checkStatus;
+</script>
+
 </head>
 <body>
     <div class="container">

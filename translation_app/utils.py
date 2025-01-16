@@ -5,6 +5,7 @@ import time
 import os
 import pandas as pd
 import logging
+import openai
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -131,6 +132,7 @@ def process_paragraphs(paragraphs, glossary, language_level, source_language, ta
         f"Use the glossary strictly when applicable: {glossary}.\n"
         f"Return only the improved translation, without additional comments.\n\n"
     )
+
     for para in paragraphs:
         prompt += f"{para}\n\n"
 
@@ -151,3 +153,4 @@ def process_paragraphs(paragraphs, glossary, language_level, source_language, ta
     except Exception as e:
         logger.error(f"An error occurred with OpenAI API: {e}")
         raise
+

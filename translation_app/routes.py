@@ -54,10 +54,8 @@ def processing():
 
 @translation_bp.route("/done")
 def done():
-    progress = get_user_progress()
-    output_file_name = progress.get("output_file_name", "improved_output.docx")
-    return render_template("done.html", output_file_name=output_file_name)
-
+    filename = request.args.get("filename", "improved_output.docx")
+    return render_template("done.html", output_file_name=filename)
 
 @translation_bp.route("/downloads/<filename>")
 def download_file(filename):

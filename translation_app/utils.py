@@ -113,3 +113,35 @@ def read_glossary(glossary_path):
         logger.error(f"Erreur lors de la lecture du glossaire : {e}")
         raise
     return glossary
+
+def process_paragraphs(paragraphs, glossary, language_level, source_language, target_language, model):
+    """
+    Envoie les paragraphes à ChatGPT pour amélioration de la traduction.
+    """
+    logger.debug(f"Traitement des paragraphes avec le modèle {model}.")
+    prompt = (
+        f"Translate the following text from {source_language} to {target_language} "
+        f"and improve its quality to match the '{language_level}' language level.\n"
+        f"Use the glossary strictly when applicable: {glossary}.\n"
+        f"Return only the improved translation, without additional comments.\n\n"
+    )
+    for para in paragraphs:
+        prompt += f"{para}\n\n"
+
+    try:
+        response = openai.ChatCompletion.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": "You are a skilled translator and editor."},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=2048,
+            temperature=0.7,
+        )
+        return response["choices"][0]["message"]["content"].strip()
+    except openai.error.RateLimitError as e:
+        logger.error(f"Rate limit reached: {e}. Adding delay before retrying.")
+        raise
+    except Exception as e:
+        logger.error(f"An error occurred with OpenAI API: {e}")
+        raise

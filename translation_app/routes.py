@@ -6,6 +6,7 @@ from .utils import (
     improve_translation,
     create_glossary,
     convert_excel_to_csv,
+    read_glossary,  # Import de la fonction manquante
 )
 import logging
 

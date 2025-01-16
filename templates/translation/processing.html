@@ -99,34 +99,26 @@
             background: darkred;
         }
     </style>
-   <script>
-    // Vérifie régulièrement le statut de la tâche
-    function checkStatus() {
-        fetch('/check_status')
-            .then(response => response.json())
-            .then(data => {
-                console.log(data); // Pour le débogage
-                if (data.status === 'done') {
-                    // Redirection vers la page de fin une fois le traitement terminé
-                    window.location.href = '/translation/done';
-                } else if (data.status === 'error') {
-                    // Affiche une alerte en cas d'erreur
-                    alert("Une erreur est survenue : " + data.message);
-                } else {
-                    // Continue à vérifier le statut si toujours en cours
-                    setTimeout(checkStatus, 2000); // Vérifie toutes les 2 secondes
-                }
-            })
-            .catch(error => {
-                console.error("Erreur lors de la vérification du statut :", error);
-                setTimeout(checkStatus, 5000); // Réessaye après 5 secondes en cas d'échec
-            });
-    }
+<script>
+  function checkStatus() {
+    fetch('/check_status')
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'done') {
+          // Redirection vers la page "done" avec le nom du fichier
+          window.location.href = `/translation/done?filename=${data.output_file_name}`;
+        } else if (data.status === 'error') {
+          // Redirection vers une page d'erreur
+          window.location.href = '/translation/error';
+        }
+      })
+      .catch(error => {
+        console.error('Erreur lors de la vérification du statut:', error);
+      });
+  }
 
-    // Lancement de la vérification une fois la page chargée
-    document.addEventListener('DOMContentLoaded', function () {
-        checkStatus();
-    });
+  // Vérifie le statut toutes les 3 secondes
+  setInterval(checkStatus, 3000);
 </script>
 
 </head>

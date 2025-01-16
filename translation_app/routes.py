@@ -6,7 +6,7 @@ from .utils import (
     improve_translation,
     create_glossary,
     convert_excel_to_csv,
-    read_glossary,  # Import de la fonction manquante
+    read_glossary,
 )
 import logging
 import openai
@@ -20,7 +20,7 @@ translation_bp = Blueprint("translation", __name__, template_folder="../template
 logger = logging.getLogger(__name__)
 
 # Variable globale pour suivre le statut du traitement
-progress = {"status": "idle", "message": ""}
+progress = {"status": "idle", "message": "Aucune tâche en cours."}
 
 @translation_bp.route("/")
 def index():
@@ -84,6 +84,7 @@ def process():
                 progress["message"] = "Traitement en cours..."
                 logger.debug("Début du traitement en arrière-plan.")
 
+                # Création du glossaire si nécessaire
                 glossary_id = None
                 if kwargs.get("glossary_csv_path"):
                     logger.debug(f"Création du glossaire avec le fichier : {kwargs['glossary_csv_path']}")
@@ -95,6 +96,7 @@ def process():
                         glossary_path=kwargs["glossary_csv_path"],
                     )
 
+                # Traduction du fichier source
                 translated_output_path = os.path.join(app_context.config["UPLOAD_FOLDER"], "translated.docx")
                 translate_docx_with_deepl(
                     api_key=app_context.config["DEEPL_API_KEY"],
@@ -105,6 +107,7 @@ def process():
                     glossary_id=glossary_id,
                 )
 
+                # Amélioration de la traduction avec OpenAI
                 improve_translation(
                     input_file=translated_output_path,
                     glossary_path=kwargs.get("glossary_gpt_path"),
@@ -126,6 +129,7 @@ def process():
                 progress["message"] = f"Une erreur est survenue : {str(e)}"
                 logger.error(f"Erreur dans le traitement : {e}")
 
+    # Téléchargement des fichiers
     input_file = request.files["input_file"]
     input_path = os.path.join(current_app.config["UPLOAD_FOLDER"], input_file.filename)
     input_file.save(input_path)
@@ -149,6 +153,7 @@ def process():
         glossary_gpt.save(glossary_gpt_path)
         logger.debug(f"Glossaire GPT téléchargé : {glossary_gpt_path}")
 
+    # Préparation du fichier de sortie
     output_file_name = request.form.get("output_file_name", "improved_output.docx")
     final_output_path = os.path.join(current_app.config["DOWNLOAD_FOLDER"], output_file_name)
 

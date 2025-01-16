@@ -70,29 +70,30 @@ def process():
     """
     Démarre le processus principal de traitement en arrière-plan.
     """
-    def background_process(input_path, final_output_path, **kwargs):
-        global progress
-        try:
-            progress["status"] = "in_progress"
-            progress["message"] = "Traitement en cours..."
-            logger.debug("Début du traitement en arrière-plan.")
+    app_context = current_app._get_current_object()
 
-            # Utiliser le contexte de l'application Flask
-            with current_app.app_context():
+    def background_process(app_context, input_path, final_output_path, **kwargs):
+        global progress
+        with app_context.app_context():
+            try:
+                progress["status"] = "in_progress"
+                progress["message"] = "Traitement en cours..."
+                logger.debug("Début du traitement en arrière-plan.")
+
                 glossary_id = None
                 if kwargs.get("glossary_csv_path"):
                     logger.debug(f"Création du glossaire avec le fichier : {kwargs['glossary_csv_path']}")
                     glossary_id = create_glossary(
-                        api_key=current_app.config["DEEPL_API_KEY"],
+                        api_key=app_context.config["DEEPL_API_KEY"],
                         name="MyGlossary",
                         source_lang=kwargs["source_language"],
                         target_lang=kwargs["target_language"],
                         glossary_path=kwargs["glossary_csv_path"],
                     )
 
-                translated_output_path = os.path.join(current_app.config["UPLOAD_FOLDER"], "translated.docx")
+                translated_output_path = os.path.join(app_context.config["UPLOAD_FOLDER"], "translated.docx")
                 translate_docx_with_deepl(
-                    api_key=current_app.config["DEEPL_API_KEY"],
+                    api_key=app_context.config["DEEPL_API_KEY"],
                     input_file_path=input_path,
                     output_file_path=translated_output_path,
                     target_language=kwargs["target_language"],
@@ -116,10 +117,10 @@ def process():
                 progress["output_file_name"] = os.path.basename(final_output_path)
                 logger.debug("Traitement terminé avec succès.")
 
-        except Exception as e:
-            progress["status"] = "error"
-            progress["message"] = f"Une erreur est survenue : {str(e)}"
-            logger.error(f"Erreur dans le traitement : {e}")
+            except Exception as e:
+                progress["status"] = "error"
+                progress["message"] = f"Une erreur est survenue : {str(e)}"
+                logger.error(f"Erreur dans le traitement : {e}")
 
     input_file = request.files["input_file"]
     input_path = os.path.join(current_app.config["UPLOAD_FOLDER"], input_file.filename)
@@ -157,6 +158,6 @@ def process():
         "gpt_model": request.form["gpt_model"],
     }
 
-    threading.Thread(target=background_process, args=(input_path, final_output_path), kwargs=thread_args).start()
+    threading.Thread(target=background_process, args=(app_context, input_path, final_output_path), kwargs=thread_args).start()
 
     return redirect(url_for("translation.processing"))

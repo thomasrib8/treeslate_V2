@@ -29,12 +29,10 @@ def assign_user_id():
     if "user_id" not in session:
         session["user_id"] = str(uuid.uuid4())
 
-def get_user_progress():
-    user_id = session.get("user_id")
+def get_user_progress(user_id):
     return progress_store.setdefault(user_id, {"status": "idle", "message": "Aucune tâche en cours."})
 
-def set_user_progress(status, message, output_file_name=None):
-    user_id = session.get("user_id")
+def set_user_progress(user_id, status, message, output_file_name=None):
     progress_store[user_id] = {
         "status": status,
         "message": message,
@@ -43,18 +41,13 @@ def set_user_progress(status, message, output_file_name=None):
 
 @translation_bp.route("/")
 def index():
-    """
-    Page principale de l'application de traduction.
-    """
     logger.debug("Page principale (index) affichée.")
     return render_template("index.html")
 
 @translation_bp.route("/processing")
 def processing():
-    """
-    Page intermédiaire affichant "Traduction en cours...".
-    """
-    progress = get_user_progress()
+    user_id = session.get("user_id")
+    progress = get_user_progress(user_id)
     logger.debug(f"Accès à la page de traitement. Statut actuel : {progress['status']}")
     if progress["status"] == "error":
         return redirect(url_for("translation.index"))
@@ -62,18 +55,13 @@ def processing():
 
 @translation_bp.route("/done")
 def done():
-    """
-    Page finale affichant "Traduction terminée".
-    """
-    progress = get_user_progress()
+    user_id = session.get("user_id")
+    progress = get_user_progress(user_id)
     output_file_name = progress.get("output_file_name", "improved_output.docx")
     return render_template("done.html", output_file_name=output_file_name)
 
 @translation_bp.route("/downloads/<filename>")
 def download_file(filename):
-    """
-    Permet à l'utilisateur de télécharger le fichier traduit.
-    """
     download_path = current_app.config["DOWNLOAD_FOLDER"]
     file_path = os.path.join(download_path, filename)
     logger.debug(f"Demande de téléchargement pour : {file_path}")
@@ -86,28 +74,22 @@ def download_file(filename):
 
 @translation_bp.route("/check_status")
 def check_status():
-    """
-    Vérifie le statut du traitement en cours.
-    """
-    progress = get_user_progress()
+    user_id = session.get("user_id")
+    progress = get_user_progress(user_id)
     logger.debug(f"Statut actuel renvoyé : {progress}")
     return jsonify(progress)
 
 @translation_bp.route("/process", methods=["POST"])
 def process():
-    """
-    Démarre le processus principal de traitement en arrière-plan.
-    """
+    user_id = session.get("user_id")
     app_context = current_app._get_current_object()
 
-    def background_process(app_context, input_path, final_output_path, **kwargs):
-        progress = get_user_progress()
+    def background_process(app_context, user_id, input_path, final_output_path, **kwargs):
         with app_context.app_context():
             try:
-                set_user_progress("in_progress", "Traitement en cours...")
-                logger.debug("Début du traitement en arrière-plan.")
+                set_user_progress(user_id, "in_progress", "Traitement en cours...")
+                logger.debug(f"[{user_id}] Début du traitement en arrière-plan.")
 
-                # Création du glossaire si nécessaire
                 glossary_id = None
                 if kwargs.get("glossary_csv_path"):
                     logger.debug(f"Création du glossaire avec le fichier : {kwargs['glossary_csv_path']}")
@@ -119,7 +101,6 @@ def process():
                         glossary_path=kwargs["glossary_csv_path"],
                     )
 
-                # Traduction du fichier source
                 translated_output_path = os.path.join(app_context.config["UPLOAD_FOLDER"], "translated.docx")
                 translate_docx_with_deepl(
                     api_key=app_context.config["DEEPL_API_KEY"],
@@ -130,7 +111,6 @@ def process():
                     glossary_id=glossary_id,
                 )
 
-                # Amélioration de la traduction avec OpenAI
                 improve_translation(
                     input_file=translated_output_path,
                     glossary_path=kwargs.get("glossary_gpt_path"),
@@ -142,14 +122,13 @@ def process():
                     model=kwargs["gpt_model"],
                 )
 
-                set_user_progress("done", "Traitement terminé avec succès.", output_file_name=os.path.basename(final_output_path))
-                logger.debug("Traitement terminé avec succès.")
+                set_user_progress(user_id, "done", "Traitement terminé avec succès.", output_file_name=os.path.basename(final_output_path))
+                logger.debug(f"[{user_id}] Traitement terminé avec succès.")
 
             except Exception as e:
-                set_user_progress("error", f"Une erreur est survenue : {str(e)}")
-                logger.error(f"Erreur dans le traitement : {e}")
+                set_user_progress(user_id, "error", f"Une erreur est survenue : {str(e)}")
+                logger.error(f"[{user_id}] Erreur dans le traitement : {e}")
 
-    # Téléchargement des fichiers
     input_file = request.files["input_file"]
     input_path = os.path.join(current_app.config["UPLOAD_FOLDER"], input_file.filename)
     input_file.save(input_path)
@@ -168,7 +147,6 @@ def process():
         glossary_gpt_path = os.path.join(current_app.config["UPLOAD_FOLDER"], glossary_gpt.filename)
         glossary_gpt.save(glossary_gpt_path)
 
-    # Préparation du fichier de sortie
     output_file_name = request.form.get("output_file_name", "improved_output.docx")
     final_output_path = os.path.join(current_app.config["DOWNLOAD_FOLDER"], output_file_name)
 
@@ -182,6 +160,6 @@ def process():
         "gpt_model": request.form["gpt_model"],
     }
 
-    threading.Thread(target=background_process, args=(app_context, input_path, final_output_path), kwargs=thread_args).start()
+    threading.Thread(target=background_process, args=(app_context, user_id, input_path, final_output_path), kwargs=thread_args).start()
 
     return redirect(url_for("translation.processing"))

@@ -163,3 +163,9 @@ def process():
     threading.Thread(target=background_process, args=(app_context, input_path, final_output_path), kwargs=thread_args).start()
 
     return redirect(url_for("translation.processing"))
+
+@translation_bp.route("/error")
+def error():
+    progress = get_user_progress("static_user_id")
+    error_message = progress.get("message", "Une erreur est survenue.")
+    return render_template("error.html", error_message=error_message)

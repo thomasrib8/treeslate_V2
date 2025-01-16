@@ -99,46 +99,36 @@
             background: darkred;
         }
     </style>
-    <script>
-      async function checkStatus() {
-        try {
-            const response = await fetch("/check_status");
-            if (!response.ok) {
-                throw new Error("Erreur lors de la récupération du statut.");
-            }
-    
-            const status = await response.json();
-            console.log("Statut reçu :", status); // Log ajouté pour déboguer
-    
-            if (status.status === "done") {
-                console.log("Redirection vers /done");
-                window.location.href = "/done";
-            } else if (status.status === "in_progress") {
-                document.getElementById("status-message").innerText = status.message;
-                updateProgressBar(status.progress || 50); // Exemple avec une progression par défaut
-                setTimeout(checkStatus, 2000); // Vérification périodique
-            } else if (status.status === "error") {
-                showError(status.message);
-            }
-        } catch (error) {
-            console.error("Erreur dans checkStatus :", error);
-            showError("Erreur lors de la vérification du statut. Veuillez réessayer plus tard.");
-        }
+   <script>
+    // Vérifie régulièrement le statut de la tâche
+    function checkStatus() {
+        fetch('/check_status')
+            .then(response => response.json())
+            .then(data => {
+                console.log(data); // Pour le débogage
+                if (data.status === 'done') {
+                    // Redirection vers la page de fin une fois le traitement terminé
+                    window.location.href = '/translation/done';
+                } else if (data.status === 'error') {
+                    // Affiche une alerte en cas d'erreur
+                    alert("Une erreur est survenue : " + data.message);
+                } else {
+                    // Continue à vérifier le statut si toujours en cours
+                    setTimeout(checkStatus, 2000); // Vérifie toutes les 2 secondes
+                }
+            })
+            .catch(error => {
+                console.error("Erreur lors de la vérification du statut :", error);
+                setTimeout(checkStatus, 5000); // Réessaye après 5 secondes en cas d'échec
+            });
     }
 
-        function updateProgressBar(percentage) {
-            const progressBarFill = document.getElementById("progress-bar-fill");
-            progressBarFill.style.width = `${percentage}%`;
-        }
+    // Lancement de la vérification une fois la page chargée
+    document.addEventListener('DOMContentLoaded', function () {
+        checkStatus();
+    });
+</script>
 
-        function showError(message) {
-            document.getElementById("status-message").innerHTML = `<span class="error">${message}</span>`;
-            document.getElementById("spinner").style.display = "none";
-            document.getElementById("retry-button").style.display = "inline-block";
-        }
-
-        window.onload = checkStatus;
-    </script>
 </head>
 <body>
     <div class="container" role="alert">

@@ -35,7 +35,9 @@ def processing():
     """
     Page intermédiaire affichant "Traduction en cours...".
     """
-    logger.debug("Page de traitement en cours affichée.")
+    logger.debug(f"Accès à la page de traitement. Statut actuel : {progress['status']}")
+    if progress["status"] == "error":
+        return redirect(url_for("translation.index"))
     return render_template("processing.html")
 
 @translation_bp.route("/done")
@@ -53,10 +55,10 @@ def download_file(filename):
     """
     download_path = current_app.config["DOWNLOAD_FOLDER"]
     file_path = os.path.join(download_path, filename)
-    logger.debug(f"Request to download file: {file_path}")
+    logger.debug(f"Demande de téléchargement pour : {file_path}")
 
     if not os.path.exists(file_path):
-        logger.error(f"File not found: {file_path}")
+        logger.error(f"Fichier non trouvé : {file_path}")
         return "File not found", 404
 
     return send_from_directory(download_path, filename, as_attachment=True)
@@ -66,7 +68,7 @@ def check_status():
     """
     Vérifie le statut du traitement en cours.
     """
-    logger.debug(f"Statut du traitement demandé : {progress}")
+    logger.debug(f"Statut actuel renvoyé : {progress}")
     return jsonify(progress)
 
 @translation_bp.route("/process", methods=["POST"])

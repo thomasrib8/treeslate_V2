@@ -17,7 +17,8 @@ os.makedirs(app.config["DOWNLOAD_FOLDER"], exist_ok=True)
 os.makedirs(app.config["SESSION_FILE_DIR"], exist_ok=True)
 
 # Initialiser Flask-Session
-Session(app)
+if app.config.get("SESSION_TYPE") == "filesystem":
+    Session(app)
 
 # Enregistrer les blueprints
 app.register_blueprint(translation_bp, url_prefix="/translation")

@@ -108,6 +108,7 @@
                 }
 
                 const status = await response.json();
+                console.log("Statut reçu:", status);
 
                 if (status.status === "done") {
                     window.location.href = "/done";

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for
+from flask import Flask, render_template, redirect, url_for, jsonify
 from translation_app.routes import translation_bp
 from calculator_app.routes import calculator_bp
 import os
@@ -49,3 +49,17 @@ def main_menu():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=True, host="0.0.0.0", port=port)
+
+# Exemple de route pour vérifier l'état de la traduction
+@app.route('/check_status', methods=['GET'])
+def check_status():
+    # Exemple de logique pour vérifier l'état
+    # À adapter selon votre gestion des tâches
+    task_status = "done"  # Remplacez par la vraie logique pour obtenir le statut
+
+    if task_status == "done":
+        return jsonify({"status": "done", "message": "Traduction terminée."})
+    elif task_status == "processing":
+        return jsonify({"status": "processing", "message": "Traitement en cours."})
+    else:
+        return jsonify({"status": "error", "message": "Une erreur est survenue."}), 500

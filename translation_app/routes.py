@@ -1,18 +1,13 @@
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify, current_app, send_from_directory, session
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify, current_app, send_from_directory
 import os
 import threading
-import uuid
 from .utils import (
     translate_docx_with_deepl,
     improve_translation,
     create_glossary,
     convert_excel_to_csv,
-    read_glossary,
 )
 import logging
-import openai
-
-openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 # Création du Blueprint
 translation_bp = Blueprint("translation", __name__, template_folder="../templates/translation")
@@ -20,46 +15,49 @@ translation_bp = Blueprint("translation", __name__, template_folder="../template
 # Configuration des logs
 logger = logging.getLogger(__name__)
 
-# Dictionnaire pour suivre le statut des traitements par utilisateur
-progress_store = {}
+# Dictionnaire pour suivre le statut des traitements (utilisation d'un ID utilisateur statique)
+STATIC_USER_ID = "static_user_id"
+progress_store = {STATIC_USER_ID: {"status": "idle", "message": "Aucune tâche en cours."}}
 
-# Middleware pour assigner un ID utilisateur unique à chaque session
-@translation_bp.before_request
-def assign_user_id():
-    if "user_id" not in session:
-        session["user_id"] = str(uuid.uuid4())
 
-def get_user_progress(user_id):
-    # Récupère ou initialise le statut pour un utilisateur donné
-    return progress_store.setdefault(user_id, {"status": "idle", "message": "Aucune tâche en cours."})
+def get_user_progress():
+    """
+    Récupère ou initialise le statut de l'utilisateur statique.
+    """
+    return progress_store.setdefault(STATIC_USER_ID, {"status": "idle", "message": "Aucune tâche en cours."})
 
-def set_user_progress(user_id, status, message, output_file_name=None):
-    # Met à jour le statut de l'utilisateur
-    progress_store[user_id] = {
+
+def set_user_progress(status, message, output_file_name=None):
+    """
+    Met à jour le statut de l'utilisateur statique.
+    """
+    progress_store[STATIC_USER_ID] = {
         "status": status,
         "message": message,
         "output_file_name": output_file_name,
     }
-    logger.debug(f"[{user_id}] Progress store mis à jour : {progress_store[user_id]}")
+    logger.debug(f"Progress store mis à jour : {progress_store[STATIC_USER_ID]}")
+
 
 @translation_bp.route("/")
 def index():
     logger.debug("Page principale (index) affichée.")
     return render_template("index.html")
 
+
 @translation_bp.route("/processing")
 def processing():
-    user_id = session.get("user_id")
-    progress = get_user_progress(user_id)
+    progress = get_user_progress()
     logger.debug(f"Accès à la page de traitement. Statut actuel : {progress}")
     return render_template("processing.html")
 
+
 @translation_bp.route("/done")
 def done():
-    user_id = session.get("user_id")
-    progress = get_user_progress(user_id)
+    progress = get_user_progress()
     output_file_name = progress.get("output_file_name", "improved_output.docx")
     return render_template("done.html", output_file_name=output_file_name)
+
 
 @translation_bp.route("/downloads/<filename>")
 def download_file(filename):
@@ -73,23 +71,23 @@ def download_file(filename):
 
     return send_from_directory(download_path, filename, as_attachment=True)
 
+
 @translation_bp.route("/check_status")
 def check_status():
-    user_id = session.get("user_id")
-    progress = get_user_progress(user_id)
+    progress = get_user_progress()
     logger.debug(f"Statut actuel renvoyé : {progress}")
     return jsonify(progress)
 
+
 @translation_bp.route("/process", methods=["POST"])
 def process():
-    user_id = session.get("user_id")
     app_context = current_app._get_current_object()
 
-    def background_process(app_context, user_id, input_path, final_output_path, **kwargs):
+    def background_process(app_context, input_path, final_output_path, **kwargs):
         with app_context.app_context():
             try:
-                set_user_progress(user_id, "in_progress", "Traitement en cours...")
-                logger.debug(f"[{user_id}] Début du traitement en arrière-plan.")
+                set_user_progress("in_progress", "Traitement en cours...")
+                logger.debug("Début du traitement en arrière-plan.")
 
                 glossary_id = None
                 if kwargs.get("glossary_csv_path"):
@@ -123,12 +121,12 @@ def process():
                     model=kwargs["gpt_model"],
                 )
 
-                set_user_progress(user_id, "done", "Traitement terminé avec succès.", output_file_name=os.path.basename(final_output_path))
-                logger.debug(f"[{user_id}] Traitement terminé avec succès.")
+                set_user_progress("done", "Traitement terminé avec succès.", output_file_name=os.path.basename(final_output_path))
+                logger.debug("Traitement terminé avec succès.")
 
             except Exception as e:
-                set_user_progress(user_id, "error", f"Une erreur est survenue : {str(e)}")
-                logger.error(f"[{user_id}] Erreur dans le traitement : {e}")
+                set_user_progress("error", f"Une erreur est survenue : {str(e)}")
+                logger.error(f"Erreur dans le traitement : {e}")
 
     input_file = request.files["input_file"]
     input_path = os.path.join(current_app.config["UPLOAD_FOLDER"], input_file.filename)
@@ -161,6 +159,6 @@ def process():
         "gpt_model": request.form["gpt_model"],
     }
 
-    threading.Thread(target=background_process, args=(app_context, user_id, input_path, final_output_path), kwargs=thread_args).start()
+    threading.Thread(target=background_process, args=(app_context, input_path, final_output_path), kwargs=thread_args).start()
 
     return redirect(url_for("translation.processing"))

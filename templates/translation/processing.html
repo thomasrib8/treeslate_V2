@@ -100,42 +100,42 @@
         }
     </style>
     <script>
-    async function checkStatus() {
-        try {
-            const response = await fetch("/check_status");
-            if (!response.ok) {
-                throw new Error("Erreur lors de la récupération du statut.");
-            }
+        async function checkStatus() {
+            try {
+                const response = await fetch("/check_status");
+                if (!response.ok) {
+                    throw new Error("Erreur lors de la récupération du statut.");
+                }
 
-            const status = await response.json();
+                const status = await response.json();
 
-            if (status.status === "done") {
-                window.location.href = "/done";
-            } else if (status.status === "in_progress") {
-                document.getElementById("status-message").innerText = status.message;
-                updateProgressBar(status.progress || 50); // Exemple: si la progression est disponible
-                setTimeout(checkStatus, 2000);
-            } else if (status.status === "error") {
-                showError(status.message);
+                if (status.status === "done") {
+                    window.location.href = "/done";
+                } else if (status.status === "in_progress") {
+                    document.getElementById("status-message").innerText = status.message;
+                    updateProgressBar(status.progress || 50); // Exemple: si la progression est disponible
+                    setTimeout(checkStatus, 2000);
+                } else if (status.status === "error") {
+                    showError(status.message);
+                }
+            } catch (error) {
+                console.error(error);
+                showError("Erreur lors de la vérification du statut. Veuillez réessayer plus tard.");
             }
-        } catch (error) {
-            console.error(error);
-            showError("Erreur lors de la vérification du statut. Veuillez réessayer plus tard.");
         }
-    }
 
-    function updateProgressBar(percentage) {
-        const progressBarFill = document.getElementById("progress-bar-fill");
-        progressBarFill.style.width = `${percentage}%`;
-    }
+        function updateProgressBar(percentage) {
+            const progressBarFill = document.getElementById("progress-bar-fill");
+            progressBarFill.style.width = `${percentage}%`;
+        }
 
-    function showError(message) {
-        document.getElementById("status-message").innerHTML = `<span class="error">${message}</span>`;
-        document.getElementById("spinner").style.display = "none";
-        document.getElementById("retry-button").style.display = "inline-block";
-    }
+        function showError(message) {
+            document.getElementById("status-message").innerHTML = `<span class="error">${message}</span>`;
+            document.getElementById("spinner").style.display = "none";
+            document.getElementById("retry-button").style.display = "inline-block";
+        }
 
-    window.onload = checkStatus;
+        window.onload = checkStatus;
     </script>
 </head>
 <body>

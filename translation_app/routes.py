@@ -86,41 +86,57 @@ def process():
                 progress["message"] = "Traitement en cours..."
                 logger.debug("Début du traitement en arrière-plan.")
 
-                # Création du glossaire si nécessaire
+                # Étape 1 : Création du glossaire si nécessaire
                 glossary_id = None
                 if kwargs.get("glossary_csv_path"):
-                    logger.debug(f"Création du glossaire avec le fichier : {kwargs['glossary_csv_path']}")
-                    glossary_id = create_glossary(
+                    try:
+                        logger.debug(f"Création du glossaire avec le fichier : {kwargs['glossary_csv_path']}")
+                        glossary_id = create_glossary(
+                            api_key=app_context.config["DEEPL_API_KEY"],
+                            name="MyGlossary",
+                            source_lang=kwargs["source_language"],
+                            target_lang=kwargs["target_language"],
+                            glossary_path=kwargs["glossary_csv_path"],
+                        )
+                        logger.info("Glossaire créé avec succès.")
+                    except Exception as e:
+                        logger.error(f"Erreur lors de la création du glossaire : {e}")
+                        raise Exception("Échec de la création du glossaire.")
+
+                # Étape 2 : Traduction du fichier source
+                try:
+                    translated_output_path = os.path.join(app_context.config["UPLOAD_FOLDER"], "translated.docx")
+                    translate_docx_with_deepl(
                         api_key=app_context.config["DEEPL_API_KEY"],
-                        name="MyGlossary",
-                        source_lang=kwargs["source_language"],
-                        target_lang=kwargs["target_language"],
-                        glossary_path=kwargs["glossary_csv_path"],
+                        input_file_path=input_path,
+                        output_file_path=translated_output_path,
+                        target_language=kwargs["target_language"],
+                        source_language=kwargs["source_language"],
+                        glossary_id=glossary_id,
                     )
+                    logger.info("Traduction initiale réussie.")
+                except Exception as e:
+                    logger.error(f"Erreur pendant la traduction initiale : {e}")
+                    raise Exception("Échec de la traduction initiale.")
 
-                # Traduction du fichier source
-                translated_output_path = os.path.join(app_context.config["UPLOAD_FOLDER"], "translated.docx")
-                translate_docx_with_deepl(
-                    api_key=app_context.config["DEEPL_API_KEY"],
-                    input_file_path=input_path,
-                    output_file_path=translated_output_path,
-                    target_language=kwargs["target_language"],
-                    source_language=kwargs["source_language"],
-                    glossary_id=glossary_id,
-                )
+                # Étape 3 : Amélioration de la traduction
+                try:
+                    improve_translation(
+                        input_file=translated_output_path,
+                        glossary_path=kwargs.get("glossary_gpt_path"),
+                        output_file=final_output_path,
+                        language_level=kwargs["language_level"],
+                        source_language=kwargs["source_language"],
+                        target_language=kwargs["target_language"],
+                        group_size=kwargs["group_size"],
+                        model=kwargs["gpt_model"],
+                    )
+                    logger.info("Amélioration de la traduction réussie.")
+                except Exception as e:
+                    logger.error(f"Erreur pendant l'amélioration de la traduction : {e}")
+                    raise Exception("Échec de l'amélioration de la traduction.")
 
-                # Amélioration de la traduction avec OpenAI
-                improve_translation(
-                    input_file=translated_output_path,
-                    glossary_path=kwargs.get("glossary_gpt_path"),
-                    output_file=final_output_path,
-                    language_level=kwargs["language_level"],
-                    source_language=kwargs["source_language"],
-                    target_language=kwargs["target_language"],
-                    group_size=kwargs["group_size"],
-                    model=kwargs["gpt_model"],
-                )
-
+                # Mise à jour finale du statut
                 progress["status"] = "done"
                 progress["message"] = "Traitement terminé avec succès."
                 progress["output_file_name"] = os.path.basename(final_output_path)
@@ -130,6 +146,8 @@ def process():
                 progress["status"] = "error"
                 progress["message"] = f"Une erreur est survenue : {str(e)}"
                 logger.error(f"Erreur dans le traitement : {e}")
+            finally:
+                logger.debug(f"Statut final : {progress}")
 
     # Téléchargement des fichiers
     input_file = request.files["input_file"]

@@ -30,14 +30,17 @@ def assign_user_id():
         session["user_id"] = str(uuid.uuid4())
 
 def get_user_progress(user_id):
+    # Récupère ou initialise le statut pour un utilisateur donné
     return progress_store.setdefault(user_id, {"status": "idle", "message": "Aucune tâche en cours."})
 
 def set_user_progress(user_id, status, message, output_file_name=None):
+    # Met à jour le statut de l'utilisateur
     progress_store[user_id] = {
         "status": status,
         "message": message,
         "output_file_name": output_file_name,
     }
+    logger.debug(f"[{user_id}] Progress store mis à jour : {progress_store[user_id]}")
 
 @translation_bp.route("/")
 def index():
@@ -48,7 +51,7 @@ def index():
 def processing():
     user_id = session.get("user_id")
     progress = get_user_progress(user_id)
-    logger.debug(f"Accès à la page de traitement. Statut actuel : {progress['status']}")
+    logger.debug(f"Accès à la page de traitement. Statut actuel : {progress}")
     return render_template("processing.html")
 
 @translation_bp.route("/done")
@@ -90,6 +93,7 @@ def process():
 
                 glossary_id = None
                 if kwargs.get("glossary_csv_path"):
+                    logger.debug(f"Création du glossaire avec le fichier : {kwargs['glossary_csv_path']}")
                     glossary_id = create_glossary(
                         api_key=app_context.config["DEEPL_API_KEY"],
                         name="MyGlossary",

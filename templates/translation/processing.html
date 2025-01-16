@@ -56,6 +56,20 @@
                 transform: rotate(360deg);
             }
         }
+        .progress-bar {
+            width: 100%;
+            background-color: #f3f3f3;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 10px;
+            margin: 20px 0;
+        }
+        .progress-bar-fill {
+            width: 0;
+            height: 100%;
+            background-color: #8ed3a2;
+            transition: width 0.5s ease;
+        }
         .button-container {
             margin-top: 20px;
         }
@@ -86,6 +100,7 @@
                 window.location.href = "/done";
             } else if (status.status === "in_progress") {
                 document.getElementById("status-message").innerText = status.message;
+                updateProgressBar(status.progress || 50); // Exemple: si la progression est disponible
                 setTimeout(checkStatus, 2000);
             } else if (status.status === "error") {
                 document.getElementById("status-message").innerHTML = `<span class="error">${status.message}</span>`;
@@ -98,14 +113,21 @@
         }
     }
 
-    window.onload = checkStatus;
-</script>
+    function updateProgressBar(percentage) {
+        const progressBarFill = document.getElementById("progress-bar-fill");
+        progressBarFill.style.width = `${percentage}%`;
+    }
 
+    window.onload = checkStatus;
+    </script>
 </head>
 <body>
-    <div class="container">
+    <div class="container" role="alert">
         <h1>Traduction en cours...</h1>
-        <div id="spinner" class="spinner"></div>
+        <div id="spinner" class="spinner" aria-busy="true"></div>
+        <div class="progress-bar" aria-hidden="true">
+            <div id="progress-bar-fill" class="progress-bar-fill"></div>
+        </div>
         <p id="status-message">Veuillez patienter pendant le traitement de votre document.</p>
         <div class="button-container">
             <a href="/">Retour à l'accueil</a>

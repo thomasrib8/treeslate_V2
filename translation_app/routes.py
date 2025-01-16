@@ -49,8 +49,6 @@ def processing():
     user_id = session.get("user_id")
     progress = get_user_progress(user_id)
     logger.debug(f"Accès à la page de traitement. Statut actuel : {progress['status']}")
-    if progress["status"] == "error":
-        return redirect(url_for("translation.index"))
     return render_template("processing.html")
 
 @translation_bp.route("/done")
@@ -92,7 +90,6 @@ def process():
 
                 glossary_id = None
                 if kwargs.get("glossary_csv_path"):
-                    logger.debug(f"Création du glossaire avec le fichier : {kwargs['glossary_csv_path']}")
                     glossary_id = create_glossary(
                         api_key=app_context.config["DEEPL_API_KEY"],
                         name="MyGlossary",

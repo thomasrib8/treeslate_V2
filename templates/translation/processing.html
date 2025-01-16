@@ -56,31 +56,46 @@
                 transform: rotate(360deg);
             }
         }
+        .button-container {
+            margin-top: 20px;
+        }
+        a {
+            display: inline-block;
+            padding: 10px 15px;
+            background: #000000;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        a:hover {
+            background: #333333;
+        }
     </style>
     <script>
         async function checkStatus() {
             try {
                 const response = await fetch("/check_status");
+                if (!response.ok) throw new Error("Erreur serveur lors de la vérification du statut.");
+                
                 const status = await response.json();
 
                 if (status.status === "done") {
-                    // Rediriger vers la page finale
-                    window.location.href = "/done";
+                    window.location.href = "/translation/done";
                 } else if (status.status === "error") {
-                    // Afficher le message d'erreur
                     document.getElementById("status-message").innerHTML = `<span class="error">${status.message}</span>`;
                     document.getElementById("spinner").style.display = "none";
                 } else {
-                    // Mettre à jour le message de progression
                     document.getElementById("status-message").innerText = status.message;
-                    setTimeout(checkStatus, 1000); // Réessayer après 1 seconde
+                    setTimeout(checkStatus, 2000); // Vérifie toutes les 2 secondes
                 }
             } catch (error) {
                 console.error("Erreur lors de la vérification du statut :", error);
+                document.getElementById("status-message").innerHTML = `<span class="error">Une erreur est survenue. Veuillez réessayer plus tard.</span>`;
+                document.getElementById("spinner").style.display = "none";
             }
         }
 
-        // Lancer la vérification dès que la page est chargée
         window.onload = checkStatus;
     </script>
 </head>
@@ -89,6 +104,9 @@
         <h1>Traduction en cours...</h1>
         <div id="spinner" class="spinner"></div>
         <p id="status-message">Veuillez patienter pendant le traitement de votre document.</p>
+        <div class="button-container">
+            <a href="/">Retour à l'accueil</a>
+        </div>
     </div>
 </body>
 </html>

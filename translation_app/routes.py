@@ -9,6 +9,9 @@ from .utils import (
     read_glossary,  # Import de la fonction manquante
 )
 import logging
+import openai
+
+openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 # Création du Blueprint
 translation_bp = Blueprint("translation", __name__, template_folder="../templates/translation")

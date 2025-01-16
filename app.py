@@ -6,6 +6,9 @@ import os
 # Simuler un état de traitement global
 task_status = {"status": "idle", "message": "Aucune tâche en cours."}
 
+ # Charger la configuration
+    app.config.from_object('config') 
+
 app = Flask(__name__)
 
 # Configuration des dossiers

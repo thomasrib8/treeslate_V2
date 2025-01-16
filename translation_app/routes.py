@@ -74,6 +74,9 @@ def download_file(filename):
 
 @translation_bp.route("/check_status")
 def check_status():
+    """
+    Vérifie le statut du traitement.
+    """
     progress = get_user_progress()
     logger.debug(f"Statut actuel renvoyé : {progress}")
     return jsonify(progress)

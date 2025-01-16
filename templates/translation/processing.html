@@ -85,6 +85,19 @@
         a:hover {
             background: #333333;
         }
+        .retry-button {
+            display: none;
+            background: red;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            padding: 10px 15px;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .retry-button:hover {
+            background: darkred;
+        }
     </style>
     <script>
     async function checkStatus() {
@@ -103,19 +116,23 @@
                 updateProgressBar(status.progress || 50); // Exemple: si la progression est disponible
                 setTimeout(checkStatus, 2000);
             } else if (status.status === "error") {
-                document.getElementById("status-message").innerHTML = `<span class="error">${status.message}</span>`;
-                document.getElementById("spinner").style.display = "none";
+                showError(status.message);
             }
         } catch (error) {
             console.error(error);
-            document.getElementById("status-message").innerHTML = `<span class="error">Erreur lors de la vérification du statut. Veuillez réessayer plus tard.</span>`;
-            document.getElementById("spinner").style.display = "none";
+            showError("Erreur lors de la vérification du statut. Veuillez réessayer plus tard.");
         }
     }
 
     function updateProgressBar(percentage) {
         const progressBarFill = document.getElementById("progress-bar-fill");
         progressBarFill.style.width = `${percentage}%`;
+    }
+
+    function showError(message) {
+        document.getElementById("status-message").innerHTML = `<span class="error">${message}</span>`;
+        document.getElementById("spinner").style.display = "none";
+        document.getElementById("retry-button").style.display = "inline-block";
     }
 
     window.onload = checkStatus;
@@ -130,6 +147,7 @@
         </div>
         <p id="status-message">Veuillez patienter pendant le traitement de votre document.</p>
         <div class="button-container">
+            <a href="/" id="retry-button" class="retry-button">Relancer</a>
             <a href="/">Retour à l'accueil</a>
         </div>
     </div>

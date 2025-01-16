@@ -154,3 +154,11 @@ def process_paragraphs(paragraphs, glossary, language_level, source_language, ta
         logger.error(f"An error occurred with OpenAI API: {e}")
         raise
 
+def ensure_directory_exists(path):
+    """
+    Vérifie que le répertoire du chemin donné existe, sinon le crée.
+    """
+    directory = os.path.dirname(path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        logger.debug(f"Répertoire créé : {directory}")

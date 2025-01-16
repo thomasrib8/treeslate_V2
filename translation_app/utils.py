@@ -93,3 +93,23 @@ def convert_excel_to_csv(excel_path, csv_path):
     df = pd.read_excel(excel_path, header=None)
     df.to_csv(csv_path, index=False, header=False)
     return csv_path
+
+# Ajout de la fonction read_glossary
+def read_glossary(glossary_path):
+    """
+    Lit un glossaire à partir d'un fichier Word (.docx).
+    :param glossary_path: Chemin vers le fichier .docx contenant le glossaire.
+    :return: Dictionnaire contenant les termes source et cible.
+    """
+    glossary = {}
+    try:
+        doc = Document(glossary_path)
+        for paragraph in doc.paragraphs:
+            if ":" in paragraph.text:
+                source, target = paragraph.text.split(":", 1)
+                glossary[source.strip()] = target.strip()
+        logger.debug(f"Glossaire chargé avec succès depuis {glossary_path}.")
+    except Exception as e:
+        logger.error(f"Erreur lors de la lecture du glossaire : {e}")
+        raise
+    return glossary

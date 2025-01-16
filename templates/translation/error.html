@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Erreur</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8d7da;
+            color: #721c24;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .container {
+            text-align: center;
+            background-color: #f5c6cb;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #f5c2c7;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        p {
+            margin-bottom: 20px;
+        }
+        .button-container {
+            display: flex;
+            gap: 10px;
+        }
+        .button {
+            text-decoration: none;
+            color: white;
+            background-color: #d9534f;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #c9302c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Une erreur est survenue</h1>
+        <p>{{ error_message }}</p>
+        <div class="button-container">
+            <a href="/" class="button">Retour à l'accueil</a>
+            <a href="/translation" class="button">Réessayer</a>
+        </div>
+    </div>
+</body>
+</html>

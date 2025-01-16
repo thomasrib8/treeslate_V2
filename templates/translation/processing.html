@@ -100,30 +100,31 @@
         }
     </style>
     <script>
-        async function checkStatus() {
-            try {
-                const response = await fetch("/check_status");
-                if (!response.ok) {
-                    throw new Error("Erreur lors de la récupération du statut.");
-                }
-
-                const status = await response.json();
-                console.log("Statut reçu:", status);
-
-                if (status.status === "done") {
-                    window.location.href = "/done";
-                } else if (status.status === "in_progress") {
-                    document.getElementById("status-message").innerText = status.message;
-                    updateProgressBar(status.progress || 50); // Exemple: si la progression est disponible
-                    setTimeout(checkStatus, 2000);
-                } else if (status.status === "error") {
-                    showError(status.message);
-                }
-            } catch (error) {
-                console.error(error);
-                showError("Erreur lors de la vérification du statut. Veuillez réessayer plus tard.");
+      async function checkStatus() {
+        try {
+            const response = await fetch("/check_status");
+            if (!response.ok) {
+                throw new Error("Erreur lors de la récupération du statut.");
             }
+    
+            const status = await response.json();
+            console.log("Statut reçu :", status); // Log ajouté pour déboguer
+    
+            if (status.status === "done") {
+                console.log("Redirection vers /done");
+                window.location.href = "/done";
+            } else if (status.status === "in_progress") {
+                document.getElementById("status-message").innerText = status.message;
+                updateProgressBar(status.progress || 50); // Exemple avec une progression par défaut
+                setTimeout(checkStatus, 2000); // Vérification périodique
+            } else if (status.status === "error") {
+                showError(status.message);
+            }
+        } catch (error) {
+            console.error("Erreur dans checkStatus :", error);
+            showError("Erreur lors de la vérification du statut. Veuillez réessayer plus tard.");
         }
+    }
 
         function updateProgressBar(percentage) {
             const progressBarFill = document.getElementById("progress-bar-fill");

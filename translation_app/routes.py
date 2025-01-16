@@ -17,15 +17,13 @@ logger = logging.getLogger(__name__)
 
 # Dictionnaire pour suivre le statut des traitements (utilisation d'un ID utilisateur statique)
 STATIC_USER_ID = "static_user_id"
-progress_store = {STATIC_USER_ID: {"status": "idle", "message": "Aucune tâche en cours."}}
-
+progress_store = {STATIC_USER_ID: {"status": "idle", "message": "Aucune tâche en cours.", "output_file_name": None}}
 
 def get_user_progress():
     """
     Récupère ou initialise le statut de l'utilisateur statique.
     """
-    return progress_store.setdefault(STATIC_USER_ID, {"status": "idle", "message": "Aucune tâche en cours."})
-
+    return progress_store.setdefault(STATIC_USER_ID, {"status": "idle", "message": "Aucune tâche en cours.", "output_file_name": None})
 
 def set_user_progress(status, message, output_file_name=None):
     """
@@ -38,27 +36,33 @@ def set_user_progress(status, message, output_file_name=None):
     }
     logger.debug(f"Progress store mis à jour : {progress_store[STATIC_USER_ID]}")
 
-
 @translation_bp.route("/")
 def index():
     logger.debug("Page principale (index) affichée.")
     return render_template("index.html")
 
-
 @translation_bp.route("/processing")
 def processing():
+    """
+    Affiche la page de traitement.
+    """
     progress = get_user_progress()
     logger.debug(f"Accès à la page de traitement. Statut actuel : {progress}")
     return render_template("processing.html")
 
-
 @translation_bp.route("/done")
 def done():
+    """
+    Affiche la page de fin lorsque le traitement est terminé.
+    """
     filename = request.args.get("filename", "improved_output.docx")
     return render_template("done.html", output_file_name=filename)
 
 @translation_bp.route("/downloads/<filename>")
 def download_file(filename):
+    """
+    Permet le téléchargement du fichier généré.
+    """
     download_path = current_app.config["DOWNLOAD_FOLDER"]
     file_path = os.path.join(download_path, filename)
     logger.debug(f"Demande de téléchargement pour : {file_path}")
@@ -69,7 +73,6 @@ def download_file(filename):
 
     return send_from_directory(download_path, filename, as_attachment=True)
 
-
 @translation_bp.route("/check_status")
 def check_status():
     """
@@ -79,9 +82,11 @@ def check_status():
     logger.debug(f"Statut actuel renvoyé : {progress}")
     return jsonify(progress)
 
-
 @translation_bp.route("/process", methods=["POST"])
 def process():
+    """
+    Démarre le traitement en arrière-plan.
+    """
     app_context = current_app._get_current_object()
 
     def background_process(app_context, input_path, final_output_path, **kwargs):
@@ -90,6 +95,7 @@ def process():
                 set_user_progress("in_progress", "Traitement en cours...")
                 logger.debug("Début du traitement en arrière-plan.")
 
+                # Création du glossaire si un fichier est fourni
                 glossary_id = None
                 if kwargs.get("glossary_csv_path"):
                     logger.debug(f"Création du glossaire avec le fichier : {kwargs['glossary_csv_path']}")
@@ -101,6 +107,7 @@ def process():
                         glossary_path=kwargs["glossary_csv_path"],
                     )
 
+                # Étape 1 : Traduction avec DeepL
                 translated_output_path = os.path.join(app_context.config["UPLOAD_FOLDER"], "translated.docx")
                 translate_docx_with_deepl(
                     api_key=app_context.config["DEEPL_API_KEY"],
@@ -111,6 +118,7 @@ def process():
                     glossary_id=glossary_id,
                 )
 
+                # Étape 2 : Amélioration avec GPT
                 improve_translation(
                     input_file=translated_output_path,
                     glossary_path=kwargs.get("glossary_gpt_path"),
@@ -122,6 +130,7 @@ def process():
                     model=kwargs["gpt_model"],
                 )
 
+                # Mise à jour du statut final
                 set_user_progress("done", "Traitement terminé avec succès.", output_file_name=os.path.basename(final_output_path))
                 logger.debug("Traitement terminé avec succès.")
 
@@ -129,6 +138,7 @@ def process():
                 set_user_progress("error", f"Une erreur est survenue : {str(e)}")
                 logger.error(f"Erreur dans le traitement : {e}")
 
+    # Gestion des fichiers téléchargés
     input_file = request.files["input_file"]
     input_path = os.path.join(current_app.config["UPLOAD_FOLDER"], input_file.filename)
     input_file.save(input_path)
@@ -150,6 +160,7 @@ def process():
     output_file_name = request.form.get("output_file_name", "improved_output.docx")
     final_output_path = os.path.join(current_app.config["DOWNLOAD_FOLDER"], output_file_name)
 
+    # Démarrage du thread de traitement
     thread_args = {
         "glossary_csv_path": glossary_csv_path,
         "glossary_gpt_path": glossary_gpt_path,
@@ -166,6 +177,9 @@ def process():
 
 @translation_bp.route("/error")
 def error():
-    progress = get_user_progress("static_user_id")
+    """
+    Affiche une page d'erreur en cas de problème.
+    """
+    progress = get_user_progress()
     error_message = progress.get("message", "Une erreur est survenue.")
     return render_template("error.html", error_message=error_message)

@@ -75,19 +75,25 @@ def translate_docx_with_deepl(api_key, input_file_path, output_file_path, target
         raise Exception(f"Failed to download translated document: {download_response.text}")
 
 def improve_translation(input_file, glossary_path, output_file, language_level, source_language, target_language, group_size, model):
+    """
+    Améliore la traduction avec ChatGPT en utilisant le glossaire.
+    """
     doc = Document(input_file)
     glossary = read_glossary(glossary_path)
     output_doc = Document()
     paragraphs = [para.text for para in doc.paragraphs if para.text.strip()]
-
+    logger.debug(f"Chargé {len(paragraphs)} paragraphes pour traitement.")
     with tqdm(total=len(paragraphs), desc="Processing paragraphs") as pbar:
         for i in range(0, len(paragraphs), group_size):
             group = paragraphs[i : i + group_size]
             improved_text = process_paragraphs(group, glossary, language_level, source_language, target_language, model)
             if improved_text:
                 output_doc.add_paragraph(improved_text)
+            else:
+                logger.warning(f"Skipping group {i // group_size + 1} due to an error.")
             pbar.update(len(group))
     output_doc.save(output_file)
+    logger.debug(f"Document amélioré enregistré dans {output_file}.")
 
 def convert_excel_to_csv(excel_path, csv_path):
     df = pd.read_excel(excel_path, header=None)

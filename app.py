@@ -1,8 +1,10 @@
-from flask import Flask, render_template, redirect, url_for, jsonify, request
+from flask import Flask, render_template, redirect, url_for, jsonify
 from translation_app.routes import translation_bp
 from calculator_app.routes import calculator_bp
 import os
-import time
+
+# Simuler un état de traitement global
+task_status = {"status": "idle", "message": "Aucune tâche en cours."}
 
 app = Flask(__name__)
 
@@ -19,12 +21,9 @@ app.config["SECRET_KEY"] = "your_secret_key"
 app.config["DEEPL_API_KEY"] = os.getenv("DEEPL_API_KEY")
 app.config["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
-# Enregistrement des blueprints pour les deux sous-applications
+# Enregistrement des blueprints
 app.register_blueprint(translation_bp, url_prefix="/translation")
 app.register_blueprint(calculator_bp, url_prefix="/calculator")
-
-# Variable globale pour gérer le statut
-translation_status = {"status": "idle", "message": "Aucune tâche en cours."}
 
 @app.route("/")
 def main_menu():
@@ -41,7 +40,6 @@ def main_menu():
                     "path": filepath,
                     "creation_date": os.path.getctime(filepath),
                 })
-        # Trier les fichiers par date de création (les plus récents en premier)
         files.sort(key=lambda x: x["creation_date"], reverse=True)
     except Exception as e:
         files = []
@@ -49,41 +47,30 @@ def main_menu():
 
     return render_template("main_menu.html", files=files)
 
-@app.route("/translation/process", methods=["POST"])
-def process_translation():
-    """
-    Route pour lancer le traitement de la traduction.
-    """
-    global translation_status
-
-    try:
-        # Mettre à jour le statut à "processing"
-        translation_status = {"status": "processing", "message": "Traitement en cours."}
-
-        # Simuler un traitement synchrone (remplacez par votre logique réelle)
-        time.sleep(5)  # Simule un délai de traitement
-        
-        # Exemple : Simuler un fichier traduit
-        output_filename = "translated_file.docx"
-        output_filepath = os.path.join(DOWNLOAD_FOLDER, output_filename)
-        with open(output_filepath, "w") as file:
-            file.write("Fichier traduit avec succès.")  # Exemple de contenu
-
-        # Mettre à jour le statut à "done"
-        translation_status = {"status": "done", "message": "Traduction terminée."}
-    except Exception as e:
-        # En cas d'erreur
-        translation_status = {"status": "error", "message": str(e)}
-    
-    return redirect("/translation/processing")
-
-@app.route("/check_status", methods=["GET"])
+@app.route('/check_status', methods=['GET'])
 def check_status():
     """
-    Route pour vérifier l'état du traitement.
+    Retourne le statut actuel de la tâche.
     """
-    global translation_status
-    return jsonify(translation_status)
+    global task_status
+    return jsonify(task_status)
+
+@app.route('/set_status/<string:status>', methods=['POST'])
+def set_status(status):
+    """
+    Met à jour le statut de la tâche.
+    """
+    global task_status
+    if status in ["done", "processing", "idle", "error"]:
+        task_status["status"] = status
+        task_status["message"] = {
+            "done": "Traduction terminée.",
+            "processing": "Traitement en cours.",
+            "idle": "Aucune tâche en cours.",
+            "error": "Une erreur est survenue."
+        }.get(status, "Statut inconnu.")
+        return jsonify({"message": "Statut mis à jour avec succès."})
+    return jsonify({"message": "Statut invalide."}), 400
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

@@ -14,6 +14,11 @@ translation_bp = Blueprint("translation", __name__, template_folder="../template
 
 # Configuration des logs
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)  # Niveau par défaut
+handler = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 # Dictionnaire pour suivre le statut des traitements (utilisation d'un ID utilisateur statique)
 STATIC_USER_ID = "static_user_id"
@@ -34,7 +39,10 @@ def set_user_progress(status, message, output_file_name=None):
         "message": message,
         "output_file_name": output_file_name,
     }
-    logger.debug(f"Progress store mis à jour : {progress_store[STATIC_USER_ID]}")
+    if status != "in_progress":
+        logger.info(f"Progress updated: {progress_store[STATIC_USER_ID]}")
+    else:
+        logger.debug(f"Progress updated: {progress_store[STATIC_USER_ID]}")
 
 @translation_bp.route("/")
 def index():
@@ -57,9 +65,10 @@ def done():
     """
     filename = request.args.get("filename", "improved_output.docx")
     file_path = os.path.join(current_app.config["DOWNLOAD_FOLDER"], filename)
-    logger.debug(f"Redirection vers la page 'done.html' avec le fichier : {filename}")
+    logger.info(f"Accès à la page 'done.html' avec le fichier : {filename}")
 
     if not os.path.exists(file_path):
+        logger.error(f"Fichier introuvable : {file_path}")
         return render_template("error.html", message="Le fichier traduit est introuvable.")
     return send_from_directory(current_app.config["DOWNLOAD_FOLDER"], filename, as_attachment=True)
 
@@ -70,7 +79,7 @@ def download_file(filename):
     """
     download_path = current_app.config["DOWNLOAD_FOLDER"]
     file_path = os.path.join(download_path, filename)
-    logger.debug(f"Demande de téléchargement pour : {file_path}")
+    logger.info(f"Demande de téléchargement pour : {file_path}")
 
     if not os.path.exists(file_path):
         logger.error(f"Fichier non trouvé : {file_path}")
@@ -81,6 +90,9 @@ def download_file(filename):
 @translation_bp.route("/check_status")
 def check_status():
     progress = get_user_progress()
+    # Réduction des logs pour éviter les ambiguïtés dues aux requêtes fréquentes
+    if progress["status"] != "done":
+        logger.debug(f"Statut en cours : {progress}")
     return jsonify({
         "status": progress["status"],
         "message": progress["message"],
@@ -98,12 +110,12 @@ def process():
         with app_context.app_context():
             try:
                 set_user_progress("in_progress", "Traitement en cours...")
-                logger.debug("Début du traitement en arrière-plan.")
+                logger.info("Début du traitement en arrière-plan.")
 
                 # Création du glossaire si un fichier est fourni
                 glossary_id = None
                 if kwargs.get("glossary_csv_path"):
-                    logger.debug(f"Création du glossaire avec le fichier : {kwargs['glossary_csv_path']}")
+                    logger.info(f"Création du glossaire avec le fichier : {kwargs['glossary_csv_path']}")
                     glossary_id = create_glossary(
                         api_key=app_context.config["DEEPL_API_KEY"],
                         name="MyGlossary",
@@ -137,7 +149,7 @@ def process():
 
                 # Mise à jour du statut final
                 set_user_progress("done", "Traitement terminé avec succès.", output_file_name=os.path.basename(final_output_path))
-                logger.debug("Traitement terminé avec succès.")
+                logger.info("Traitement terminé avec succès.")
 
             except Exception as e:
                 set_user_progress("error", f"Une erreur est survenue : {str(e)}")
@@ -187,11 +199,16 @@ def error():
     """
     progress = get_user_progress()
     error_message = progress.get("message", "Une erreur est survenue.")
+    logger.error(f"Erreur détectée : {error_message}")
     return render_template("error.html", error_message=error_message)
 
 @translation_bp.route('/translation/download/<filename>')
-def download_file(filename):
+def download_translation_file(filename):
+    """
+    Permet de télécharger un fichier traduit.
+    """
     return send_from_directory(
-        directory=os.path.join(app.root_path, 'downloads'),
+        directory=current_app.config["DOWNLOAD_FOLDER"],
         path=filename,
         as_attachment=True
+    )

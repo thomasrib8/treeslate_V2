@@ -110,6 +110,9 @@
         } else if (data.status === 'error') {
           // Redirection vers une page d'erreur
           window.location.href = '/translation/error';
+            } else {
+                    // Relancer la vérification après un délai
+                    setTimeout(checkStatus, 2000);
         }
       })
       .catch(error => {

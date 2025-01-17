@@ -82,12 +82,12 @@ def download_file(filename):
 
 @translation_bp.route("/check_status")
 def check_status():
-    """
-    Vérifie le statut du traitement.
-    """
     progress = get_user_progress()
-    logger.debug(f"Statut actuel renvoyé : {progress}")
-    return jsonify(progress)
+    return jsonify({
+        "status": progress["status"],
+        "message": progress["message"],
+        "output_file_name": progress["output_file_name"]
+    })
 
 @translation_bp.route("/process", methods=["POST"])
 def process():

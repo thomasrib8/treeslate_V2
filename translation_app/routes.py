@@ -188,3 +188,10 @@ def error():
     progress = get_user_progress()
     error_message = progress.get("message", "Une erreur est survenue.")
     return render_template("error.html", error_message=error_message)
+
+@translation_bp.route('/translation/download/<filename>')
+def download_file(filename):
+    return send_from_directory(
+        directory=os.path.join(app.root_path, 'downloads'),
+        path=filename,
+        as_attachment=True

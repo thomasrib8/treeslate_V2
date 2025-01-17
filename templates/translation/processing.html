@@ -101,53 +101,35 @@
     </style>
 
     <script>
-    setInterval(() => {
-        fetch("/check_status")
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === "done") {
-                    window.location.href = "/done?filename=" + data.output_file_name;
-                }
-            });
-    }, 2000); // Vérifie toutes les 2 secondes
-
-    let intervalId = setInterval(() => {
-    fetch('/check_status')
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'done') {
-                clearInterval(intervalId); // Arrête les requêtes répétées
-                window.location.href = `/translation/download/${data.output_file_name}`;
-            }
-        })
-        .catch(error => console.error('Erreur lors de la vérification du statut :', error));
-}, 2000); // Vérifie toutes les 2 secondes
-    
-  function checkStatus() {
-    fetch('/check_status')
-      .then(response => response.json())
-      .then(data => {
-        if (data.status === 'done') {
-          // Redirection vers la page "done" avec le nom du fichier
-          window.location.href = `/translation/done?filename=${data.output_file_name}`;
-        } else if (data.status === 'error') {
-          // Redirection vers une page d'erreur
-          window.location.href = '/translation/error';
-            } else {
-                    // Relancer la vérification après un délai
-                    setTimeout(checkStatus, 2000);
+        // Fonction unique pour vérifier le statut
+        function checkStatus() {
+            fetch('/check_status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'done') {
+                        // Arrêter les requêtes répétées
+                        clearInterval(intervalId);
+                        // Redirection vers la page "done" avec le fichier en paramètre
+                        window.location.href = `/translation/download/${data.output_file_name}`;
+                    } else if (data.status === 'error') {
+                        // Arrêter les requêtes répétées
+                        clearInterval(intervalId);
+                        // Afficher un message d'erreur ou rediriger vers une page d'erreur
+                        document.getElementById('status-message').textContent = "Une erreur est survenue. Veuillez réessayer.";
+                        document.getElementById('retry-button').style.display = "block"; // Affiche le bouton "Relancer"
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur lors de la vérification du statut :', error);
+                    clearInterval(intervalId);
+                    document.getElementById('status-message').textContent = "Erreur réseau. Vérifiez votre connexion.";
+                    document.getElementById('retry-button').style.display = "block"; // Affiche le bouton "Relancer"
+                });
         }
-      })
-      .catch(error => {
-        console.error('Erreur lors de la vérification du statut:', error);
-      });
-  }
 
-  // Vérifie le statut toutes les 3 secondes
-  setInterval(checkStatus, 3000);
-        
+        // Lancer la vérification toutes les 2 secondes
+        const intervalId = setInterval(checkStatus, 2000);
     </script>
-
 </head>
 <body>
     <div class="container" role="alert">
@@ -156,7 +138,7 @@
         <div class="progress-bar" aria-hidden="true">
             <div id="progress-bar-fill" class="progress-bar-fill"></div>
         </div>
-        <p id="status-message">Veuillez patienter pendant le traitement de votre document.</p>
+        <p id="status-message" aria-live="polite">Veuillez patienter pendant le traitement de votre document.</p>
         <div class="button-container">
             <a href="/" id="retry-button" class="retry-button">Relancer</a>
             <a href="/">Retour à l'accueil</a>

@@ -59,11 +59,9 @@ def done():
     file_path = os.path.join(current_app.config["DOWNLOAD_FOLDER"], filename)
     logger.debug(f"Redirection vers la page 'done.html' avec le fichier : {filename}")
 
-    if not os.path.exists(file_path):
-            logger.error(f"Le fichier demandé n'existe pas : {file_path}")
-            return render_template("error.html", error_message="Le fichier demandé est introuvable.")
-
-    return render_template("done.html", output_file_name=filename)
+     if not os.path.exists(file_path):
+        return render_template("error.html", message="Le fichier traduit est introuvable.")
+    return send_from_directory(current_app.config["DOWNLOAD_FOLDER"], filename, as_attachment=True)
 
 @translation_bp.route("/downloads/<filename>")
 def download_file(filename):

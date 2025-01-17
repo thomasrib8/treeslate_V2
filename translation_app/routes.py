@@ -56,6 +56,7 @@ def done():
     Affiche la page de fin lorsque le traitement est terminé.
     """
     filename = request.args.get("filename", "improved_output.docx")
+    logger.debug(f"Redirection vers la page 'done.html' avec le fichier : {filename}")
     return render_template("done.html", output_file_name=filename)
 
 @translation_bp.route("/downloads/<filename>")

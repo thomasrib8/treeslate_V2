@@ -110,9 +110,19 @@
                 }
             });
     }, 2000); // Vérifie toutes les 2 secondes
-</script>
+
+    let intervalId = setInterval(() => {
+    fetch('/check_status')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'done') {
+                clearInterval(intervalId); // Arrête les requêtes répétées
+                window.location.href = `/translation/download/${data.output_file_name}`;
+            }
+        })
+        .catch(error => console.error('Erreur lors de la vérification du statut :', error));
+}, 2000); // Vérifie toutes les 2 secondes
     
-    <script>
   function checkStatus() {
     fetch('/check_status')
       .then(response => response.json())
@@ -135,7 +145,8 @@
 
   // Vérifie le statut toutes les 3 secondes
   setInterval(checkStatus, 3000);
-</script>
+        
+    </script>
 
 </head>
 <body>

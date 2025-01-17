@@ -99,7 +99,20 @@
             background: darkred;
         }
     </style>
-<script>
+
+    <script>
+    setInterval(() => {
+        fetch("/check_status")
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "done") {
+                    window.location.href = "/done?filename=" + data.output_file_name;
+                }
+            });
+    }, 2000); // Vérifie toutes les 2 secondes
+</script>
+    
+    <script>
   function checkStatus() {
     fetch('/check_status')
       .then(response => response.json())

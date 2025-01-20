@@ -142,6 +142,7 @@ def process():
                 source_language=form_data["source_language"],
                 glossary_id=glossary_id,
             )
+            logger.debug(f"Statut actuel après traduction : {task_status}")
 
             improve_translation(
                 input_file=final_output_path,
@@ -153,6 +154,7 @@ def process():
                 group_size=form_data["group_size"],
                 model=form_data["gpt_model"],
             )
+            logger.debug(f"Statut actuel après traduction : {task_status}")
 
             # Mise à jour du statut avec le bon fichier de sortie
             set_task_status("done", "Traduction terminée", os.path.basename(final_output_path))

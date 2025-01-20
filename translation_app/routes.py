@@ -99,7 +99,12 @@ def process():
 
                 glossary_id = None
                 if glossary_csv_path:
-                    glossary_id = create_glossary(app.config["DEEPL_API_KEY"], glossary_csv_path)
+                    glossary_id = create_glossary(
+                        api_key=app.config["DEEPL_API_KEY"],
+                        source_lang=form_data["source_language"],
+                        target_lang=form_data["target_language"],
+                        glossary_path=glossary_csv_path
+                    )
 
                 translate_docx_with_deepl(
                     api_key=app.config["DEEPL_API_KEY"],

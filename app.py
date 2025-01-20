@@ -24,7 +24,7 @@ app.register_blueprint(translation_bp, url_prefix="/translation")
 app.register_blueprint(calculator_bp, url_prefix="/calculator")
 
 # État global de la tâche (remplacé par des sessions dans les blueprints)
-task_status = {"status": "idle", "message": "Aucune tâche en cours."}
+task_status = {"status": "idle", "message": "Aucune tâche en cours.", "output_file_name": None}
 
 @app.route("/")
 def main_menu():
@@ -67,7 +67,7 @@ def set_status(status):
         task_status["status"] = status
         task_status["message"] = {
             "done": "Traduction terminée.",
-            "processing": "Traitement en cours.",
+            "processing": "Traitement en cours...",
             "idle": "Aucune tâche en cours.",
             "error": "Une erreur est survenue."
         }.get(status, "Statut inconnu.")

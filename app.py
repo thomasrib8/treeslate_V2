@@ -1,17 +1,29 @@
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify, current_app, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, jsonify, send_from_directory, current_app
 import os
-import sys
 import threading
 import logging
 from translation_app.utils import translate_docx_with_deepl
 from translation_app.routes import translation_bp
 from calculator_app.routes import calculator_bp
+from config import DevelopmentConfig
 
-# Création du Blueprint
-translation_bp = Blueprint("translation", __name__, template_folder="../templates/translation")
+# Initialisation de l'application Flask
+app = Flask(__name__)
+
+# Charger la configuration depuis config.py
+app.config.from_object(DevelopmentConfig)
 
 # Configuration des logs
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Créer les dossiers nécessaires si non existants
+os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+os.makedirs(app.config["DOWNLOAD_FOLDER"], exist_ok=True)
+
+# Enregistrer les blueprints
+app.register_blueprint(translation_bp, url_prefix="/translation")
+app.register_blueprint(calculator_bp, url_prefix="/calculator")
 
 # Dictionnaire pour suivre le statut des tâches
 task_status = {
@@ -33,13 +45,13 @@ def start_translation_process(input_file_path, output_file_path):
     """
     Fonction de traitement en arrière-plan pour la traduction.
     """
-    with current_app.app_context():
+    with app.app_context():
         try:
             set_task_status("processing", "Traduction en cours...")
 
             # Simulation du processus de traduction
             translate_docx_with_deepl(
-                api_key=current_app.config["DEEPL_API_KEY"],
+                api_key=app.config["DEEPL_API_KEY"],
                 input_file_path=input_file_path,
                 output_file_path=output_file_path,
                 target_language="EN"
@@ -51,68 +63,50 @@ def start_translation_process(input_file_path, output_file_path):
             set_task_status("error", f"Erreur lors du traitement : {str(e)}")
             logger.error(f"Erreur dans le traitement : {e}")
 
-@translation_bp.route("/")
-def index():
+@app.route("/")
+def main_menu():
     """
-    Affiche la page d'accueil de l'application de traduction.
+    Menu principal affichant les fichiers traduits.
     """
-    logger.info("Affichage de la page d'accueil de la traduction.")
-    return render_template("index.html")
+    try:
+        files = []
+        for filename in os.listdir(app.config["DOWNLOAD_FOLDER"]):
+            filepath = os.path.join(app.config["DOWNLOAD_FOLDER"], filename)
+            if os.path.isfile(filepath):
+                files.append({
+                    "name": filename,
+                    "path": filepath,
+                    "creation_date": os.path.getctime(filepath),
+                })
+        files.sort(key=lambda x: x["creation_date"], reverse=True)
+    except Exception as e:
+        files = []
+        logger.error(f"Erreur lors du chargement des fichiers : {e}")
 
-@translation_bp.route("/processing")
-def processing():
-    """
-    Affiche la page de traitement de la traduction.
-    """
-    logger.info("Accès à la page de traitement.")
-    return render_template("processing.html")
+    return render_template("main_menu.html", files=files)
 
-@translation_bp.route("/done")
-def done():
-    """
-    Affiche la page de fin de traitement lorsque la traduction est terminée.
-    """
-    filename = request.args.get("filename", "output.docx")
-    return render_template("done.html", filename=filename)
-
-@translation_bp.route("/process", methods=["POST"])
-def process():
-    """
-    Démarre le processus de traduction.
-    """
-    input_file = request.files["input_file"]
-    input_path = os.path.join(current_app.config["UPLOAD_FOLDER"], input_file.filename)
-    input_file.save(input_path)
-
-    output_file_name = request.form.get("output_file_name", "translated_output.docx")
-    output_path = os.path.join(current_app.config["DOWNLOAD_FOLDER"], output_file_name)
-
-    logger.info("Début du processus de traduction.")
-    
-    # Lancer la traduction dans un thread séparé
-    thread = threading.Thread(target=start_translation_process, args=(input_path, output_path))
-    thread.start()
-
-    return redirect(url_for("translation.processing"))
-
-@translation_bp.route("/check_status")
+@app.route("/check_status")
 def check_status():
     """
-    Vérifie le statut de la traduction en cours.
+    Retourne le statut actuel de la tâche.
     """
     return jsonify(task_status)
 
-@translation_bp.route("/download/<filename>")
-def download(filename):
+@app.route("/set_status/<string:status>", methods=["POST"])
+def set_status(status):
     """
-    Permet de télécharger le fichier de sortie une fois la traduction terminée.
+    Met à jour le statut global de la tâche.
     """
-    download_path = current_app.config["DOWNLOAD_FOLDER"]
-    return send_from_directory(download_path, filename, as_attachment=True)
+    if status in ["done", "processing", "idle", "error"]:
+        set_task_status(status, {
+            "done": "Traduction terminée.",
+            "processing": "Traitement en cours.",
+            "idle": "Aucune tâche en cours.",
+            "error": "Une erreur est survenue."
+        }.get(status, "Statut inconnu."))
+        return jsonify({"message": "Statut mis à jour avec succès."})
+    return jsonify({"message": "Statut invalide."}), 400
 
-@translation_bp.route("/error")
-def error():
-    """
-    Affiche une page d'erreur en cas de problème.
-    """
-    return render_template("error.html", message=task_status["message"])
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=app.config.get("DEBUG", False), host="0.0.0.0", port=port)

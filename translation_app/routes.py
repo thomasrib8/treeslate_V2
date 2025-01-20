@@ -154,3 +154,8 @@ def process():
         logger.error(f"Erreur lors de l'upload du fichier : {str(e)}")
         set_task_status("error", "Erreur lors de l'upload du fichier.")
         return redirect(url_for("translation.error"))
+
+@translation_bp.route('/download/<filename>')
+def download_file(filename):
+    download_folder = current_app.config["DOWNLOAD_FOLDER"]
+    return send_from_directory(directory=download_folder, filename=filename, as_attachment=True)

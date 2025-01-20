@@ -27,7 +27,7 @@ def set_task_status(status, message, output_file_name=None):
         "output_file_name": output_file_name,
     })
 
-@translation_bp.route("/translation")
+@translation_bp.route("/")
 def index():
     logger.info("Affichage de la page d'accueil de la traduction.")
     return render_template("index.html")
@@ -50,7 +50,7 @@ def done():
         return render_template("error.html", message="Le fichier traduit est introuvable.")
 
     return render_template("done.html", output_file_name=filename)
-    
+
 @translation_bp.route("/check_status")
 def check_status():
     if task_status.get("status") == "done" and task_status.get("output_file_name"):
@@ -161,3 +161,15 @@ def download_file(filename):
     download_folder = current_app.config["DOWNLOAD_FOLDER"]
     return send_from_directory(download_folder, filename, as_attachment=True)
 
+@translation_bp.route("/main_menu")
+def main_menu():
+    download_folder = current_app.config["DOWNLOAD_FOLDER"]
+    translated_files = []
+
+    if os.path.exists(download_folder):
+        for filename in os.listdir(download_folder):
+            file_path = os.path.join(download_folder, filename)
+            created_at = datetime.fromtimestamp(os.path.getctime(file_path)).strftime('%Y-%m-%d %H:%M:%S')
+            translated_files.append({'filename': filename, 'created_at': created_at})
+
+    return render_template("main_menu.html", translated_files=translated_files)

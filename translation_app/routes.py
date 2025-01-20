@@ -100,54 +100,57 @@ def process():
         app = current_app._get_current_object()
 
         def background_task():
-            with app.app_context():
-                try:
-                    set_task_status("processing", "Traduction en cours...")
-                    logger.info("Début du processus de traduction.")
+    with app.app_context():
+        try:
+            set_task_status("processing", "Traduction en cours...")
+            logger.info("Début du processus de traduction.")
 
-                    glossary_id = None
-                    if glossary_csv_path:
-                        glossary_id = create_glossary(
-                            app.config["DEEPL_API_KEY"],
-                            f"Glossary_{form_data['source_language']}_to_{form_data['target_language']}",
-                            form_data["source_language"],
-                            form_data["target_language"],
-                            glossary_csv_path
-                        )
-                        logger.info(f"Glossaire créé avec ID : {glossary_id}")
+            glossary_id = None
+            if glossary_csv_path:
+                glossary_id = create_glossary(
+                    app.config["DEEPL_API_KEY"],
+                    f"Glossary_{form_data['source_language']}_to_{form_data['target_language']}",
+                    form_data["source_language"],
+                    form_data["target_language"],
+                    glossary_csv_path
+                )
+                logger.info(f"Glossaire créé avec ID : {glossary_id}")
 
-                    translate_docx_with_deepl(
-                        api_key=app.config["DEEPL_API_KEY"],
-                        input_file_path=input_path,
-                        output_file_path=final_output_path,
-                        target_language=form_data["target_language"],
-                        source_language=form_data["source_language"],
-                        glossary_id=glossary_id,
-                    )
+            logger.info(f"Langue source : {form_data['source_language']}, Langue cible : {form_data['target_language']}")
 
-                    improve_translation(
-                        input_file=final_output_path,
-                        glossary_path=glossary_csv_path,
-                        output_file=final_output_path,
-                        language_level=form_data["language_level"],
-                        source_language=form_data["source_language"],
-                        target_language=form_data["target_language"],
-                        group_size=form_data["group_size"],
-                        model=form_data["gpt_model"],
-                    )
+            translate_docx_with_deepl(
+                api_key=app.config["DEEPL_API_KEY"],
+                input_file_path=input_path,
+                output_file_path=final_output_path,
+                target_language=form_data["target_language"],
+                source_language=form_data["source_language"],
+                glossary_id=glossary_id,
+            )
 
-                    set_task_status("done", "Traduction terminée", os.path.basename(final_output_path))
-                    logger.info(f"Statut mis à jour à 'done' avec fichier : {os.path.basename(final_output_path)}")
-                except Exception as e:
-                    set_task_status("error", f"Erreur lors du traitement : {str(e)}")
-                    logger.error(f"Erreur dans le traitement : {e}")
+            improve_translation(
+                input_file=final_output_path,
+                glossary_path=glossary_csv_path,
+                output_file=final_output_path,
+                language_level=form_data["language_level"],
+                source_language=form_data["source_language"],
+                target_language=form_data["target_language"],
+                group_size=form_data["group_size"],
+                model=form_data["gpt_model"],
+            )
 
-        thread = threading.Thread(target=background_task)
-        thread.start()
+            # Mise à jour du statut avec le bon fichier de sortie
+            set_task_status("done", "Traduction terminée", os.path.basename(final_output_path))
+            logger.info(f"Statut mis à jour à 'done' avec fichier : {os.path.basename(final_output_path)}")
 
-        return redirect(url_for("translation.processing"))
+            # Ajout de la redirection automatique après la fin du traitement
+            redirect_url = url_for("translation.done", filename=os.path.basename(final_output_path))
+            logger.info(f"Redirection automatique vers : {redirect_url}")
+            
+            # Redirection côté serveur
+            with app.test_request_context():
+                return redirect(redirect_url)
 
-    except Exception as e:
-        logger.error(f"Erreur lors de l'upload du fichier : {str(e)}")
-        set_task_status("error", "Erreur lors de l'upload du fichier.")
-        return redirect(url_for("translation.error"))
+        except Exception as e:
+            set_task_status("error", f"Erreur lors du traitement : {str(e)}")
+            logger.error(f"Erreur dans le traitement : {e}")
+

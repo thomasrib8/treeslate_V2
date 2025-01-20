@@ -24,7 +24,6 @@ os.makedirs(app.config["DOWNLOAD_FOLDER"], exist_ok=True)
 # Enregistrer les blueprints
 app.register_blueprint(translation_bp, url_prefix="/translation")
 app.register_blueprint(calculator_bp, url_prefix="/calculator")
-app.register_blueprint(translation_bp, url_prefix="/")
 
 # Dictionnaire pour suivre le statut des tâches
 task_status = {

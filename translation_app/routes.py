@@ -1,7 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, current_app, send_from_directory
 import os
 import threading
-import time
 from .utils import (
     translate_docx_with_deepl,
     improve_translation,
@@ -52,7 +51,7 @@ def done():
 
 @translation_bp.route("/check_status")
 def check_status():
-    if task_status["status"] == "done" and task_status["output_file_name"]:
+    if task_status.get("status") == "done" and task_status.get("output_file_name"):
         response = jsonify({
             "status": "done",
             "output_file_name": task_status["output_file_name"],
@@ -60,7 +59,7 @@ def check_status():
         })
         set_task_status("idle", "Aucune tâche en cours.")
         return response
-    elif task_status["status"] == "error":
+    elif task_status.get("status") == "error":
         return jsonify({
             "status": "error",
             "message": task_status["message"]
@@ -90,7 +89,6 @@ def process():
                 set_task_status("error", f"Fichier glossaire introuvable : {glossary_csv_path}")
                 return redirect(url_for("translation.error"))
 
-        # Récupération des paramètres du formulaire
         form_data = {
             "target_language": request.form["target_language"],
             "source_language": request.form["source_language"],
@@ -102,7 +100,6 @@ def process():
         output_file_name = request.form.get("output_file_name", "improved_output.docx")
         final_output_path = os.path.join(current_app.config["DOWNLOAD_FOLDER"], output_file_name)
 
-        # Capture du contexte d'application Flask
         app = current_app._get_current_object()
 
         def background_task():
@@ -121,8 +118,6 @@ def process():
                             glossary_csv_path
                         )
                         logger.info(f"Glossaire créé avec ID : {glossary_id}")
-
-                    logger.info(f"Langue source : {form_data['source_language']}, Langue cible : {form_data['target_language']}")
 
                     translate_docx_with_deepl(
                         api_key=app.config["DEEPL_API_KEY"],
@@ -144,15 +139,8 @@ def process():
                         model=form_data["gpt_model"],
                     )
 
-                    # Mise à jour du statut avec le bon fichier de sortie
                     set_task_status("done", "Traduction terminée", os.path.basename(final_output_path))
                     logger.info(f"Statut mis à jour à 'done' avec fichier : {os.path.basename(final_output_path)}")
-
-                    # Redirection automatique côté serveur après génération du fichier
-                    with app.test_request_context():
-                        redirect_url = url_for("translation.done", filename=os.path.basename(final_output_path))
-                        logger.info(f"Redirection automatique vers : {redirect_url}")
-
                 except Exception as e:
                     set_task_status("error", f"Erreur lors du traitement : {str(e)}")
                     logger.error(f"Erreur dans le traitement : {e}")
@@ -161,20 +149,7 @@ def process():
         thread.start()
 
         return redirect(url_for("translation.processing"))
-
     except Exception as e:
         logger.error(f"Erreur lors de l'upload du fichier : {str(e)}")
         set_task_status("error", "Erreur lors de l'upload du fichier.")
         return redirect(url_for("translation.error"))
-
-@translation_bp.route("/error")
-def error():
-    return render_template("error.html", error_message=task_status.get("message", "Une erreur est survenue."))
-
-@translation_bp.route("/download/<filename>")
-def download_file(filename):
-    file_path = os.path.join(current_app.config["DOWNLOAD_FOLDER"], filename)
-    if not os.path.exists(file_path):
-        logger.error(f"Fichier de téléchargement introuvable : {filename}")
-        return render_template("error.html", message="Fichier introuvable.")
-    return send_from_directory(current_app.config["DOWNLOAD_FOLDER"], filename, as_attachment=True)

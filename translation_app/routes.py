@@ -15,7 +15,7 @@ translation_bp = Blueprint("translation", __name__, template_folder="../template
 # Configuration des logs
 logger = logging.getLogger(__name__)
 
-# État global de la tâche
+# État global de la tâche (avec sauvegarde persistante possible si nécessaire)
 task_status = {"status": "idle", "message": "Aucune tâche en cours.", "output_file_name": None}
 
 def set_task_status(status, message, output_file_name=None):
@@ -48,7 +48,11 @@ def done():
     """
     Affiche la page de fin lorsque le traitement est terminé.
     """
-    filename = request.args.get("filename", "improved_output.docx")
+    filename = request.args.get("filename")
+    if not filename:
+        logger.error("Le nom du fichier n'est pas défini dans la requête.")
+        return render_template("error.html", message="Nom du fichier non spécifié.")
+
     file_path = os.path.join(current_app.config["DOWNLOAD_FOLDER"], filename)
     if not os.path.exists(file_path):
         logger.error(f"Le fichier traduit {filename} est introuvable.")
@@ -116,54 +120,61 @@ def process():
         app = current_app._get_current_object()
 
         def background_task():
-    with app.app_context():
-        try:
-            set_task_status("processing", "Traduction en cours...")
-            logger.info("Début du processus de traduction.")
+            with app.app_context():
+                try:
+                    set_task_status("processing", "Traduction en cours...")
+                    logger.info("Début du processus de traduction.")
 
-            glossary_id = None
-            if glossary_csv_path:
-                glossary_id = create_glossary(
-                    app.config["DEEPL_API_KEY"],
-                    f"Glossary_{form_data['source_language']}_to_{form_data['target_language']}",
-                    form_data["source_language"],
-                    form_data["target_language"],
-                    glossary_csv_path
-                )
-                logger.info(f"Glossaire créé avec ID : {glossary_id}")
+                    glossary_id = None
+                    if glossary_csv_path:
+                        glossary_id = create_glossary(
+                            app.config["DEEPL_API_KEY"],
+                            f"Glossary_{form_data['source_language']}_to_{form_data['target_language']}",
+                            form_data["source_language"],
+                            form_data["target_language"],
+                            glossary_csv_path
+                        )
+                        logger.info(f"Glossaire créé avec ID : {glossary_id}")
 
-            logger.info(f"Langue source : {form_data['source_language']}, Langue cible : {form_data['target_language']}")
+                    logger.info(f"Langue source : {form_data['source_language']}, Langue cible : {form_data['target_language']}")
 
-            translate_docx_with_deepl(
-                api_key=app.config["DEEPL_API_KEY"],
-                input_file_path=input_path,
-                output_file_path=final_output_path,
-                target_language=form_data["target_language"],
-                source_language=form_data["source_language"],
-                glossary_id=glossary_id,
-            )
-            logger.debug(f"Statut actuel après traduction : {task_status}")
+                    translate_docx_with_deepl(
+                        api_key=app.config["DEEPL_API_KEY"],
+                        input_file_path=input_path,
+                        output_file_path=final_output_path,
+                        target_language=form_data["target_language"],
+                        source_language=form_data["source_language"],
+                        glossary_id=glossary_id,
+                    )
 
-            improve_translation(
-                input_file=final_output_path,
-                glossary_path=glossary_csv_path,
-                output_file=final_output_path,
-                language_level=form_data["language_level"],
-                source_language=form_data["source_language"],
-                target_language=form_data["target_language"],
-                group_size=form_data["group_size"],
-                model=form_data["gpt_model"],
-            )
-            logger.debug(f"Statut actuel après traduction : {task_status}")
+                    improve_translation(
+                        input_file=final_output_path,
+                        glossary_path=glossary_csv_path,
+                        output_file=final_output_path,
+                        language_level=form_data["language_level"],
+                        source_language=form_data["source_language"],
+                        target_language=form_data["target_language"],
+                        group_size=form_data["group_size"],
+                        model=form_data["gpt_model"],
+                    )
 
-            # Mise à jour du statut avec le bon fichier de sortie
-            set_task_status("done", "Traduction terminée", os.path.basename(final_output_path))
-            logger.info(f"Statut mis à jour à 'done' avec fichier : {os.path.basename(final_output_path)}")
+                    # Mise à jour du statut avec le bon fichier de sortie
+                    set_task_status("done", "Traduction terminée", os.path.basename(final_output_path))
+                    logger.info(f"Statut mis à jour à 'done' avec fichier : {os.path.basename(final_output_path)}")
 
-        except Exception as e:
-            set_task_status("error", f"Erreur lors du traitement : {str(e)}")
-            logger.error(f"Erreur dans le traitement : {e}")
+                except Exception as e:
+                    set_task_status("error", f"Erreur lors du traitement : {str(e)}")
+                    logger.error(f"Erreur dans le traitement : {e}")
 
+        thread = threading.Thread(target=background_task)
+        thread.start()
+
+        return redirect(url_for("translation.processing"))
+
+    except Exception as e:
+        logger.error(f"Erreur lors de l'upload du fichier : {str(e)}")
+        set_task_status("error", "Erreur lors de l'upload du fichier.")
+        return redirect(url_for("translation.error"))
 
 @translation_bp.route("/error")
 def error():

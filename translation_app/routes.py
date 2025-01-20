@@ -61,10 +61,16 @@ def check_status():
     Vérifie le statut de la tâche de traduction en cours.
     Si la tâche est terminée, renvoie l'URL de redirection.
     """
-    if task_status["status"] == "done":
+    if task_status["status"] == "done" and task_status["output_file_name"]:
         return jsonify({
             "status": "done",
+            "output_file_name": task_status["output_file_name"],
             "redirect_url": url_for("translation.done", filename=task_status["output_file_name"])
+        })
+    elif task_status["status"] == "error":
+        return jsonify({
+            "status": "error",
+            "message": task_status["message"]
         })
     return jsonify(task_status)
 

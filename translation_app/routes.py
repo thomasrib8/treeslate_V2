@@ -47,8 +47,9 @@ def done():
     if not os.path.exists(file_path):
         logger.error(f"Le fichier traduit {filename} est introuvable.")
         return render_template("error.html", message="Le fichier traduit est introuvable.")
-    return send_from_directory(current_app.config["DOWNLOAD_FOLDER"], filename, as_attachment=True)
 
+    return render_template("done.html", output_file_name=filename)
+    
 @translation_bp.route("/check_status")
 def check_status():
     if task_status.get("status") == "done" and task_status.get("output_file_name"):

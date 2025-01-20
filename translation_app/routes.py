@@ -79,8 +79,12 @@ def process():
     output_file_name = request.form.get("output_file_name", "improved_output.docx")
     final_output_path = os.path.join(current_app.config["DOWNLOAD_FOLDER"], output_file_name)
 
-    def background_task(app_context):
-        with app_context:
+    # Capture le contexte d'application et de requête
+    app_context = current_app._get_current_object()
+    request_context = request._get_current_object()
+
+    def background_task():
+        with app_context.app_context(), request_context:
             try:
                 set_task_status("processing", "Traduction en cours...")
                 logger.info("Début du processus de traduction.")
@@ -111,9 +115,7 @@ def process():
                 set_task_status("error", f"Erreur lors du traitement : {str(e)}")
                 logger.error(f"Erreur dans le traitement : {e}")
 
-    # Obtenir le contexte de l'application et lancer le thread avec le bon contexte
-    app_context = current_app.app_context()
-    thread = threading.Thread(target=background_task, args=(app_context,))
+    thread = threading.Thread(target=background_task)
     thread.start()
 
     return redirect(url_for("translation.processing"))

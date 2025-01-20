@@ -19,16 +19,12 @@ logger = logging.getLogger(__name__)
 task_status = {"status": "idle", "message": "Aucune tâche en cours.", "output_file_name": None}
 
 def set_task_status(status, message, output_file_name=None):
-    """
-    Met à jour le statut de la tâche.
-    """
-    global task_status
+    logger.info(f"Mise à jour du statut en {status} avec fichier: {output_file_name}")
     task_status.update({
         "status": status,
         "message": message,
         "output_file_name": output_file_name,
     })
-    logger.info(f"Statut mis à jour : {task_status}")
 
 @translation_bp.route("/")
 def index():

@@ -14,39 +14,25 @@ translation_bp = Blueprint("translation", __name__, template_folder="../template
 
 # Configuration des logs
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)  # Niveau par défaut
-handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
 
-# Dictionnaire pour suivre le statut des traitements (utilisation d'un ID utilisateur statique)
-STATIC_USER_ID = "static_user_id"
-progress_store = {STATIC_USER_ID: {"status": "idle", "message": "Aucune tâche en cours.", "output_file_name": None}}
+# État global de la tâche
+task_status = {"status": "idle", "message": "Aucune tâche en cours.", "output_file_name": None}
 
-def get_user_progress():
+def set_task_status(status, message, output_file_name=None):
     """
-    Récupère ou initialise le statut de l'utilisateur statique.
+    Met à jour le statut de la tâche.
     """
-    return progress_store.setdefault(STATIC_USER_ID, {"status": "idle", "message": "Aucune tâche en cours.", "output_file_name": None})
-
-def set_user_progress(status, message, output_file_name=None):
-    """
-    Met à jour le statut de l'utilisateur statique.
-    """
-    progress_store[STATIC_USER_ID] = {
+    global task_status
+    task_status.update({
         "status": status,
         "message": message,
         "output_file_name": output_file_name,
-    }
-    if status != "in_progress":
-        logger.info(f"Progress updated: {progress_store[STATIC_USER_ID]}")
-    else:
-        logger.debug(f"Progress updated: {progress_store[STATIC_USER_ID]}")
+    })
+    logger.info(f"Statut mis à jour : {task_status}")
 
 @translation_bp.route("/")
 def index():
-    logger.debug("Page principale (index) affichée.")
+    logger.info("Affichage de la page d'accueil de la traduction.")
     return render_template("index.html")
 
 @translation_bp.route("/processing")
@@ -54,8 +40,7 @@ def processing():
     """
     Affiche la page de traitement.
     """
-    progress = get_user_progress()
-    logger.debug(f"Accès à la page de traitement. Statut actuel : {progress}")
+    logger.info("Accès à la page de traitement.")
     return render_template("processing.html")
 
 @translation_bp.route("/done")
@@ -65,97 +50,20 @@ def done():
     """
     filename = request.args.get("filename", "improved_output.docx")
     file_path = os.path.join(current_app.config["DOWNLOAD_FOLDER"], filename)
-    logger.info(f"Accès à la page 'done.html' avec le fichier : {filename}")
-
     if not os.path.exists(file_path):
-        logger.error(f"Fichier introuvable : {file_path}")
+        logger.error("Le fichier traduit est introuvable.")
         return render_template("error.html", message="Le fichier traduit est introuvable.")
     return send_from_directory(current_app.config["DOWNLOAD_FOLDER"], filename, as_attachment=True)
 
-@translation_bp.route("/downloads/<filename>")
-def download_file(filename):
-    """
-    Permet le téléchargement du fichier généré.
-    """
-    download_path = current_app.config["DOWNLOAD_FOLDER"]
-    file_path = os.path.join(download_path, filename)
-    logger.info(f"Demande de téléchargement pour : {file_path}")
-
-    if not os.path.exists(file_path):
-        logger.error(f"Fichier non trouvé : {file_path}")
-        return "File not found", 404
-
-    return send_from_directory(download_path, filename, as_attachment=True)
-
 @translation_bp.route("/check_status")
 def check_status():
-    progress = get_user_progress()
-    # Réduction des logs pour éviter les ambiguïtés dues aux requêtes fréquentes
-    if progress["status"] != "done":
-        logger.debug(f"Statut en cours : {progress}")
-    return jsonify({
-        "status": progress["status"],
-        "message": progress["message"],
-        "output_file_name": progress["output_file_name"]
-    })
+    return jsonify(task_status)
 
 @translation_bp.route("/process", methods=["POST"])
 def process():
     """
     Démarre le traitement en arrière-plan.
     """
-    app_context = current_app._get_current_object()
-
-    def background_process(app_context, input_path, final_output_path, **kwargs):
-        with app_context.app_context():
-            try:
-                set_user_progress("in_progress", "Traitement en cours...")
-                logger.info("Début du traitement en arrière-plan.")
-
-                # Création du glossaire si un fichier est fourni
-                glossary_id = None
-                if kwargs.get("glossary_csv_path"):
-                    logger.info(f"Création du glossaire avec le fichier : {kwargs['glossary_csv_path']}")
-                    glossary_id = create_glossary(
-                        api_key=app_context.config["DEEPL_API_KEY"],
-                        name="MyGlossary",
-                        source_lang=kwargs["source_language"],
-                        target_lang=kwargs["target_language"],
-                        glossary_path=kwargs["glossary_csv_path"],
-                    )
-
-                # Étape 1 : Traduction avec DeepL
-                translated_output_path = os.path.join(app_context.config["UPLOAD_FOLDER"], "translated.docx")
-                translate_docx_with_deepl(
-                    api_key=app_context.config["DEEPL_API_KEY"],
-                    input_file_path=input_path,
-                    output_file_path=translated_output_path,
-                    target_language=kwargs["target_language"],
-                    source_language=kwargs["source_language"],
-                    glossary_id=glossary_id,
-                )
-
-                # Étape 2 : Amélioration avec GPT
-                improve_translation(
-                    input_file=translated_output_path,
-                    glossary_path=kwargs.get("glossary_gpt_path"),
-                    output_file=final_output_path,
-                    language_level=kwargs["language_level"],
-                    source_language=kwargs["source_language"],
-                    target_language=kwargs["target_language"],
-                    group_size=kwargs["group_size"],
-                    model=kwargs["gpt_model"],
-                )
-
-                # Mise à jour du statut final
-                set_user_progress("done", "Traitement terminé avec succès.", output_file_name=os.path.basename(final_output_path))
-                logger.info("Traitement terminé avec succès.")
-
-            except Exception as e:
-                set_user_progress("error", f"Une erreur est survenue : {str(e)}")
-                logger.error(f"Erreur dans le traitement : {e}")
-
-    # Gestion des fichiers téléchargés
     input_file = request.files["input_file"]
     input_path = os.path.join(current_app.config["UPLOAD_FOLDER"], input_file.filename)
     input_file.save(input_path)
@@ -168,28 +76,41 @@ def process():
         if glossary_csv_path.endswith(".xlsx"):
             glossary_csv_path = convert_excel_to_csv(glossary_csv_path, glossary_csv_path.replace(".xlsx", ".csv"))
 
-    glossary_gpt = request.files.get("glossary_gpt")
-    glossary_gpt_path = None
-    if glossary_gpt:
-        glossary_gpt_path = os.path.join(current_app.config["UPLOAD_FOLDER"], glossary_gpt.filename)
-        glossary_gpt.save(glossary_gpt_path)
-
     output_file_name = request.form.get("output_file_name", "improved_output.docx")
     final_output_path = os.path.join(current_app.config["DOWNLOAD_FOLDER"], output_file_name)
 
-    # Démarrage du thread de traitement
-    thread_args = {
-        "glossary_csv_path": glossary_csv_path,
-        "glossary_gpt_path": glossary_gpt_path,
-        "source_language": request.form["source_language"],
-        "target_language": request.form["target_language"],
-        "language_level": request.form["language_level"],
-        "group_size": int(request.form["group_size"]),
-        "gpt_model": request.form["gpt_model"],
-    }
+    def background_task():
+        try:
+            set_task_status("processing", "Traduction en cours...")
+            logger.info("Début du processus de traduction.")
 
-    threading.Thread(target=background_process, args=(app_context, input_path, final_output_path), kwargs=thread_args).start()
+            translate_docx_with_deepl(
+                api_key=current_app.config["DEEPL_API_KEY"],
+                input_file_path=input_path,
+                output_file_path=final_output_path,
+                target_language=request.form["target_language"],
+                source_language=request.form["source_language"],
+                glossary_id=create_glossary(current_app.config["DEEPL_API_KEY"], glossary_csv_path) if glossary_csv_path else None,
+            )
 
+            improve_translation(
+                input_file=final_output_path,
+                glossary_path=glossary_csv_path,
+                output_file=final_output_path,
+                language_level=request.form["language_level"],
+                source_language=request.form["source_language"],
+                target_language=request.form["target_language"],
+                group_size=int(request.form["group_size"]),
+                model=request.form["gpt_model"],
+            )
+
+            set_task_status("done", "Traduction terminée", output_file_name)
+            logger.info("Traduction terminée avec succès.")
+        except Exception as e:
+            set_task_status("error", f"Erreur lors du traitement : {str(e)}")
+            logger.error(f"Erreur dans le traitement : {e}")
+
+    threading.Thread(target=background_task).start()
     return redirect(url_for("translation.processing"))
 
 @translation_bp.route("/error")
@@ -197,18 +118,11 @@ def error():
     """
     Affiche une page d'erreur en cas de problème.
     """
-    progress = get_user_progress()
-    error_message = progress.get("message", "Une erreur est survenue.")
-    logger.error(f"Erreur détectée : {error_message}")
-    return render_template("error.html", error_message=error_message)
+    return render_template("error.html", error_message=task_status.get("message", "Une erreur est survenue."))
 
-@translation_bp.route('/translation/download/<filename>')
-def download_translation_file(filename):
+@translation_bp.route("/download/<filename>")
+def download_file(filename):
     """
-    Permet de télécharger un fichier traduit.
+    Permet le téléchargement du fichier traduit.
     """
-    return send_from_directory(
-        directory=current_app.config["DOWNLOAD_FOLDER"],
-        path=filename,
-        as_attachment=True
-    )
+    return send_from_directory(current_app.config["DOWNLOAD_FOLDER"], filename, as_attachment=True)

@@ -79,23 +79,22 @@ def process():
     output_file_name = request.form.get("output_file_name", "improved_output.docx")
     final_output_path = os.path.join(current_app.config["DOWNLOAD_FOLDER"], output_file_name)
 
-    # Capture le contexte d'application et de requête
-    app_context = current_app._get_current_object()
-    request_context = request._get_current_object()
+    # Capture du contexte d'application Flask
+    app = current_app._get_current_object()
 
     def background_task():
-        with app_context.app_context(), request_context:
+        with app.app_context():
             try:
                 set_task_status("processing", "Traduction en cours...")
                 logger.info("Début du processus de traduction.")
 
                 translate_docx_with_deepl(
-                    api_key=current_app.config["DEEPL_API_KEY"],
+                    api_key=app.config["DEEPL_API_KEY"],
                     input_file_path=input_path,
                     output_file_path=final_output_path,
                     target_language=request.form["target_language"],
                     source_language=request.form["source_language"],
-                    glossary_id=create_glossary(current_app.config["DEEPL_API_KEY"], glossary_csv_path) if glossary_csv_path else None,
+                    glossary_id=create_glossary(app.config["DEEPL_API_KEY"], glossary_csv_path) if glossary_csv_path else None,
                 )
 
                 improve_translation(

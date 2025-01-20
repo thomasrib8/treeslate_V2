@@ -158,4 +158,4 @@ def process():
 @translation_bp.route('/download/<filename>')
 def download_file(filename):
     download_folder = current_app.config["DOWNLOAD_FOLDER"]
-    return send_from_directory(directory=download_folder, filename=filename, as_attachment=True)
+    return send_from_directory(download_folder, filename, as_attachment=True)

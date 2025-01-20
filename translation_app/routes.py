@@ -109,11 +109,14 @@ def process():
                 if glossary_csv_path:
                     glossary_id = create_glossary(
                         app.config["DEEPL_API_KEY"],
-                        "Glossary_" + form_data["source_language"] + "_to_" + form_data["target_language"],
+                        f"Glossary_{form_data['source_language']}_to_{form_data['target_language']}",
                         form_data["source_language"],
                         form_data["target_language"],
                         glossary_csv_path
                     )
+                    logger.info(f"Glossaire créé avec ID : {glossary_id}")
+
+                logger.info(f"Langue source : {form_data['source_language']}, Langue cible : {form_data['target_language']}")
 
                 translate_docx_with_deepl(
                     api_key=app.config["DEEPL_API_KEY"],

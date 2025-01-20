@@ -101,33 +101,35 @@
     </style>
 
     <script>
-        // Fonction unique pour vérifier le statut
         function checkStatus() {
-            fetch('/check_status')
+            fetch('/translation/check_status')
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'done') {
-                        // Arrêter les requêtes répétées
                         clearInterval(intervalId);
-                        // Redirection vers la page "done" avec le fichier en paramètre
-                        window.location.href = `/translation/download/${data.output_file_name}`;
+                        window.location.href = `/translation/done?filename=${data.output_file_name}`;
                     } else if (data.status === 'error') {
-                        // Arrêter les requêtes répétées
                         clearInterval(intervalId);
-                        // Afficher un message d'erreur ou rediriger vers une page d'erreur
                         document.getElementById('status-message').textContent = "Une erreur est survenue. Veuillez réessayer.";
-                        document.getElementById('retry-button').style.display = "block"; // Affiche le bouton "Relancer"
+                        document.getElementById('spinner').style.display = "none";
+                        document.getElementById('retry-button').style.display = "block";
+                    } else if (data.status === 'processing') {
+                        // Simuler la progression
+                        const progressBar = document.getElementById('progress-bar-fill');
+                        let currentWidth = parseInt(progressBar.style.width) || 0;
+                        progressBar.style.width = Math.min(currentWidth + 10, 100) + '%';
                     }
                 })
                 .catch(error => {
                     console.error('Erreur lors de la vérification du statut :', error);
                     clearInterval(intervalId);
                     document.getElementById('status-message').textContent = "Erreur réseau. Vérifiez votre connexion.";
-                    document.getElementById('retry-button').style.display = "block"; // Affiche le bouton "Relancer"
+                    document.getElementById('spinner').style.display = "none";
+                    document.getElementById('retry-button').style.display = "block";
                 });
         }
 
-        // Lancer la vérification toutes les 2 secondes
+        // Vérifier le statut toutes les 2 secondes
         const intervalId = setInterval(checkStatus, 2000);
     </script>
 </head>

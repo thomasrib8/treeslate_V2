@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, current_app, send_from_directory
 import os
 import threading
+import time
 from .utils import (
     translate_docx_with_deepl,
     improve_translation,
@@ -33,17 +34,11 @@ def index():
 
 @translation_bp.route("/processing")
 def processing():
-    """
-    Affiche la page de traitement.
-    """
     logger.info("Accès à la page de traitement.")
     return render_template("processing.html")
 
 @translation_bp.route("/done")
 def done():
-    """
-    Affiche la page de fin lorsque le traitement est terminé.
-    """
     filename = request.args.get("filename")
     if not filename:
         logger.error("Le nom du fichier n'est pas défini dans la requête.")
@@ -57,16 +52,14 @@ def done():
 
 @translation_bp.route("/check_status")
 def check_status():
-    """
-    Vérifie le statut de la tâche de traduction en cours.
-    Si la tâche est terminée, renvoie l'URL de redirection.
-    """
     if task_status["status"] == "done" and task_status["output_file_name"]:
-        return jsonify({
+        response = jsonify({
             "status": "done",
             "output_file_name": task_status["output_file_name"],
             "redirect_url": url_for("translation.done", filename=task_status["output_file_name"])
         })
+        set_task_status("idle", "Aucune tâche en cours.")
+        return response
     elif task_status["status"] == "error":
         return jsonify({
             "status": "error",
@@ -76,9 +69,6 @@ def check_status():
 
 @translation_bp.route("/process", methods=["POST"])
 def process():
-    """
-    Démarre le traitement en arrière-plan.
-    """
     try:
         input_file = request.files["input_file"]
         input_path = os.path.join(current_app.config["UPLOAD_FOLDER"], input_file.filename)
@@ -96,11 +86,6 @@ def process():
                 glossary_csv_path = convert_excel_to_csv(glossary_csv_path, glossary_csv_path.replace(".xlsx", ".csv"))
                 logger.info(f"Glossaire converti en CSV : {glossary_csv_path}")
 
-            if not os.path.exists(glossary_csv_path):
-                set_task_status("error", f"Fichier glossaire introuvable : {glossary_csv_path}")
-                return redirect(url_for("translation.error"))
-
-        # Récupération des paramètres du formulaire
         form_data = {
             "target_language": request.form["target_language"],
             "source_language": request.form["source_language"],
@@ -112,7 +97,6 @@ def process():
         output_file_name = request.form.get("output_file_name", "improved_output.docx")
         final_output_path = os.path.join(current_app.config["DOWNLOAD_FOLDER"], output_file_name)
 
-        # Capture du contexte d'application Flask
         app = current_app._get_current_object()
 
         def background_task():
@@ -131,8 +115,6 @@ def process():
                             glossary_csv_path
                         )
                         logger.info(f"Glossaire créé avec ID : {glossary_id}")
-
-                    logger.info(f"Langue source : {form_data['source_language']}, Langue cible : {form_data['target_language']}")
 
                     translate_docx_with_deepl(
                         api_key=app.config["DEEPL_API_KEY"],
@@ -154,10 +136,8 @@ def process():
                         model=form_data["gpt_model"],
                     )
 
-                    # Mise à jour du statut avec le bon fichier de sortie
                     set_task_status("done", "Traduction terminée", os.path.basename(final_output_path))
                     logger.info(f"Statut mis à jour à 'done' avec fichier : {os.path.basename(final_output_path)}")
-
                 except Exception as e:
                     set_task_status("error", f"Erreur lors du traitement : {str(e)}")
                     logger.error(f"Erreur dans le traitement : {e}")
@@ -171,21 +151,3 @@ def process():
         logger.error(f"Erreur lors de l'upload du fichier : {str(e)}")
         set_task_status("error", "Erreur lors de l'upload du fichier.")
         return redirect(url_for("translation.error"))
-
-@translation_bp.route("/error")
-def error():
-    """
-    Affiche une page d'erreur en cas de problème.
-    """
-    return render_template("error.html", error_message=task_status.get("message", "Une erreur est survenue."))
-
-@translation_bp.route("/download/<filename>")
-def download_file(filename):
-    """
-    Permet le téléchargement du fichier traduit.
-    """
-    file_path = os.path.join(current_app.config["DOWNLOAD_FOLDER"], filename)
-    if not os.path.exists(file_path):
-        logger.error(f"Fichier de téléchargement introuvable : {filename}")
-        return render_template("error.html", message="Fichier introuvable.")
-    return send_from_directory(current_app.config["DOWNLOAD_FOLDER"], filename, as_attachment=True)

@@ -57,7 +57,7 @@
         <h1>Traduction terminée</h1>
         <p>Votre fichier traduit est prêt à être téléchargé.</p>
 
-        <a href="/downloads/{{ output_file_name }}">Télécharger le fichier traduit</a>
+        <a href="{{ url_for('translation.done', filename=output_file_name) }}">Télécharger le fichier traduit</a>
         
         <div class="button-container">
             <a href="/">Nouvelle traduction</a>

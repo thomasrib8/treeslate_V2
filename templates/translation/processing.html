@@ -102,29 +102,29 @@
 
     <script>
     function checkStatus() {
-        fetch('/translation/check_status')
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'done' && data.output_file_name) {
-                    clearInterval(intervalId);
-                    window.location.href = data.redirect_url;
-                } else if (data.status === 'error') {
-                    clearInterval(intervalId);
-                    document.getElementById('status-message').textContent = "Une erreur est survenue. Veuillez réessayer.";
-                    document.getElementById('spinner').style.display = "none";
-                    document.getElementById('retry-button').style.display = "block";
-                }
-            })
-            .catch(error => {
-                console.error('Erreur lors de la vérification du statut :', error);
-                clearInterval(intervalId);
-                document.getElementById('status-message').textContent = "Erreur réseau. Vérifiez votre connexion.";
-                document.getElementById('spinner').style.display = "none";
-                document.getElementById('retry-button').style.display = "block";
-            });
-    }
+    fetch('/translation/check_status')
+        .then(response => response.json())
+        .then(data => {
+            console.log("Statut reçu : ", data); // Ajout de logs pour le débogage
 
-    const intervalId = setInterval(checkStatus, 2000);
+            if (data.status === 'done' && data.output_file_name && data.output_file_name !== 'undefined') {
+                clearInterval(intervalId);
+                window.location.href = `/translation/done?filename=${data.output_file_name}`;
+            } else if (data.status === 'error') {
+                clearInterval(intervalId);
+                document.getElementById('status-message').textContent = "Une erreur est survenue. Veuillez réessayer.";
+                document.getElementById('retry-button').style.display = "block"; 
+            }
+        })
+        .catch(error => {
+            console.error('Erreur lors de la vérification du statut :', error);
+            clearInterval(intervalId);
+            document.getElementById('status-message').textContent = "Erreur réseau. Vérifiez votre connexion.";
+            document.getElementById('retry-button').style.display = "block"; 
+        });
+}
+
+const intervalId = setInterval(checkStatus, 2000);
 </script>
 </head>
 <body>

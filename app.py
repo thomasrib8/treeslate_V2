@@ -5,6 +5,7 @@ import logging
 from translation_app.utils import translate_docx_with_deepl
 from translation_app.routes import translation_bp
 from calculator_app.routes import calculator_bp
+from datetime import datetime
 from config import DevelopmentConfig
 
 # Initialisation de l'application Flask

@@ -7,6 +7,7 @@ from .utils import (
     create_glossary,
     convert_excel_to_csv,
 )
+from datetime import datetime
 import logging
 
 # Création du Blueprint
@@ -159,3 +160,14 @@ def process():
 def download_file(filename):
     download_folder = current_app.config["DOWNLOAD_FOLDER"]
     return send_from_directory(download_folder, filename, as_attachment=True)
+
+@bp.route('/')
+def main_menu():
+    translated_files = []
+    if os.path.exists(DOWNLOAD_FOLDER):
+        for filename in os.listdir(DOWNLOAD_FOLDER):
+            file_path = os.path.join(DOWNLOAD_FOLDER, filename)
+            created_at = datetime.fromtimestamp(os.path.getctime(file_path)).strftime('%Y-%m-%d %H:%M:%S')
+            translated_files.append({'filename': filename, 'created_at': created_at})
+
+    return render_template('main_menu.html', translated_files=translated_files)

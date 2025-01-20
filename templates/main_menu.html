@@ -85,8 +85,10 @@
             <td>{{ file.filename }}</td>
             <td>{{ file.created_at }}</td>
             <td>
-                 <a href="{{ url_for('translation.download_file', filename=file.filename) }}" class="btn btn-primary">
-            </td>
+    <a href="{{ url_for('translation.download_file', filename=file.filename) }}" class="btn btn-primary">
+        Télécharger
+    </a>
+</td>
         </tr>
         {% endfor %}
     </tbody>

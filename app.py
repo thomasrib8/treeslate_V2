@@ -24,6 +24,7 @@ os.makedirs(app.config["DOWNLOAD_FOLDER"], exist_ok=True)
 # Enregistrer les blueprints
 app.register_blueprint(translation_bp, url_prefix="/translation")
 app.register_blueprint(calculator_bp, url_prefix="/calculator")
+app.register_blueprint(translation_bp, url_prefix="/")
 
 # Dictionnaire pour suivre le statut des tâches
 task_status = {
@@ -68,28 +69,6 @@ def start_translation_process(input_file_path, output_file_path):
         logger.error(f"Erreur dans le traitement : {e}")
     finally:
         app_context.pop()
-
-@app.route("/")
-def main_menu():
-    """
-    Menu principal affichant les fichiers traduits.
-    """
-    try:
-        files = []
-        for filename in os.listdir(app.config["DOWNLOAD_FOLDER"]):
-            filepath = os.path.join(app.config["DOWNLOAD_FOLDER"], filename)
-            if os.path.isfile(filepath):
-                files.append({
-                    "name": filename,
-                    "path": filepath,
-                    "creation_date": os.path.getctime(filepath),
-                })
-        files.sort(key=lambda x: x["creation_date"], reverse=True)
-    except Exception as e:
-        files = []
-        logger.error(f"Erreur lors du chargement des fichiers : {e}")
-
-    return render_template("main_menu.html", files=files)
 
 @app.route("/upload", methods=["POST"])
 def upload_file():

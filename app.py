@@ -1,8 +1,11 @@
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, current_app, send_from_directory
 import os
+import sys
 import threading
 import logging
 from translation_app.utils import translate_docx_with_deepl
+from translation_app.routes import translation_bp
+from calculator_app.routes import calculator_bp
 
 # Création du Blueprint
 translation_bp = Blueprint("translation", __name__, template_folder="../templates/translation")

@@ -57,6 +57,11 @@ def done():
 
 @translation_bp.route("/check_status")
 def check_status():
+    if task_status["status"] == "done":
+        return jsonify({
+            "status": "done",
+            "redirect_url": url_for("translation.done", filename=task_status["output_file_name"])
+        })
     return jsonify(task_status)
 
 @translation_bp.route("/process", methods=["POST"])

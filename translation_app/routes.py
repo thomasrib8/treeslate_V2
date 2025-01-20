@@ -27,7 +27,7 @@ def set_task_status(status, message, output_file_name=None):
         "output_file_name": output_file_name,
     })
 
-@translation_bp.route("/")
+@translation_bp.route("/translation")
 def index():
     logger.info("Affichage de la page d'accueil de la traduction.")
     return render_template("index.html")
@@ -160,21 +160,4 @@ def process():
 def download_file(filename):
     download_folder = current_app.config["DOWNLOAD_FOLDER"]
     return send_from_directory(download_folder, filename, as_attachment=True)
-
-@translation_bp.route('/main_menu')
-def main_menu():
-    download_folder = current_app.config["DOWNLOAD_FOLDER"]
-    translated_files = []
-
-    if os.path.exists(download_folder):
-        for filename in os.listdir(download_folder):
-            file_path = os.path.join(download_folder, filename)
-            created_at = datetime.fromtimestamp(os.path.getctime(file_path)).strftime('%Y-%m-%d %H:%M:%S')
-            translated_files.append({
-                'filename': filename,
-                'created_at': created_at,
-                'download_url': url_for('translation.download_file', filename=filename)
-            })
-
-    return render_template('main_menu.html', translated_files=translated_files)
 

@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, jsonif
 import os
 import threading
 import logging
-from .utils import translate_docx_with_deepl
+from utils import translate_docx_with_deepl
 
 # Création du Blueprint
 translation_bp = Blueprint("translation", __name__, template_folder="../templates/translation")

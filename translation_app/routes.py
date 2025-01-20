@@ -51,7 +51,7 @@ def done():
     filename = request.args.get("filename", "improved_output.docx")
     file_path = os.path.join(current_app.config["DOWNLOAD_FOLDER"], filename)
     if not os.path.exists(file_path):
-        logger.error("Le fichier traduit est introuvable.")
+        logger.error(f"Le fichier traduit {filename} est introuvable.")
         return render_template("error.html", message="Le fichier traduit est introuvable.")
     return send_from_directory(current_app.config["DOWNLOAD_FOLDER"], filename, as_attachment=True)
 
@@ -67,14 +67,22 @@ def process():
     input_file = request.files["input_file"]
     input_path = os.path.join(current_app.config["UPLOAD_FOLDER"], input_file.filename)
     input_file.save(input_path)
+    logger.info(f"Fichier source enregistré à : {input_path}")
 
     glossary_csv = request.files.get("glossary_csv")
     glossary_csv_path = None
     if glossary_csv:
         glossary_csv_path = os.path.join(current_app.config["UPLOAD_FOLDER"], glossary_csv.filename)
         glossary_csv.save(glossary_csv_path)
+        logger.info(f"Glossaire enregistré à : {glossary_csv_path}")
+
         if glossary_csv_path.endswith(".xlsx"):
             glossary_csv_path = convert_excel_to_csv(glossary_csv_path, glossary_csv_path.replace(".xlsx", ".csv"))
+            logger.info(f"Glossaire converti en CSV : {glossary_csv_path}")
+
+        if not os.path.exists(glossary_csv_path):
+            set_task_status("error", f"Fichier glossaire introuvable : {glossary_csv_path}")
+            return redirect(url_for("translation.error"))
 
     # Récupération des paramètres en dehors du thread
     form_data = {
@@ -100,12 +108,12 @@ def process():
                 glossary_id = None
                 if glossary_csv_path:
                     glossary_id = create_glossary(
-                        api_key=app.config["DEEPL_API_KEY"],
-                        source_lang=form_data["source_language"],
-                        target_lang=form_data["target_language"],
-                        glossary_path=glossary_csv_path,
-                        name="custom_glossary"
-)
+                        app.config["DEEPL_API_KEY"],
+                        "Glossary_" + form_data["source_language"] + "_to_" + form_data["target_language"],
+                        form_data["source_language"],
+                        form_data["target_language"],
+                        glossary_csv_path
+                    )
 
                 translate_docx_with_deepl(
                     api_key=app.config["DEEPL_API_KEY"],

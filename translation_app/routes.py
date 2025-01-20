@@ -86,6 +86,11 @@ def process():
                 glossary_csv_path = convert_excel_to_csv(glossary_csv_path, glossary_csv_path.replace(".xlsx", ".csv"))
                 logger.info(f"Glossaire converti en CSV : {glossary_csv_path}")
 
+            if not os.path.exists(glossary_csv_path):
+                set_task_status("error", f"Fichier glossaire introuvable : {glossary_csv_path}")
+                return redirect(url_for("translation.error"))
+
+        # Récupération des paramètres du formulaire
         form_data = {
             "target_language": request.form["target_language"],
             "source_language": request.form["source_language"],
@@ -97,7 +102,19 @@ def process():
         output_file_name = request.form.get("output_file_name", "improved_output.docx")
         final_output_path = os.path.join(current_app.config["DOWNLOAD_FOLDER"], output_file_name)
 
+        # Capture du contexte d'application Flask
         app = current_app._get_current_object()
+
+        thread = threading.Thread(target=background_task)
+        thread.start()
+
+        return redirect(url_for("translation.processing"))
+
+    except Exception as e:
+        logger.error(f"Erreur lors de l'upload du fichier : {str(e)}")
+        set_task_status("error", "Erreur lors de l'upload du fichier.")
+        return redirect(url_for("translation.error"))
+
 
         def background_task():
     with app.app_context():

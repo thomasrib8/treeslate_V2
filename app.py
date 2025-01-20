@@ -129,3 +129,16 @@ def download_file(filename):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=app.config.get("DEBUG", False), host="0.0.0.0", port=port)
+
+@app.route('/')
+def main_menu():
+    translated_files = []
+    download_folder = current_app.config.get("DOWNLOAD_FOLDER")
+
+    if os.path.exists(download_folder):
+        for filename in os.listdir(download_folder):
+            file_path = os.path.join(download_folder, filename)
+            created_at = datetime.fromtimestamp(os.path.getctime(file_path)).strftime('%Y-%m-%d %H:%M:%S')
+            translated_files.append({'filename': filename, 'created_at': created_at})
+
+    return render_template('main_menu.html', translated_files=translated_files)

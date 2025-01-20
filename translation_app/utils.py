@@ -10,7 +10,7 @@ import openai
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-def create_glossary(api_key, name, source_lang, target_lang, glossary_path):
+def create_glossary(api_key, source_lang, target_lang, glossary_path, name):
     api_url = "https://api.deepl.com/v2/glossaries"
     with open(glossary_path, "r") as glossary_file:
         glossary_content = glossary_file.read()

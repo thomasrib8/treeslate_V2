@@ -100,12 +100,12 @@ def process():
                 glossary_id = None
                 if glossary_csv_path:
                     glossary_id = create_glossary(
-                        app.config["DEEPL_API_KEY"], 
-                        form_data["source_language"], 
-                        form_data["target_language"], 
-                        glossary_csv_path,
-                        name="custom_glossary"  # Ajout de l'argument 'name'
-                )
+                        api_key=app.config["DEEPL_API_KEY"],
+                        source_lang=form_data["source_language"],
+                        target_lang=form_data["target_language"],
+                        glossary_path=glossary_csv_path,
+                        name="custom_glossary"
+)
 
                 translate_docx_with_deepl(
                     api_key=app.config["DEEPL_API_KEY"],

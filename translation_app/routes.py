@@ -76,6 +76,15 @@ def process():
         if glossary_csv_path.endswith(".xlsx"):
             glossary_csv_path = convert_excel_to_csv(glossary_csv_path, glossary_csv_path.replace(".xlsx", ".csv"))
 
+    # Récupération des paramètres en dehors du thread
+    form_data = {
+        "target_language": request.form["target_language"],
+        "source_language": request.form["source_language"],
+        "language_level": request.form["language_level"],
+        "group_size": int(request.form["group_size"]),
+        "gpt_model": request.form["gpt_model"],
+    }
+
     output_file_name = request.form.get("output_file_name", "improved_output.docx")
     final_output_path = os.path.join(current_app.config["DOWNLOAD_FOLDER"], output_file_name)
 
@@ -88,24 +97,28 @@ def process():
                 set_task_status("processing", "Traduction en cours...")
                 logger.info("Début du processus de traduction.")
 
+                glossary_id = None
+                if glossary_csv_path:
+                    glossary_id = create_glossary(app.config["DEEPL_API_KEY"], glossary_csv_path)
+
                 translate_docx_with_deepl(
                     api_key=app.config["DEEPL_API_KEY"],
                     input_file_path=input_path,
                     output_file_path=final_output_path,
-                    target_language=request.form["target_language"],
-                    source_language=request.form["source_language"],
-                    glossary_id=create_glossary(app.config["DEEPL_API_KEY"], glossary_csv_path) if glossary_csv_path else None,
+                    target_language=form_data["target_language"],
+                    source_language=form_data["source_language"],
+                    glossary_id=glossary_id,
                 )
 
                 improve_translation(
                     input_file=final_output_path,
                     glossary_path=glossary_csv_path,
                     output_file=final_output_path,
-                    language_level=request.form["language_level"],
-                    source_language=request.form["source_language"],
-                    target_language=request.form["target_language"],
-                    group_size=int(request.form["group_size"]),
-                    model=request.form["gpt_model"],
+                    language_level=form_data["language_level"],
+                    source_language=form_data["source_language"],
+                    target_language=form_data["target_language"],
+                    group_size=form_data["group_size"],
+                    model=form_data["gpt_model"],
                 )
 
                 set_task_status("done", "Traduction terminée", output_file_name)

@@ -79,38 +79,43 @@ def process():
     output_file_name = request.form.get("output_file_name", "improved_output.docx")
     final_output_path = os.path.join(current_app.config["DOWNLOAD_FOLDER"], output_file_name)
 
-    def background_task():
-        try:
-            set_task_status("processing", "Traduction en cours...")
-            logger.info("Début du processus de traduction.")
+    def background_task(app_context):
+        with app_context:
+            try:
+                set_task_status("processing", "Traduction en cours...")
+                logger.info("Début du processus de traduction.")
 
-            translate_docx_with_deepl(
-                api_key=current_app.config["DEEPL_API_KEY"],
-                input_file_path=input_path,
-                output_file_path=final_output_path,
-                target_language=request.form["target_language"],
-                source_language=request.form["source_language"],
-                glossary_id=create_glossary(current_app.config["DEEPL_API_KEY"], glossary_csv_path) if glossary_csv_path else None,
-            )
+                translate_docx_with_deepl(
+                    api_key=current_app.config["DEEPL_API_KEY"],
+                    input_file_path=input_path,
+                    output_file_path=final_output_path,
+                    target_language=request.form["target_language"],
+                    source_language=request.form["source_language"],
+                    glossary_id=create_glossary(current_app.config["DEEPL_API_KEY"], glossary_csv_path) if glossary_csv_path else None,
+                )
 
-            improve_translation(
-                input_file=final_output_path,
-                glossary_path=glossary_csv_path,
-                output_file=final_output_path,
-                language_level=request.form["language_level"],
-                source_language=request.form["source_language"],
-                target_language=request.form["target_language"],
-                group_size=int(request.form["group_size"]),
-                model=request.form["gpt_model"],
-            )
+                improve_translation(
+                    input_file=final_output_path,
+                    glossary_path=glossary_csv_path,
+                    output_file=final_output_path,
+                    language_level=request.form["language_level"],
+                    source_language=request.form["source_language"],
+                    target_language=request.form["target_language"],
+                    group_size=int(request.form["group_size"]),
+                    model=request.form["gpt_model"],
+                )
 
-            set_task_status("done", "Traduction terminée", output_file_name)
-            logger.info("Traduction terminée avec succès.")
-        except Exception as e:
-            set_task_status("error", f"Erreur lors du traitement : {str(e)}")
-            logger.error(f"Erreur dans le traitement : {e}")
+                set_task_status("done", "Traduction terminée", output_file_name)
+                logger.info("Traduction terminée avec succès.")
+            except Exception as e:
+                set_task_status("error", f"Erreur lors du traitement : {str(e)}")
+                logger.error(f"Erreur dans le traitement : {e}")
 
-    threading.Thread(target=background_task).start()
+    # Obtenir le contexte de l'application et lancer le thread avec le bon contexte
+    app_context = current_app.app_context()
+    thread = threading.Thread(target=background_task, args=(app_context,))
+    thread.start()
+
     return redirect(url_for("translation.processing"))
 
 @translation_bp.route("/error")

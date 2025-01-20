@@ -44,14 +44,14 @@ def set_task_status(status, message, output_file_name=None):
 def start_translation_process(input_file_path, output_file_path):
     """
     Fonction de traitement en arrière-plan pour la traduction.
+    Utilisation correcte du contexte Flask.
     """
-    with app.app_context():
+    with current_app.app_context():
         try:
             set_task_status("processing", "Traduction en cours...")
 
-            # Simulation du processus de traduction
             translate_docx_with_deepl(
-                api_key=app.config["DEEPL_API_KEY"],
+                api_key=current_app.config["DEEPL_API_KEY"],
                 input_file_path=input_file_path,
                 output_file_path=output_file_path,
                 target_language="EN"
@@ -62,6 +62,7 @@ def start_translation_process(input_file_path, output_file_path):
         except Exception as e:
             set_task_status("error", f"Erreur lors du traitement : {str(e)}")
             logger.error(f"Erreur dans le traitement : {e}")
+
 
 @app.route("/")
 def main_menu():

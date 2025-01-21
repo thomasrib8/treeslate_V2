@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, send_from_directory, current_app
+from flask_httpauth import HTTPBasicAuth
 import os
 import threading
 import logging
@@ -10,6 +11,13 @@ from config import DevelopmentConfig
 
 # Initialisation de l'application Flask
 app = Flask(__name__)
+auth = HTTPBasicAuth()
+
+# Exemple d'utilisateurs autorisés
+users = {
+    "admin": "Roue2021*",
+    "user": "Roue2021*"
+}
 
 # Charger la configuration depuis config.py
 app.config.from_object(DevelopmentConfig)
@@ -70,7 +78,29 @@ def start_translation_process(input_file_path, output_file_path):
     finally:
         app_context.pop()
 
+# Fonction d'authentification
+@auth.verify_password
+def verify_password(username, password):
+    if username in users and users[username] == password:
+        return username
+    return None
+
+@app.route('/')
+@auth.login_required
+def main_menu():
+    translated_files = []
+    download_folder = current_app.config.get("DOWNLOAD_FOLDER")
+
+    if os.path.exists(download_folder):
+        for filename in os.listdir(download_folder):
+            file_path = os.path.join(download_folder, filename)
+            created_at = datetime.fromtimestamp(os.path.getctime(file_path)).strftime('%Y-%m-%d %H:%M:%S')
+            translated_files.append({'filename': filename, 'created_at': created_at})
+
+    return render_template('main_menu.html', translated_files=translated_files)
+
 @app.route("/upload", methods=["POST"])
+@auth.login_required
 def upload_file():
     """
     Endpoint pour téléverser un fichier et lancer la traduction.
@@ -95,6 +125,7 @@ def upload_file():
     return redirect(url_for("check_status"))
 
 @app.route("/check_status")
+@auth.login_required
 def check_status():
     """
     Retourne le statut actuel de la tâche.
@@ -102,6 +133,7 @@ def check_status():
     return jsonify(task_status)
 
 @app.route("/set_status/<string:status>", methods=["POST"])
+@auth.login_required
 def set_status(status):
     """
     Met à jour le statut global de la tâche.
@@ -117,6 +149,7 @@ def set_status(status):
     return jsonify({"message": "Statut invalide."}), 400
 
 @app.route("/download/<filename>")
+@auth.login_required
 def download_file(filename):
     """
     Permet de télécharger un fichier traduit.
@@ -130,16 +163,3 @@ def download_file(filename):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=app.config.get("DEBUG", False), host="0.0.0.0", port=port)
-
-@app.route('/')
-def main_menu():
-    translated_files = []
-    download_folder = current_app.config.get("DOWNLOAD_FOLDER")
-
-    if os.path.exists(download_folder):
-        for filename in os.listdir(download_folder):
-            file_path = os.path.join(download_folder, filename)
-            created_at = datetime.fromtimestamp(os.path.getctime(file_path)).strftime('%Y-%m-%d %H:%M:%S')
-            translated_files.append({'filename': filename, 'created_at': created_at})
-
-    return render_template('main_menu.html', translated_files=translated_files)

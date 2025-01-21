@@ -18,8 +18,10 @@
         <p><strong>Total Cost:</strong> ${{ total_cost }}</p>
         
         <a href="/home" class="button">Back</a>
-        <a href="/logout" class="button">Logout</a>
-        <a href="https://three-monkeys-traduction.onrender.com" target="_blank" class="button">Translate</a>
+        <!-- Modification ici : remplace 'Logout' par 'Menu Principal' -->
+        <a href="{{ url_for('translation.index') }}" class="button">Menu Principal</a>
+        <!-- Modification ici : ajustement du lien vers la page de traduction -->
+        <a href="{{ url_for('translation.index') }}" class="button">Translate</a>
     </div>
 </body>
 </html>

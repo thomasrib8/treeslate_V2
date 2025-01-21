@@ -16,7 +16,9 @@ auth = HTTPBasicAuth()
 # Exemple d'utilisateurs autorisés
 users = {
     "admin": "Roue2021*",
-    "user": "Roue2021*"
+    "thomas": "Roue2021*",
+    "florian": "Roue2021*",
+    "victor": "Roue2021*"
 }
 
 # Charger la configuration depuis config.py

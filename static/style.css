@@ -26,11 +26,12 @@ body {
 .logo-container {
     display: flex;
     justify-content: center;
-    margin-bottom: 20px;
+    align-items: center;
+    margin-bottom: 15px;
 }
 
 .logo-container img {
-    width: 150px; /* Ajuste la taille du logo */
+    width: 50px;  /* Taille réduite du logo */
     height: auto;
 }
 

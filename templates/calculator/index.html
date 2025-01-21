@@ -8,15 +8,15 @@
 </head>
 <body>
     <div class="container">
-        <h1>Calculette traduction 3 Monkeys</h1>
+        <h1>Calcule du coût de traduction</h1>
         <form action="/" method="get">
-    <a href="{{ url_for('translation.index') }}" class="button">Menu Principal</a>
+    <a href="{{ url_for('main_menu') }}" class="button">Menu Principal</a>
 </form>
         <form method="post" enctype="multipart/form-data">
-            <label for="file">Upload a .docx file:</label>
+            <label for="file">Téléverser un document word (.docx):</label>
             <input type="file" id="file" name="file" required>
             
-            <label for="group_size">Choose Group Size:</label>
+            <label for="group_size">Choisir le nombre de paragraphes traités en groupe par l'application:</label>
             <select id="group_size" name="group_size" required>
                 <option value="1">1</option>
                 <option value="2">2</option>
@@ -30,14 +30,14 @@
                 <option value="10">10</option>
             </select>
             
-            <label for="reviewer">Choose Reviewer:</label>
+            <label for="reviewer">Choisir le(s) relecteur(s):</label>
             <select id="reviewer" name="reviewer" required>
                 <option value="TOBY">TOBY</option>
                 <option value="TOBY+MIKE">TOBY+MIKE</option>
                 <option value="MIKE">MIKE</option>
             </select>
             
-            <button type="submit" class="button">Calculate</button>
+            <button type="submit" class="button">Calculer le coût de traduction</button>
         </form>
     </div>
 </body>

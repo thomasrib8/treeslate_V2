@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Results</title>
+    <title>Resultats</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
-        <h1>Translation Results</h1>
-        <p><strong>Words:</strong> {{ words }}</p>
-        <p><strong>Characters:</strong> {{ characters }}</p>
-        <p><strong>Paragraphs:</strong> {{ paragraphs }}</p>
-        <p><strong>Translation Time:</strong> {{ translation_time }}</p>
-        <p><strong>Translation Cost:</strong> ${{ translation_cost }}</p>
-        <p><strong>Review Cost:</strong> ${{ review_cost }}</p>
-        <p><strong>Total Cost:</strong> ${{ total_cost }}</p>
+        <h1>Coût de traduction</h1>
+        <p><strong>Nombre de mots:</strong> {{ words }}</p>
+        <p><strong>Nombre de caractères:</strong> {{ characters }}</p>
+        <p><strong>Nombre de paragraphes:</strong> {{ paragraphs }}</p>
+        <p><strong>Temps estimé de traduction:</strong> {{ translation_time }}</p>
+        <p><strong>Coût estimé de traduction:</strong> ${{ translation_cost }}</p>
+        <p><strong>Coût estimé de relecture:</strong> ${{ review_cost }}</p>
+        <p><strong>Total estimé du coût de traduction:</strong> ${{ total_cost }}</p>
         
         <!-- Modification ici : remplace 'Logout' par 'Menu Principal' -->
         <a href="{{ url_for('main_menu') }}" class="button">Menu Principal</a>

@@ -103,6 +103,22 @@ form {
     margin-bottom: 20px;
 }
 
+.menu-button {
+    background: #8ed3a2;
+    color: #000000;
+    border: none;
+    padding: 12px 20px;
+    font-size: 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.3s ease;
+}
+
+.menu-button:hover {
+    background: #77b98c;
+}
+
 .button-container {
     margin-top: 20px;
     text-align: center;

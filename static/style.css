@@ -22,17 +22,20 @@ body {
     text-align: center;
 }
 
-/* Logo styling */
+/* Assurer le centrage horizontal et vertical */
 .logo-container {
     display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 15px;
+    justify-content: center;  /* Centre horizontalement */
+    align-items: center;      /* Centre verticalement si nécessaire */
+    margin-bottom: 20px;
 }
 
+/* Ajustement de la taille du logo */
 .logo-container img {
-    width: 50px;  /* Taille réduite du logo */
+    max-width: 120px;  /* Réduction de la taille */
+    width: 100%;
     height: auto;
+    display: block;
 }
 
 /* Titles and labels */

@@ -22,6 +22,18 @@ body {
     text-align: center;
 }
 
+/* Logo styling */
+.logo-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.logo-container img {
+    width: 150px; /* Ajuste la taille du logo */
+    height: auto;
+}
+
 /* Titles and labels */
 h1 {
     color: #333;

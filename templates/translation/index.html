@@ -5,67 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <title>TRADUCTION DU FICHIER</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #8ed3a2;
-            color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .container {
-            background: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 20px 40px;
-            max-width: 600px;
-            width: 100%;
-        }
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 20px;
-            font-size: 28px;
-        }
-        label {
-            display: block;
-            font-size: 14px;
-            margin: 10px 0 5px;
-            text-align: left;
-        }
-        input[type="file"],
-        select,
-        input[type="text"],
-        input[type="number"] {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        .button-container {
-            text-align: center;
-            margin-top: 20px;
-        }
-        button {
-            background: #000000;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            font-size: 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-        button:hover {
-            background: #333333;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -77,14 +16,24 @@
             <input type="file" id="input_file" name="input_file" required>
 
             <!-- Glossaire DeepL -->
-            <p class="info-text">Optionnel : Glossaire personnalisé pour DeepL</p>
-            <label for="glossary_csv">Glossaire pour DeepL (.xlsx ou .csv) :</label>
-            <input type="file" id="glossary_csv" name="glossary_csv">
+            <p class="info-text">Sélectionnez un glossaire pour DeepL</p>
+            <label for="deepl_glossary">Glossaire Deepl :</label>
+            <select id="deepl_glossary" name="deepl_glossary">
+                <option value="" disabled selected>Choisir un glossaire</option>
+                {% for glossary in deepl_glossaries %}
+                <option value="{{ glossary }}">{{ glossary }}</option>
+                {% endfor %}
+            </select>
 
             <!-- Glossaire ChatGPT -->
-            <p class="info-text">Optionnel : Glossaire personnalisé pour ChatGPT</p>
-            <label for="glossary_gpt">Glossaire pour ChatGPT (.docx) :</label>
-            <input type="file" id="glossary_gpt" name="glossary_gpt">
+            <p class="info-text">Sélectionnez un glossaire pour ChatGPT</p>
+            <label for="gpt_glossary">Glossaire ChatGPT :</label>
+            <select id="gpt_glossary" name="gpt_glossary">
+                <option value="" disabled selected>Choisir un glossaire</option>
+                {% for glossary in gpt_glossaries %}
+                <option value="{{ glossary }}">{{ glossary }}</option>
+                {% endfor %}
+            </select>
 
             <!-- Langue source -->
             <label for="source_language">Langue source :</label>
@@ -124,7 +73,7 @@
 
             <!-- Niveau de langue -->
             <label for="language_level">Niveau de langue :</label>
-            <select id="language_level" name="language_level" onchange="updateLevelLabel('language_level', 'language_level_label')" required>
+            <select id="language_level" name="language_level" required>
                 <option value="" disabled selected>Choisir un niveau</option>
                 <option value="soutenu">Soutenu</option>
                 <option value="normal">Normal</option>
@@ -137,8 +86,7 @@
                 <option value="créatif">Créatif</option>
                 <option value="humoristique">Humoristique</option>
             </select>
-            <div id="language_level_label">Sélectionnez un niveau pour voir la description.</div>
-            
+
             <!-- Nom du fichier de sortie -->
             <label for="output_file_name">Nom du fichier de sortie (avec l'extension .docx) : </label>
             <input type="text" id="output_file_name" name="output_file_name" placeholder="improved_output.docx">
@@ -153,18 +101,22 @@
                 <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
                 <option value="gpt-4">GPT-4</option>
             </select>
+
             <p style="font-size: 10px; font-style: italic;">
-                La principale différence entre ChatGPT 3.5 Turbo et ChatGPT 4 réside dans leurs capacités : le modèle 4 est plus avancé, offrant une meilleure compréhension contextuelle, une précision accrue et des réponses plus nuancées, tandis que le modèle 3.5 Turbo est plus rapide et moins coûteux, idéal pour des cas d'utilisation nécessitant des performances efficaces.
+                La principale différence entre ChatGPT 3.5 Turbo et ChatGPT 4 réside dans leurs capacités :
+                le modèle 4 est plus avancé, offrant une meilleure compréhension contextuelle, une précision accrue 
+                et des réponses plus nuancées, tandis que le modèle 3.5 Turbo est plus rapide et moins coûteux, 
+                idéal pour des cas d'utilisation nécessitant des performances efficaces.
             </p>
-            
+
             <div class="button-container">
-    <button type="submit">Lancer la traduction</button>
-    <a href="{{ url_for('main_menu') }}" class="menu-button">Menu Principal</a>
-</div>
+                <button type="submit">Lancer la traduction</button>
+                <a href="{{ url_for('main_menu') }}" class="menu-button">Menu Principal</a>
+            </div>
         </form>
     </div>
 
-     <!-- Script JavaScript -->
+    <!-- Script JavaScript -->
     <script>
         function updateLevelLabel(selectId, labelId) {
             const levelDescriptions = {
@@ -183,7 +135,6 @@
             const selectedValue = document.getElementById(selectId).value;
             const label = document.getElementById(labelId);
 
-            // Mettre à jour le contenu avec la description ou un message par défaut
             label.innerText = levelDescriptions[selectedValue] || "Sélectionnez un niveau pour voir la description.";
         }
     </script>

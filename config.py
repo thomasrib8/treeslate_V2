@@ -15,12 +15,26 @@ class Config:
     BASE_DIR = os.getcwd()
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
     DOWNLOAD_FOLDER = os.path.join(BASE_DIR, "downloads")
+    GLOSSARY_FOLDER = os.path.join(BASE_DIR, "glossaries")  # Nouveau dossier pour les glossaires
+
+    # Création des dossiers si non existants
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
+    os.makedirs(GLOSSARY_FOLDER, exist_ok=True)
 
     # Configuration des sessions
     SESSION_TYPE = "filesystem"
     SESSION_FILE_DIR = os.path.join(BASE_DIR, ".flask_session")
     SESSION_PERMANENT = False
     SESSION_USE_SIGNER = True
+
+    # Configuration Flask-HTTPAuth
+    USERS = {
+        "admin": os.environ.get('ADMIN_PASSWORD', 'Roue2021*'),
+        "user": os.environ.get('USER_PASSWORD', 'Roue2021*'),
+        "editor": os.environ.get('EDITOR_PASSWORD', 'Roue2021*'),
+        "viewer": os.environ.get('VIEWER_PASSWORD', 'Roue2021*')
+    }
 
 class DevelopmentConfig(Config):
     """

@@ -15,25 +15,32 @@
             <label for="input_file">Fichier principal (.docx) :</label>
             <input type="file" id="input_file" name="input_file" required>
 
-            <!-- Glossaire DeepL -->
-            <p class="info-text">Sélectionnez un glossaire pour DeepL</p>
-            <label for="deepl_glossary">Glossaire Deepl :</label>
+            <!-- Liste déroulante pour les glossaires Deepl -->
+            <label for="deepl_glossary">Sélectionner un glossaire DeepL :</label>
             <select id="deepl_glossary" name="deepl_glossary">
-                <option value="" disabled selected>Choisir un glossaire</option>
+                <option value="" selected>Aucun</option>
                 {% for glossary in deepl_glossaries %}
-                <option value="{{ glossary }}">{{ glossary }}</option>
+                    <option value="{{ glossary }}">{{ glossary }}</option>
                 {% endfor %}
             </select>
-
-            <!-- Glossaire ChatGPT -->
-            <p class="info-text">Sélectionnez un glossaire pour ChatGPT</p>
-            <label for="gpt_glossary">Glossaire ChatGPT :</label>
+            
+            <!-- Liste déroulante pour les glossaires GPT -->
+            <label for="gpt_glossary">Sélectionner un glossaire ChatGPT :</label>
             <select id="gpt_glossary" name="gpt_glossary">
-                <option value="" disabled selected>Choisir un glossaire</option>
+                <option value="" selected>Aucun</option>
                 {% for glossary in gpt_glossaries %}
-                <option value="{{ glossary }}">{{ glossary }}</option>
+                    <option value="{{ glossary }}">{{ glossary }}</option>
                 {% endfor %}
             </select>
+            
+            <!-- Message Flash pour le feedback -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
 
             <!-- Langue source -->
             <label for="source_language">Langue source :</label>

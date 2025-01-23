@@ -32,8 +32,17 @@ def index():
     logger.info("Affichage de la page d'accueil de la traduction.")
     
     # Récupérer les glossaires disponibles
-    deepl_glossaries = os.listdir(current_app.config["DEEPL_GLOSSARY_FOLDER"])
-    gpt_glossaries = os.listdir(current_app.config["GPT_GLOSSARY_FOLDER"])
+    deepl_glossary_folder = current_app.config.get("DEEPL_GLOSSARY_FOLDER")
+    gpt_glossary_folder = current_app.config.get("GPT_GLOSSARY_FOLDER")
+
+    deepl_glossaries = []
+    gpt_glossaries = []
+
+    if deepl_glossary_folder and os.path.exists(deepl_glossary_folder):
+        deepl_glossaries = os.listdir(deepl_glossary_folder)
+
+    if gpt_glossary_folder and os.path.exists(gpt_glossary_folder):
+        gpt_glossaries = os.listdir(gpt_glossary_folder)
 
     return render_template(
         "index.html",
@@ -48,8 +57,10 @@ def upload_glossary():
         glossary_type = request.form.get("glossary_type")
 
         if glossary_file and glossary_type in ["deepl", "chatgpt"]:
-            save_folder = current_app.config["DEEPL_GLOSSARY_FOLDER"] if glossary_type == "deepl" else current_app.config["CHATGPT_GLOSSARY_FOLDER"]
-            glossary_file.save(os.path.join(save_folder, glossary_file.filename))
+            save_folder = current_app.config["DEEPL_GLOSSARY_FOLDER"] if glossary_type == "deepl" else current_app.config["GPT_GLOSSARY_FOLDER"]
+            file_path = os.path.join(save_folder, glossary_file.filename)
+            glossary_file.save(file_path)
+            logger.info(f"Glossaire {glossary_file.filename} sauvegardé dans {save_folder}")
             return redirect(url_for('translation.main_menu'))
     
     return render_template("upload_glossary.html")

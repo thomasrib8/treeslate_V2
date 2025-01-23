@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 os.makedirs(app.config["DOWNLOAD_FOLDER"], exist_ok=True)
 os.makedirs(app.config["DEEPL_GLOSSARY_FOLDER"], exist_ok=True)
-os.makedirs(app.config["CHATGPT_GLOSSARY_FOLDER"], exist_ok=True)
+os.makedirs(app.config["GPT_GLOSSARY_FOLDER"], exist_ok=True)
 
 # Enregistrer les blueprints
 app.register_blueprint(translation_bp, url_prefix="/translation")

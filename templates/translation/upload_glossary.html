@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Uploader un Glossaire</title>
+</head>
+<body>
+    <div class="container">
+        <h1>Uploader un Glossaire</h1>
+
+        <form action="{{ url_for('translation.upload_glossary') }}" method="post" enctype="multipart/form-data">
+            <!-- Upload Glossaire Deepl -->
+            <h2>Glossaire DeepL</h2>
+            <label for="deepl_glossary">Sélectionnez un fichier (.xlsx ou .csv) :</label>
+            <input type="file" id="deepl_glossary" name="deepl_glossary" accept=".csv, .xlsx" required>
+            
+            <!-- Upload Glossaire ChatGPT -->
+            <h2>Glossaire ChatGPT</h2>
+            <label for="gpt_glossary">Sélectionnez un fichier (.docx) :</label>
+            <input type="file" id="gpt_glossary" name="gpt_glossary" accept=".docx" required>
+            
+            <!-- Boutons -->
+            <div class="button-container">
+                <button type="submit">Uploader</button>
+                <a href="{{ url_for('main_menu') }}" class="menu-button">Menu Principal</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

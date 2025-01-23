@@ -16,6 +16,8 @@ class Config:
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
     DOWNLOAD_FOLDER = os.path.join(BASE_DIR, "downloads")
     GLOSSARY_FOLDER = os.path.join(BASE_DIR, "glossaries")  # Nouveau dossier pour les glossaires
+    DEEPL_GLOSSARY_FOLDER = os.path.join(GLOSSARY_FOLDER, "deepl")
+    CHATGPT_GLOSSARY_FOLDER = os.path.join(GLOSSARY_FOLDER, "chatgpt")
 
     # Création des dossiers si non existants
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)

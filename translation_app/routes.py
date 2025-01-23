@@ -31,24 +31,30 @@ def set_task_status(status, message, output_file_name=None):
 def index():
     logger.info("Affichage de la page d'accueil de la traduction.")
     
-    # Récupérer les glossaires disponibles
-    deepl_glossary_folder = current_app.config.get("DEEPL_GLOSSARY_FOLDER")
-    gpt_glossary_folder = current_app.config.get("GPT_GLOSSARY_FOLDER")
+      # Vérifier l'existence des dossiers et les créer si nécessaires
+        if not os.path.exists(current_app.config["DEEPL_GLOSSARY_FOLDER"]):
+            os.makedirs(current_app.config["DEEPL_GLOSSARY_FOLDER"])
+        if not os.path.exists(current_app.config["GPT_GLOSSARY_FOLDER"]):
+            os.makedirs(current_app.config["GPT_GLOSSARY_FOLDER"])
 
-    deepl_glossaries = []
-    gpt_glossaries = []
+        # Récupérer les glossaires disponibles
+        deepl_glossaries = os.listdir(current_app.config["DEEPL_GLOSSARY_FOLDER"])
+        gpt_glossaries = os.listdir(current_app.config["GPT_GLOSSARY_FOLDER"])
 
-    if deepl_glossary_folder and os.path.exists(deepl_glossary_folder):
-        deepl_glossaries = os.listdir(deepl_glossary_folder)
+        logger.info(f"Glossaires Deepl trouvés: {deepl_glossaries}")
+        logger.info(f"Glossaires GPT trouvés: {gpt_glossaries}")
 
-    if gpt_glossary_folder and os.path.exists(gpt_glossary_folder):
-        gpt_glossaries = os.listdir(gpt_glossary_folder)
-
-    return render_template(
-        "index.html",
-        deepl_glossaries=deepl_glossaries,
-        gpt_glossaries=gpt_glossaries
-    )
+        return render_template(
+            "index.html",
+            deepl_glossaries=deepl_glossaries,
+            gpt_glossaries=gpt_glossaries
+        )
+    except KeyError as e:
+        logger.error(f"Erreur de configuration: {e}")
+        return "Erreur de configuration. Vérifiez les variables de configuration.", 500
+    except Exception as e:
+        logger.error(f"Erreur inattendue: {e}")
+        return "Erreur interne du serveur", 500
 
 @translation_bp.route("/upload_glossary", methods=["GET", "POST"])
 def upload_glossary():
@@ -58,11 +64,17 @@ def upload_glossary():
 
         if glossary_file and glossary_type in ["deepl", "chatgpt"]:
             save_folder = current_app.config["DEEPL_GLOSSARY_FOLDER"] if glossary_type == "deepl" else current_app.config["GPT_GLOSSARY_FOLDER"]
+            
             file_path = os.path.join(save_folder, glossary_file.filename)
             glossary_file.save(file_path)
-            logger.info(f"Glossaire {glossary_file.filename} sauvegardé dans {save_folder}")
+
+            flash("Glossaire uploadé avec succès!", "success")
+            logger.info(f"Glossaire {glossary_file.filename} enregistré dans {save_folder}")
+
             return redirect(url_for('translation.main_menu'))
-    
+        else:
+            flash("Erreur lors de l'upload du glossaire. Veuillez vérifier le fichier et le type sélectionné.", "danger")
+
     return render_template("upload_glossary.html")
 
 @translation_bp.route("/processing")

@@ -30,7 +30,34 @@ def set_task_status(status, message, output_file_name=None):
 @translation_bp.route("/")
 def index():
     logger.info("Affichage de la page d'accueil de la traduction.")
-    return render_template("index.html")
+    
+    # Récupérer les glossaires disponibles
+    deepl_glossaries = os.listdir(current_app.config["DEEPL_GLOSSARY_FOLDER"])
+    gpt_glossaries = os.listdir(current_app.config["GPT_GLOSSARY_FOLDER"])
+
+    return render_template(
+        "index.html",
+        deepl_glossaries=deepl_glossaries,
+        gpt_glossaries=gpt_glossaries
+    )
+
+@translation_bp.route("/upload_glossary", methods=["GET", "POST"])
+def upload_glossary():
+    if request.method == "POST":
+        deepl_glossary = request.files.get("deepl_glossary")
+        gpt_glossary = request.files.get("gpt_glossary")
+
+        if deepl_glossary and deepl_glossary.filename.endswith((".csv", ".xlsx")):
+            deepl_glossary.save(os.path.join(current_app.config["DEEPL_GLOSSARY_FOLDER"], deepl_glossary.filename))
+            logger.info(f"Glossaire Deepl sauvegardé : {deepl_glossary.filename}")
+
+        if gpt_glossary and gpt_glossary.filename.endswith(".docx"):
+            gpt_glossary.save(os.path.join(current_app.config["GPT_GLOSSARY_FOLDER"], gpt_glossary.filename))
+            logger.info(f"Glossaire ChatGPT sauvegardé : {gpt_glossary.filename}")
+
+        return redirect(url_for("translation.main_menu"))
+
+    return render_template("upload_glossary.html")
 
 @translation_bp.route("/processing")
 def processing():
@@ -76,20 +103,14 @@ def process():
         input_file.save(input_path)
         logger.info(f"Fichier source enregistré à : {input_path}")
 
-        glossary_csv = request.files.get("glossary_csv")
-        glossary_csv_path = None
-        if glossary_csv:
-            glossary_csv_path = os.path.join(current_app.config["UPLOAD_FOLDER"], glossary_csv.filename)
-            glossary_csv.save(glossary_csv_path)
-            logger.info(f"Glossaire enregistré à : {glossary_csv_path}")
+        glossary_csv_path = request.form.get("deepl_glossary")
+        glossary_gpt_path = request.form.get("gpt_glossary")
 
-            if glossary_csv_path.endswith(".xlsx"):
-                glossary_csv_path = convert_excel_to_csv(glossary_csv_path, glossary_csv_path.replace(".xlsx", ".csv"))
-                logger.info(f"Glossaire converti en CSV : {glossary_csv_path}")
+        if glossary_csv_path:
+            glossary_csv_path = os.path.join(current_app.config["DEEPL_GLOSSARY_FOLDER"], glossary_csv_path)
 
-            if not os.path.exists(glossary_csv_path):
-                set_task_status("error", f"Fichier glossaire introuvable : {glossary_csv_path}")
-                return redirect(url_for("translation.error"))
+        if glossary_gpt_path:
+            glossary_gpt_path = os.path.join(current_app.config["GPT_GLOSSARY_FOLDER"], glossary_gpt_path)
 
         form_data = {
             "target_language": request.form["target_language"],
@@ -119,7 +140,7 @@ def process():
                             form_data["target_language"],
                             glossary_csv_path
                         )
-                        logger.info(f"Glossaire créé avec ID : {glossary_id}")
+                        logger.info(f"Glossaire Deepl utilisé : {glossary_csv_path}")
 
                     translate_docx_with_deepl(
                         api_key=app.config["DEEPL_API_KEY"],
@@ -132,7 +153,7 @@ def process():
 
                     improve_translation(
                         input_file=final_output_path,
-                        glossary_path=glossary_csv_path,
+                        glossary_path=glossary_gpt_path,
                         output_file=final_output_path,
                         language_level=form_data["language_level"],
                         source_language=form_data["source_language"],
@@ -142,7 +163,7 @@ def process():
                     )
 
                     set_task_status("done", "Traduction terminée", os.path.basename(final_output_path))
-                    logger.info(f"Statut mis à jour à 'done' avec fichier : {os.path.basename(final_output_path)}")
+                    logger.info(f"Traduction terminée avec succès : {os.path.basename(final_output_path)}")
                 except Exception as e:
                     set_task_status("error", f"Erreur lors du traitement : {str(e)}")
                     logger.error(f"Erreur dans le traitement : {e}")

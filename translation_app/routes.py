@@ -41,26 +41,18 @@ def index():
         gpt_glossaries=gpt_glossaries
     )
 
-@translation_bp.route('/upload_glossary', methods=['GET', 'POST'])
+@translation_bp.route("/upload_glossary", methods=["GET", "POST"])
 def upload_glossary():
-    if request.method == 'POST':
-        glossary_dir = current_app.config["GLOSSARY_FOLDER"]
-        
-        # Upload du glossaire Deepl
-        if 'deepl_glossary' in request.files:
-            deepl_file = request.files['deepl_glossary']
-            if deepl_file.filename:
-                deepl_file.save(os.path.join(glossary_dir, "deepl", deepl_file.filename))
+    if request.method == "POST":
+        glossary_file = request.files.get("glossary_file")
+        glossary_type = request.form.get("glossary_type")
 
-        # Upload du glossaire ChatGPT
-        if 'gpt_glossary' in request.files:
-            gpt_file = request.files['gpt_glossary']
-            if gpt_file.filename:
-                gpt_file.save(os.path.join(glossary_dir, "chatgpt", gpt_file.filename))
-
-        return redirect(url_for('translation.upload_glossary'))
-
-    return render_template('translation/upload_glossary.html')
+        if glossary_file and glossary_type in ["deepl", "chatgpt"]:
+            save_folder = current_app.config["DEEPL_GLOSSARY_FOLDER"] if glossary_type == "deepl" else current_app.config["CHATGPT_GLOSSARY_FOLDER"]
+            glossary_file.save(os.path.join(save_folder, glossary_file.filename))
+            return redirect(url_for('translation.main_menu'))
+    
+    return render_template("upload_glossary.html")
 
 @translation_bp.route("/processing")
 def processing():

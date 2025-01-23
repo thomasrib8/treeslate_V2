@@ -31,7 +31,8 @@ def set_task_status(status, message, output_file_name=None):
 def index():
     logger.info("Affichage de la page d'accueil de la traduction.")
     
-      # Vérifier l'existence des dossiers et les créer si nécessaires
+    try:
+        # Vérifier l'existence des dossiers et les créer si nécessaires
         if not os.path.exists(current_app.config["DEEPL_GLOSSARY_FOLDER"]):
             os.makedirs(current_app.config["DEEPL_GLOSSARY_FOLDER"])
         if not os.path.exists(current_app.config["GPT_GLOSSARY_FOLDER"]):
@@ -49,12 +50,14 @@ def index():
             deepl_glossaries=deepl_glossaries,
             gpt_glossaries=gpt_glossaries
         )
+
     except KeyError as e:
         logger.error(f"Erreur de configuration: {e}")
         return "Erreur de configuration. Vérifiez les variables de configuration.", 500
     except Exception as e:
         logger.error(f"Erreur inattendue: {e}")
         return "Erreur interne du serveur", 500
+
 
 @translation_bp.route("/upload_glossary", methods=["GET", "POST"])
 def upload_glossary():

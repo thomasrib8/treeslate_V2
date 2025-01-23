@@ -69,42 +69,52 @@
             color: #777;
             margin-top: 20px;
         }
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .logo-container img {
+            max-width: 150px;
+            height: auto;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <!-- Logo centré -->
-<div class="logo-container">
-    <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="Logo TREE'SLATE">
-</div>
+        <div class="logo-container">
+            <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="Logo TREE'SLATE">
+        </div>
         <h1>TREE'SLATE</h1>
         <div class="buttons">
             <a href="/translation">Traduire un nouveau fichier</a>
             <a href="/calculator">Calculer un coût de traduction</a>
+            <a href="/upload_glossary">Uploader un glossaire</a>
         </div>
         <h2>Historique des fichiers traduits</h2>
-       <table class="table">
-    <thead>
-        <tr>
-            <th>Nom du fichier</th>
-            <th>Date de création</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for file in translated_files %}
-        <tr>
-            <td>{{ file.filename }}</td>
-            <td>{{ file.created_at }}</td>
-            <td>
-    <a href="{{ url_for('translation.download_file', filename=file.filename) }}" class="btn btn-primary">
-        Télécharger
-    </a>
-</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nom du fichier</th>
+                    <th>Date de création</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for file in translated_files %}
+                <tr>
+                    <td>{{ file.filename }}</td>
+                    <td>{{ file.created_at }}</td>
+                    <td>
+                        <a href="{{ url_for('translation.download_file', filename=file.filename) }}" class="btn btn-primary">
+                            Télécharger
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
         <div class="footer">
             ©3 Monkeys Publishing, all rights reserved
         </div>

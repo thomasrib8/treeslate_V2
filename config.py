@@ -21,13 +21,20 @@ class Config:
     DEEPL_GLOSSARY_FOLDER = os.path.join(GLOSSARY_FOLDER, "deepl")
     GPT_GLOSSARY_FOLDER = os.path.join(GLOSSARY_FOLDER, "chatgpt")
 
+    # Création des répertoires s'ils n'existent pas
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
+    os.makedirs(GLOSSARY_FOLDER, exist_ok=True)
+    os.makedirs(DEEPL_GLOSSARY_FOLDER, exist_ok=True)
+    os.makedirs(GPT_GLOSSARY_FOLDER, exist_ok=True)
+
     # Configuration des sessions
     SESSION_TYPE = "filesystem"
     SESSION_FILE_DIR = os.path.join(BASE_DIR, ".flask_session")
     SESSION_PERMANENT = False
     SESSION_USE_SIGNER = True
 
-    # Configuration Flask-HTTPAuth
+    # Configuration Flask-HTTPAuth pour l'authentification
     USERS = {
         "admin": os.environ.get('ADMIN_PASSWORD', 'Roue2021*'),
         "user": os.environ.get('USER_PASSWORD', 'Roue2021*'),
@@ -35,12 +42,17 @@ class Config:
         "viewer": os.environ.get('VIEWER_PASSWORD', 'Roue2021*')
     }
 
+    # Configuration Flask-HTTPAuth pour HTTP Basic Auth
+    AUTH_REALM = "Authentification requise"
+    AUTH_ERROR_MESSAGE = "Nom d'utilisateur ou mot de passe incorrect."
+
 class DevelopmentConfig(Config):
     """
     Configuration spécifique pour le développement.
     """
     DEBUG = True
     TESTING = False
+    FLASK_ENV = "development"
 
 class ProductionConfig(Config):
     """
@@ -48,6 +60,7 @@ class ProductionConfig(Config):
     """
     DEBUG = False
     TESTING = False
+    FLASK_ENV = "production"
     SECRET_KEY = os.environ.get('SECRET_KEY', 'super_secret_key_for_production')
 
 class TestingConfig(Config):

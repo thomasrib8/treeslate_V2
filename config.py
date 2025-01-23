@@ -15,14 +15,11 @@ class Config:
     BASE_DIR = os.getcwd()
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
     DOWNLOAD_FOLDER = os.path.join(BASE_DIR, "downloads")
-    GLOSSARY_FOLDER = os.path.join(BASE_DIR, "glossaries")  # Nouveau dossier pour les glossaires
-    DEEPL_GLOSSARY_FOLDER = os.path.join(GLOSSARY_FOLDER, "deepl")
-    CHATGPT_GLOSSARY_FOLDER = os.path.join(GLOSSARY_FOLDER, "chatgpt")
 
-    # Création des dossiers si non existants
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-    os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
-    os.makedirs(GLOSSARY_FOLDER, exist_ok=True)
+    # Dossiers pour les glossaires
+    GLOSSARY_FOLDER = os.path.join(BASE_DIR, "glossaries")
+    DEEPL_GLOSSARY_FOLDER = os.path.join(GLOSSARY_FOLDER, "deepl")
+    GPT_GLOSSARY_FOLDER = os.path.join(GLOSSARY_FOLDER, "chatgpt")
 
     # Configuration des sessions
     SESSION_TYPE = "filesystem"

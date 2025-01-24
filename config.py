@@ -37,9 +37,9 @@ class Config:
     # Configuration Flask-HTTPAuth pour l'authentification
     USERS = {
         "admin": os.environ.get('ADMIN_PASSWORD', 'Roue2021*'),
-        "user": os.environ.get('USER_PASSWORD', 'Roue2021*'),
-        "editor": os.environ.get('EDITOR_PASSWORD', 'Roue2021*'),
-        "viewer": os.environ.get('VIEWER_PASSWORD', 'Roue2021*')
+        "thomas": os.environ.get('USER_PASSWORD', 'Roue2021*'),
+        "victor": os.environ.get('EDITOR_PASSWORD', 'Roue2021*'),
+        "florian": os.environ.get('VIEWER_PASSWORD', 'Roue2021*')
     }
 
     # Configuration Flask-HTTPAuth pour HTTP Basic Auth

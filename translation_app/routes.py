@@ -41,7 +41,7 @@ def detect_encoding(file_path):
 def convert_to_utf8(file_path):
     try:
         with open(file_path, 'rb') as f:
-            raw_data = f.read(4096)
+            raw_data = f.read(8192)
             detected = chardet.detect(raw_data)
             encoding = detected['encoding']
             confidence = detected['confidence']
@@ -164,7 +164,6 @@ def process():
         # Vérification et conversion en UTF-8 après enregistrement du fichier
         if not convert_to_utf8(input_path):
             set_task_status("error", "Erreur lors de la conversion en UTF-8")
-            flash("Erreur lors de la conversion du fichier en UTF-8.", "danger")
             return redirect(url_for("translation.index"))
 
         glossary_csv_name = request.form.get("deepl_glossary")
@@ -210,26 +209,13 @@ def process():
                         )
                         logger.info(f"Glossaire Deepl utilisé : {glossary_csv_path}")
 
-                    # Vérification et lecture sécurisée du fichier DOCX
+                    # Ajout du contrôle d'encodage
                     if input_path.lower().endswith('.docx'):
-                        logger.info("Fichier DOCX détecté. Lecture via python-docx.")
-                        try:
-                            doc = Document(input_path)
-                            text_content = "\n".join([para.text for para in doc.paragraphs])
-                        except Exception as e:
-                            set_task_status("error", f"Erreur de lecture DOCX: {str(e)}")
-                            logger.error(f"Erreur de lecture du fichier DOCX: {str(e)}")
-                            return
+                        logger.info("Fichier DOCX détecté, pas de conversion d'encodage nécessaire.")
                     else:
-                        encoding = detect_encoding(input_path)
-                        try:
-                            with open(input_path, 'r', encoding=encoding, errors='replace') as f:
-                                file_content = f.read()
-                                logger.info(f"Fichier source chargé avec succès en encodage détecté: {encoding}")
-                        except UnicodeDecodeError as e:
-                            logger.error(f"Erreur d'encodage lors de la lecture du fichier : {e}")
-                            set_task_status("error", f"Erreur d'encodage: {str(e)}")
-                            return
+                        if not convert_to_utf8(input_path):
+                            set_task_status("error", "Erreur lors de la conversion en UTF-8")
+                            return redirect(url_for("translation.index"))
 
                     translate_docx_with_deepl(
                         api_key=app.config["DEEPL_API_KEY"],

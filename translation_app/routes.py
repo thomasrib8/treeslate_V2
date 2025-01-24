@@ -164,10 +164,13 @@ def process():
                         )
                         logger.info(f"Glossaire Deepl utilisé : {glossary_csv_path}")
 
-                    # MODIFICATION : Utilisation du mode binaire pour éviter les erreurs d'encodage
-                    with open(input_path, 'rb') as f:
-                        file_content = f.read()
-                        logger.info("Fichier source chargé en mode binaire avec succès.")
+                    # MODIFICATION: Vérification du type de fichier avant lecture
+                    if input_path.lower().endswith('.docx'):
+                        logger.info("Fichier docx détecté. Pas de lecture directe.")
+                    else:
+                        with open(input_path, 'rb') as f:
+                            file_content = f.read()
+                            logger.info("Fichier source chargé en mode binaire avec succès.")
 
                     translate_docx_with_deepl(
                         api_key=app.config["DEEPL_API_KEY"],

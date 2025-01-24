@@ -8,6 +8,7 @@ from .utils import (
 )
 from datetime import datetime
 from docx import Document
+import chardet  # MODIFICATION
 import logging
 
 # Création du Blueprint
@@ -26,6 +27,13 @@ def set_task_status(status, message, output_file_name=None):
         "message": message,
         "output_file_name": output_file_name,
     })
+    
+def detect_encoding(file_path):  # MODIFICATION
+    """Détecte l'encodage d'un fichier donné."""
+    with open(file_path, 'rb') as f:
+        raw_data = f.read(4096)
+        result = chardet.detect(raw_data)
+        return result['encoding']
 
 @translation_bp.route("/")
 def index():
@@ -125,11 +133,11 @@ def process():
         glossary_csv_name = request.form.get("deepl_glossary")
         glossary_gpt_name = request.form.get("gpt_glossary")
 
-        # MODIFICATION : Construction des chemins complets des glossaires
+        # Construction des chemins complets des glossaires
         glossary_csv_path = os.path.join(current_app.config["DEEPL_GLOSSARY_FOLDER"], glossary_csv_name) if glossary_csv_name else None
         glossary_gpt_path = os.path.join(current_app.config["GPT_GLOSSARY_FOLDER"], glossary_gpt_name) if glossary_gpt_name else None
 
-        # MODIFICATION : Vérification de l'existence du glossaire GPT
+        # Vérification de l'existence du glossaire GPT
         if glossary_gpt_path and not os.path.exists(glossary_gpt_path):
             logger.error(f"Glossary GPT introuvable : {glossary_gpt_path}")
             flash(f"Le fichier de glossaire GPT {glossary_gpt_name} est introuvable.", "danger")
@@ -165,7 +173,7 @@ def process():
                         )
                         logger.info(f"Glossaire Deepl utilisé : {glossary_csv_path}")
 
-                    # MODIFICATION: Vérification et lecture sécurisée du fichier DOCX
+                    # Vérification et lecture sécurisée du fichier DOCX
                     if input_path.lower().endswith('.docx'):
                         logger.info("Fichier DOCX détecté. Lecture via python-docx.")
                         try:
@@ -176,9 +184,15 @@ def process():
                             logger.error(f"Erreur de lecture du fichier DOCX: {str(e)}")
                             return
                     else:
-                        with open(input_path, 'rb') as f:  # Lecture en binaire pour éviter les problèmes d'encodage
-                            file_content = f.read()
-                            logger.info("Fichier source chargé en mode binaire avec succès.")
+                        encoding = detect_encoding(input_path)  # MODIFICATION
+                        try:
+                            with open(input_path, 'r', encoding=encoding) as f:
+                                file_content = f.read()
+                                logger.info(f"Fichier source chargé avec succès en encodage détecté: {encoding}")  # MODIFICATION
+                        except UnicodeDecodeError as e:
+                            logger.error(f"Erreur d'encodage lors de la lecture du fichier : {e}")  # MODIFICATION
+                            set_task_status("error", f"Erreur d'encodage: {str(e)}")  # MODIFICATION
+                            return
 
                     translate_docx_with_deepl(
                         api_key=app.config["DEEPL_API_KEY"],

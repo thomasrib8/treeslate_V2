@@ -207,3 +207,26 @@ def process():
     except Exception as e:
         logger.error(f"Erreur lors de l'upload du fichier : {str(e)}")
         return redirect(url_for("translation.error"))
+
+@translation_bp.route('/download/<filename>')
+def download_file(filename):
+    download_folder = current_app.config["DOWNLOAD_FOLDER"]
+    try:
+        return send_from_directory(download_folder, filename, as_attachment=True)
+    except FileNotFoundError:
+        flash("Fichier introuvable.", "danger")
+        logger.error(f"Le fichier {filename} est introuvable.")
+        return redirect(url_for('translation.main_menu'))
+
+@translation_bp.route("/main_menu")
+def main_menu():
+    download_folder = current_app.config["DOWNLOAD_FOLDER"]
+    translated_files = []
+
+    if os.path.exists(download_folder):
+        for filename in os.listdir(download_folder):
+            file_path = os.path.join(download_folder, filename)
+            created_at = datetime.fromtimestamp(os.path.getctime(file_path)).strftime('%Y-%m-%d %H:%M:%S')
+            translated_files.append({'filename': filename, 'created_at': created_at})
+
+    return render_template("main_menu.html", translated_files=translated_files)

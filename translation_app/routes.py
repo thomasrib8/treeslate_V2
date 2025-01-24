@@ -68,19 +68,19 @@ def upload_glossary():
 
         if glossary_file and glossary_type in ["deepl", "chatgpt"]:
             save_folder = current_app.config["DEEPL_GLOSSARY_FOLDER"] if glossary_type == "deepl" else current_app.config["GPT_GLOSSARY_FOLDER"]
-            
             file_path = os.path.join(save_folder, glossary_file.filename)
+
             glossary_file.save(file_path)
+            logger.info(f"Glossaire sauvegardé à : {file_path}")
 
-            flash("Glossaire uploadé avec succès!", "success")
-            logger.info(f"Glossaire {glossary_file.filename} enregistré dans {save_folder}")
-
+            flash("Glossaire uploadé avec succès !", "success")
             return redirect(url_for('translation.main_menu'))
         else:
             flash("Erreur lors de l'upload du glossaire. Veuillez vérifier le fichier et le type sélectionné.", "danger")
+            logger.error("Échec de l'upload du fichier. Vérifiez le type ou le fichier fourni.")
 
     return render_template("upload_glossary.html")
-
+    
 @translation_bp.route("/processing")
 def processing():
     logger.info("Accès à la page de traitement.")

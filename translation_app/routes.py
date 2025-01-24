@@ -36,8 +36,14 @@ def index():
         # Vérifier l'existence des dossiers et les créer si nécessaires
         if not os.path.exists(current_app.config["DEEPL_GLOSSARY_FOLDER"]):
             os.makedirs(current_app.config["DEEPL_GLOSSARY_FOLDER"])
+            logger.info("Dossier Deepl Glossary créé.")
         if not os.path.exists(current_app.config["GPT_GLOSSARY_FOLDER"]):
             os.makedirs(current_app.config["GPT_GLOSSARY_FOLDER"])
+            logger.info("Dossier GPT Glossary créé.")
+
+         # Vérifier si les dossiers sont accessibles
+        logger.info(f"Accès au dossier Deepl : {os.access(current_app.config['DEEPL_GLOSSARY_FOLDER'], os.R_OK)}")
+        logger.info(f"Accès au dossier GPT : {os.access(current_app.config['GPT_GLOSSARY_FOLDER'], os.R_OK)}")
 
         # Récupérer les glossaires disponibles
         deepl_glossaries = os.listdir(current_app.config["DEEPL_GLOSSARY_FOLDER"])

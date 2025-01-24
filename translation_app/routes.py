@@ -28,12 +28,15 @@ def set_task_status(status, message, output_file_name=None):
         "output_file_name": output_file_name,
     })
     
-def detect_encoding(file_path):  # MODIFICATION
-    """Détecte l'encodage d'un fichier donné."""
+def detect_encoding(file_path):
     with open(file_path, 'rb') as f:
-        raw_data = f.read(4096)
+        raw_data = f.read(4096)  # Lit une partie du fichier pour détecter l'encodage
         result = chardet.detect(raw_data)
-        return result['encoding']
+        detected_encoding = result['encoding']
+        if not detected_encoding:
+            detected_encoding = 'utf-8'  # Utilisation de l'UTF-8 par défaut en cas d'échec de détection
+        logger.info(f"Encodage détecté : {detected_encoding}")
+        return detected_encoding
 
 @translation_bp.route("/")
 def index():
@@ -184,14 +187,14 @@ def process():
                             logger.error(f"Erreur de lecture du fichier DOCX: {str(e)}")
                             return
                     else:
-                        encoding = detect_encoding(input_path)  # MODIFICATION
+                        encoding = detect_encoding(input_path)
                         try:
                             with open(input_path, 'r', encoding=encoding) as f:
                                 file_content = f.read()
-                                logger.info(f"Fichier source chargé avec succès en encodage détecté: {encoding}")  # MODIFICATION
+                                logger.info(f"Fichier source chargé avec succès en encodage détecté: {encoding}")
                         except UnicodeDecodeError as e:
-                            logger.error(f"Erreur d'encodage lors de la lecture du fichier : {e}")  # MODIFICATION
-                            set_task_status("error", f"Erreur d'encodage: {str(e)}")  # MODIFICATION
+                            logger.error(f"Erreur d'encodage lors de la lecture du fichier : {e}")
+                            set_task_status("error", f"Erreur d'encodage: {str(e)}")
                             return
 
                     translate_docx_with_deepl(

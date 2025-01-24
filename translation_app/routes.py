@@ -5,7 +5,6 @@ from .utils import (
     translate_docx_with_deepl,
     improve_translation,
     create_glossary,
-    convert_excel_to_csv,
 )
 from datetime import datetime
 import logging
@@ -73,11 +72,10 @@ def upload_glossary():
                 return redirect(url_for('translation.upload_glossary'))
 
             save_folder = current_app.config["DEEPL_GLOSSARY_FOLDER"] if glossary_type == "deepl" else current_app.config["GPT_GLOSSARY_FOLDER"]
-            file_name = glossary_file.filename.replace(" ", "_")
-            file_path = os.path.join(save_folder, file_name)
+            file_path = os.path.join(save_folder, glossary_file.filename)
 
             allowed_extensions = {".csv", ".xlsx", ".docx"}
-            if not file_name.lower().endswith(tuple(allowed_extensions)):
+            if not glossary_file.filename.lower().endswith(tuple(allowed_extensions)):
                 flash("Format de fichier non autorisé.", "danger")
                 logger.error("Format de fichier non autorisé.")
                 return redirect(url_for('translation.upload_glossary'))
@@ -94,7 +92,7 @@ def upload_glossary():
             return redirect(url_for('translation.upload_glossary'))
 
     return render_template("upload_glossary.html")
-    
+
 @translation_bp.route("/processing")
 def processing():
     logger.info("Accès à la page de traitement.")
@@ -113,23 +111,6 @@ def done():
         return render_template("error.html", message="Le fichier traduit est introuvable.")
 
     return render_template("done.html", output_file_name=filename)
-
-@translation_bp.route("/check_status")
-def check_status():
-    if task_status.get("status") == "done" and task_status.get("output_file_name"):
-        response = jsonify({
-            "status": "done",
-            "output_file_name": task_status["output_file_name"],
-            "redirect_url": url_for("translation.done", filename=task_status["output_file_name"])
-        })
-        set_task_status("idle", "Aucune tâche en cours.")
-        return response
-    elif task_status.get("status") == "error":
-        return jsonify({
-            "status": "error",
-            "message": task_status["message"]
-        })
-    return jsonify(task_status)
 
 @translation_bp.route("/process", methods=["POST"])
 def process():
@@ -155,69 +136,56 @@ def process():
 
         app = current_app._get_current_object()
 
-def background_task():
-    with app.app_context():
-        try:
-            set_task_status("processing", "Traduction en cours...")
-            logger.info("Début du processus de traduction.")
+        def background_task():
+            with app.app_context():
+                try:
+                    set_task_status("processing", "Traduction en cours...")
+                    logger.info("Début du processus de traduction.")
 
-            glossary_id = None
-            if glossary_csv_path:
-                glossary_full_path = os.path.join(current_app.config["DEEPL_GLOSSARY_FOLDER"], glossary_csv_path)
-                
-                if not os.path.exists(glossary_full_path):
-                    raise FileNotFoundError(f"Glossary file not found: {glossary_full_path}")
-                
-                glossary_id = create_glossary(
-                    app.config["DEEPL_API_KEY"],
-                    glossary_full_path,
-                    form_data["source_language"],
-                    form_data["target_language"]
-                )
-                logger.info(f"Glossaire Deepl utilisé : {glossary_full_path}")
+                    glossary_id = None
+                    if glossary_csv_path and os.path.exists(glossary_csv_path):
+                        glossary_id = create_glossary(
+                            app.config["DEEPL_API_KEY"],
+                            f"Glossary_{form_data['source_language']}_to_{form_data['target_language']}",
+                            form_data["source_language"],
+                            form_data["target_language"],
+                            glossary_csv_path
+                        )
 
-            if not os.path.exists(input_path):
-                raise FileNotFoundError(f"Fichier source introuvable: {input_path}")
-            
-            translate_docx_with_deepl(
-                api_key=app.config["DEEPL_API_KEY"],
-                input_file_path=input_path,
-                output_file_path=final_output_path,
-                target_language=form_data["target_language"],
-                source_language=form_data["source_language"],
-                glossary_id=glossary_id,
-            )
-            logger.info(f"Traduction DeepL terminée, fichier enregistré : {final_output_path}")
+                    translate_docx_with_deepl(
+                        api_key=app.config["DEEPL_API_KEY"],
+                        input_file_path=input_path,
+                        output_file_path=final_output_path,
+                        target_language=form_data["target_language"],
+                        source_language=form_data["source_language"],
+                        glossary_id=glossary_id,
+                    )
 
-            glossary_gpt_full_path = os.path.join(current_app.config["GPT_GLOSSARY_FOLDER"], glossary_gpt_path)
-            if not os.path.exists(glossary_gpt_full_path):
-                raise FileNotFoundError(f"Glossary GPT file not found: {glossary_gpt_full_path}")
+                    improve_translation(
+                        input_file=final_output_path,
+                        glossary_path=glossary_gpt_path,
+                        output_file=final_output_path,
+                        language_level=form_data["language_level"],
+                        source_language=form_data["source_language"],
+                        target_language=form_data["target_language"],
+                        group_size=form_data["group_size"],
+                        model=form_data["gpt_model"],
+                    )
 
-            improve_translation(
-                input_file=final_output_path,
-                glossary_path=glossary_gpt_full_path,
-                output_file=final_output_path,
-                language_level=form_data["language_level"],
-                source_language=form_data["source_language"],
-                target_language=form_data["target_language"],
-                group_size=form_data["group_size"],
-                model=form_data["gpt_model"],
-            )
+                    set_task_status("done", "Traduction terminée", os.path.basename(final_output_path))
+                except Exception as e:
+                    set_task_status("error", f"Erreur lors du traitement : {str(e)}")
+                    logger.error(f"Erreur dans le traitement : {e}")
 
-            set_task_status("done", "Traduction terminée", os.path.basename(final_output_path))
-            logger.info(f"Traduction terminée avec succès : {os.path.basename(final_output_path)}")
-        except FileNotFoundError as e:
-            set_task_status("error", f"Fichier introuvable : {str(e)}")
-            logger.error(f"Erreur de fichier introuvable : {e}")
-        except Exception as e:
-            set_task_status("error", f"Erreur lors du traitement : {str(e)}")
-            logger.error(f"Erreur dans le traitement : {e}")
+        thread = threading.Thread(target=background_task)
+        thread.start()
 
-# Lancer la tâche en arrière-plan
-thread = threading.Thread(target=background_task)
-thread.start()
+        return redirect(url_for("translation.processing"))
 
-            
+    except Exception as e:
+        logger.error(f"Erreur lors de l'upload du fichier : {str(e)}")
+        return redirect(url_for("translation.error"))
+
 @translation_bp.route('/download/<filename>')
 def download_file(filename):
     download_folder = current_app.config["DOWNLOAD_FOLDER"]
@@ -225,8 +193,8 @@ def download_file(filename):
         return send_from_directory(download_folder, filename, as_attachment=True)
     except FileNotFoundError:
         flash("Fichier introuvable.", "danger")
-        logger.error(f"Le fichier {filename} est introuvable.")
         return redirect(url_for('translation.main_menu'))
+
 
 @translation_bp.route("/main_menu")
 def main_menu():

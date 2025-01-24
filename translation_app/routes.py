@@ -131,8 +131,8 @@ def process():
 
         # MODIFICATION : Vérification de l'existence du glossaire GPT
         if glossary_gpt_path and not os.path.exists(glossary_gpt_path):
-            logger.error(f"Glossary file not found: {glossary_gpt_path}")
-            flash("Le fichier de glossaire GPT est introuvable.", "danger")
+            logger.error(f"Glossary GPT introuvable : {glossary_gpt_path}")
+            flash(f"Le fichier de glossaire GPT {glossary_gpt_name} est introuvable.", "danger")
             return redirect(url_for("translation.index"))
 
         form_data = {
@@ -168,8 +168,15 @@ def process():
                     # MODIFICATION: Vérification et lecture sécurisée du fichier DOCX
                     if input_path.lower().endswith('.docx'):
                         logger.info("Fichier DOCX détecté. Lecture via python-docx.")
+                        try:
+                            doc = Document(input_path)
+                            text_content = "\n".join([para.text for para in doc.paragraphs])
+                        except Exception as e:
+                            set_task_status("error", f"Erreur de lecture DOCX: {str(e)}")
+                            logger.error(f"Erreur de lecture du fichier DOCX: {str(e)}")
+                            return
                     else:
-                        with open(input_path, 'rb') as f:  # Lecture en binaire
+                        with open(input_path, 'rb') as f:  # Lecture en binaire pour éviter les problèmes d'encodage
                             file_content = f.read()
                             logger.info("Fichier source chargé en mode binaire avec succès.")
 

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify, current_app, send_from_directory
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify, current_app, send_from_directory, flash
 import os
 import threading
 from .utils import (
@@ -8,7 +8,6 @@ from .utils import (
     convert_excel_to_csv,
 )
 from datetime import datetime
-from flask import flash
 import logging
 
 # Création du Blueprint
@@ -31,19 +30,13 @@ def set_task_status(status, message, output_file_name=None):
 @translation_bp.route("/")
 def index():
     logger.info("Affichage de la page d'accueil de la traduction.")
-    
     try:
-        # Vérifier l'existence des dossiers et les créer si nécessaires
         os.makedirs(current_app.config["DEEPL_GLOSSARY_FOLDER"], exist_ok=True)
         os.makedirs(current_app.config["GPT_GLOSSARY_FOLDER"], exist_ok=True)
 
-        logger.info("Les dossiers de glossaires sont vérifiés/créés.")
-
-        # Vérifier si les dossiers sont accessibles
         logger.info(f"Accès au dossier Deepl : {os.access(current_app.config['DEEPL_GLOSSARY_FOLDER'], os.R_OK)}")
         logger.info(f"Accès au dossier GPT : {os.access(current_app.config['GPT_GLOSSARY_FOLDER'], os.R_OK)}")
 
-        # Récupérer les glossaires disponibles
         deepl_glossaries = os.listdir(current_app.config["DEEPL_GLOSSARY_FOLDER"])
         gpt_glossaries = os.listdir(current_app.config["GPT_GLOSSARY_FOLDER"])
 
@@ -55,7 +48,6 @@ def index():
             deepl_glossaries=deepl_glossaries,
             gpt_glossaries=gpt_glossaries
         )
-
     except KeyError as e:
         logger.error(f"Erreur de configuration: {e}")
         return "Erreur de configuration. Vérifiez les variables de configuration.", 500
@@ -63,37 +55,32 @@ def index():
         logger.error(f"Erreur inattendue: {e}")
         return "Erreur interne du serveur", 500
 
-
 @translation_bp.route("/upload_glossary", methods=["GET", "POST"])
 def upload_glossary():
     if request.method == "POST":
         try:
-            glossary_type = request.form.get("glossary_type")
             glossary_file = request.files.get("glossary_file")
+            glossary_type = request.form.get("glossary_type")
 
-            if not glossary_file or glossary_file.filename == "":
+            if not glossary_file:
                 flash("Aucun fichier sélectionné.", "danger")
                 logger.error("Aucun fichier sélectionné.")
                 return redirect(url_for('translation.upload_glossary'))
 
-            if glossary_type == "deepl":
-                save_folder = current_app.config["DEEPL_GLOSSARY_FOLDER"]
-                allowed_extensions = {".csv", ".xlsx"}
-            elif glossary_type == "chatgpt":
-                save_folder = current_app.config["GPT_GLOSSARY_FOLDER"]
-                allowed_extensions = {".docx"}
-            else:
+            if glossary_type not in ["deepl", "chatgpt"]:
                 flash("Type de glossaire invalide.", "danger")
                 logger.error("Type de glossaire invalide sélectionné.")
                 return redirect(url_for('translation.upload_glossary'))
 
-            # Vérification de l'extension de fichier
-            if not any(glossary_file.filename.lower().endswith(ext) for ext in allowed_extensions):
+            save_folder = current_app.config["DEEPL_GLOSSARY_FOLDER"] if glossary_type == "deepl" else current_app.config["GPT_GLOSSARY_FOLDER"]
+            file_path = os.path.join(save_folder, glossary_file.filename)
+
+            allowed_extensions = {".csv", ".xlsx", ".docx"}
+            if not glossary_file.filename.lower().endswith(tuple(allowed_extensions)):
                 flash("Format de fichier non autorisé.", "danger")
                 logger.error("Format de fichier non autorisé.")
                 return redirect(url_for('translation.upload_glossary'))
 
-            file_path = os.path.join(save_folder, glossary_file.filename)
             glossary_file.save(file_path)
             logger.info(f"Glossaire sauvegardé avec succès : {file_path}")
             flash("Glossaire uploadé avec succès !", "success")
@@ -107,8 +94,6 @@ def upload_glossary():
 
     return render_template("upload_glossary.html")
 
-
-    
 @translation_bp.route("/processing")
 def processing():
     logger.info("Accès à la page de traitement.")
@@ -156,12 +141,6 @@ def process():
         glossary_csv_path = request.form.get("deepl_glossary")
         glossary_gpt_path = request.form.get("gpt_glossary")
 
-        if glossary_csv_path:
-            glossary_csv_path = os.path.join(current_app.config["DEEPL_GLOSSARY_FOLDER"], glossary_csv_path)
-
-        if glossary_gpt_path:
-            glossary_gpt_path = os.path.join(current_app.config["GPT_GLOSSARY_FOLDER"], glossary_gpt_path)
-
         form_data = {
             "target_language": request.form["target_language"],
             "source_language": request.form["source_language"],
@@ -190,7 +169,6 @@ def process():
                             form_data["target_language"],
                             glossary_csv_path
                         )
-                        logger.info(f"Glossaire Deepl utilisé : {glossary_csv_path}")
 
                     translate_docx_with_deepl(
                         api_key=app.config["DEEPL_API_KEY"],
@@ -213,34 +191,14 @@ def process():
                     )
 
                     set_task_status("done", "Traduction terminée", os.path.basename(final_output_path))
-                    logger.info(f"Traduction terminée avec succès : {os.path.basename(final_output_path)}")
                 except Exception as e:
                     set_task_status("error", f"Erreur lors du traitement : {str(e)}")
-                    logger.error(f"Erreur dans le traitement : {e}")
 
         thread = threading.Thread(target=background_task)
         thread.start()
 
         return redirect(url_for("translation.processing"))
+
     except Exception as e:
         logger.error(f"Erreur lors de l'upload du fichier : {str(e)}")
-        set_task_status("error", "Erreur lors de l'upload du fichier.")
         return redirect(url_for("translation.error"))
-
-@translation_bp.route('/download/<filename>')
-def download_file(filename):
-    download_folder = current_app.config["DOWNLOAD_FOLDER"]
-    return send_from_directory(download_folder, filename, as_attachment=True)
-
-@translation_bp.route("/main_menu")
-def main_menu():
-    download_folder = current_app.config["DOWNLOAD_FOLDER"]
-    translated_files = []
-
-    if os.path.exists(download_folder):
-        for filename in os.listdir(download_folder):
-            file_path = os.path.join(download_folder, filename)
-            created_at = datetime.fromtimestamp(os.path.getctime(file_path)).strftime('%Y-%m-%d %H:%M:%S')
-            translated_files.append({'filename': filename, 'created_at': created_at})
-
-    return render_template("main_menu.html", translated_files=translated_files)

@@ -39,16 +39,31 @@ def detect_encoding(file_path):
         return detected_encoding
 
 def convert_to_utf8(file_path):
-    encoding = detect_encoding(file_path)
     try:
+        with open(file_path, 'rb') as f:
+            raw_data = f.read(4096)
+            detected = chardet.detect(raw_data)
+            encoding = detected['encoding']
+            confidence = detected['confidence']
+
+            if not encoding or confidence < 0.5:
+                logger.warning(f"Encodage incertain, utilisation de 'ISO-8859-1' par défaut.")
+                encoding = 'ISO-8859-1'  # Encodage par défaut en cas d'incertitude
+
+        logger.info(f"Encodage détecté : {encoding} avec une confiance de {confidence}")
+
         with open(file_path, 'r', encoding=encoding) as f:
             content = f.read()
+
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(content)
-        logger.info(f"Fichier converti en UTF-8 depuis {encoding}")
         return True
+
+    except UnicodeDecodeError as e:
+        logger.error(f"Erreur lors de la conversion en UTF-8: {e}")
+        return False
     except Exception as e:
-        logger.error(f"Erreur lors de la conversion en UTF-8: {str(e)}")
+        logger.error(f"Erreur inconnue lors de la conversion : {e}")
         return False
 
 @translation_bp.route("/")

@@ -68,14 +68,12 @@ def index():
 def upload_glossary():
     if request.method == "POST":
         try:
-            # Identifier le type de fichier soumis
-            upload_type = request.form.get("upload_type")
-            if upload_type == "deepl":
+            glossary_type = request.form.get("glossary_type")
+
+            if glossary_type == "deepl":
                 glossary_file = request.files.get("deepl_glossary")
-                glossary_type = "deepl"
-            elif upload_type == "chatgpt":
+            elif glossary_type == "chatgpt":
                 glossary_file = request.files.get("gpt_glossary")
-                glossary_type = "chatgpt"
             else:
                 flash("Type de glossaire invalide.", "danger")
                 logger.error("Type de glossaire invalide sélectionné.")
@@ -98,7 +96,7 @@ def upload_glossary():
 
             glossary_file.save(file_path)
             logger.info(f"Glossaire sauvegardé avec succès : {file_path}")
-            flash(f"Glossaire {glossary_type.upper()} uploadé avec succès !", "success")
+            flash("Glossaire uploadé avec succès !", "success")
 
             return redirect(url_for('translation.main_menu'))
 

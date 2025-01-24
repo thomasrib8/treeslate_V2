@@ -30,13 +30,26 @@ def set_task_status(status, message, output_file_name=None):
     
 def detect_encoding(file_path):
     with open(file_path, 'rb') as f:
-        raw_data = f.read(4096)  # Lit une partie du fichier pour détecter l'encodage
+        raw_data = f.read(8192)  # Augmenter la taille de lecture
         result = chardet.detect(raw_data)
         detected_encoding = result['encoding']
         if not detected_encoding:
-            detected_encoding = 'utf-8'  # Utilisation de l'UTF-8 par défaut en cas d'échec de détection
+            detected_encoding = 'utf-8'  # Défaut à UTF-8 si non détecté
         logger.info(f"Encodage détecté : {detected_encoding}")
         return detected_encoding
+
+def convert_to_utf8(file_path):
+    encoding = detect_encoding(file_path)
+    try:
+        with open(file_path, 'r', encoding=encoding) as f:
+            content = f.read()
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        logger.info(f"Fichier converti en UTF-8 depuis {encoding}")
+        return True
+    except Exception as e:
+        logger.error(f"Erreur lors de la conversion en UTF-8: {str(e)}")
+        return False
 
 @translation_bp.route("/")
 def index():
@@ -133,6 +146,12 @@ def process():
         input_file.save(input_path)
         logger.info(f"Fichier source enregistré à : {input_path}")
 
+        # Vérification et conversion en UTF-8 après enregistrement du fichier
+        if not convert_to_utf8(input_path):
+            set_task_status("error", "Erreur lors de la conversion en UTF-8")
+            flash("Erreur lors de la conversion du fichier en UTF-8.", "danger")
+            return redirect(url_for("translation.index"))
+
         glossary_csv_name = request.form.get("deepl_glossary")
         glossary_gpt_name = request.form.get("gpt_glossary")
 
@@ -189,7 +208,7 @@ def process():
                     else:
                         encoding = detect_encoding(input_path)
                         try:
-                            with open(input_path, 'r', encoding=encoding) as f:
+                            with open(input_path, 'r', encoding=encoding, errors='replace') as f:
                                 file_content = f.read()
                                 logger.info(f"Fichier source chargé avec succès en encodage détecté: {encoding}")
                         except UnicodeDecodeError as e:

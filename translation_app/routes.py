@@ -155,7 +155,7 @@ def process():
 
         app = current_app._get_current_object()
 
-        def background_task():
+def background_task():
     with app.app_context():
         try:
             set_task_status("processing", "Traduction en cours...")
@@ -212,6 +212,11 @@ def process():
         except Exception as e:
             set_task_status("error", f"Erreur lors du traitement : {str(e)}")
             logger.error(f"Erreur dans le traitement : {e}")
+
+# Lancer la tâche en arrière-plan
+thread = threading.Thread(target=background_task)
+thread.start()
+
             
 @translation_bp.route('/download/<filename>')
 def download_file(filename):

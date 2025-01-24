@@ -73,9 +73,7 @@ def upload_glossary():
 
             save_folder = current_app.config["DEEPL_GLOSSARY_FOLDER"] if glossary_type == "deepl" else current_app.config["GPT_GLOSSARY_FOLDER"]
             os.makedirs(save_folder, exist_ok=True)  # MODIFICATION
-
-            # Définition correcte de file_path avant son utilisation
-            file_path = os.path.join(save_folder, glossary_file.filename)
+            file_path = os.path.join(save_folder, glossary_file.filename)  # MODIFICATION
 
             allowed_extensions = {".csv", ".xlsx", ".docx"}
             if not glossary_file.filename.lower().endswith(tuple(allowed_extensions)):
@@ -123,13 +121,18 @@ def process():
         input_file.save(input_path)
         logger.info(f"Fichier source enregistré à : {input_path}")
 
-        glossary_csv_path = request.form.get("deepl_glossary")
-        glossary_gpt_path = request.form.get("gpt_glossary")
+        glossary_csv_name = request.form.get("deepl_glossary")
+        glossary_gpt_name = request.form.get("gpt_glossary")
 
-        if not os.path.exists(glossary_gpt_path):  # MODIFICATION
-            logger.error(f"Glossary file not found: {glossary_gpt_path}")  # MODIFICATION
-            flash("Le fichier de glossaire GPT est introuvable.", "danger")  # MODIFICATION
-            return redirect(url_for("translation.index"))  # MODIFICATION
+        # MODIFICATION : Construction des chemins complets des glossaires
+        glossary_csv_path = os.path.join(current_app.config["DEEPL_GLOSSARY_FOLDER"], glossary_csv_name) if glossary_csv_name else None
+        glossary_gpt_path = os.path.join(current_app.config["GPT_GLOSSARY_FOLDER"], glossary_gpt_name) if glossary_gpt_name else None
+
+        # MODIFICATION : Vérification de l'existence du glossaire GPT
+        if glossary_gpt_path and not os.path.exists(glossary_gpt_path):
+            logger.error(f"Glossary file not found: {glossary_gpt_path}")
+            flash("Le fichier de glossaire GPT est introuvable.", "danger")
+            return redirect(url_for("translation.index"))
 
         form_data = {
             "target_language": request.form["target_language"],
@@ -159,6 +162,7 @@ def process():
                             form_data["target_language"],
                             glossary_csv_path
                         )
+                        logger.info(f"Glossaire Deepl utilisé : {glossary_csv_path}")
 
                     translate_docx_with_deepl(
                         api_key=app.config["DEEPL_API_KEY"],
@@ -168,6 +172,7 @@ def process():
                         source_language=form_data["source_language"],
                         glossary_id=glossary_id,
                     )
+                    logger.info("Traduction initiale terminée avec DeepL.")
 
                     improve_translation(
                         input_file=final_output_path,
@@ -179,8 +184,10 @@ def process():
                         group_size=form_data["group_size"],
                         model=form_data["gpt_model"],
                     )
+                    logger.info(f"Amélioration de la traduction terminée avec ChatGPT : {glossary_gpt_path}")
 
                     set_task_status("done", "Traduction terminée", os.path.basename(final_output_path))
+                    logger.info(f"Traduction terminée avec succès : {final_output_path}")
                 except Exception as e:
                     set_task_status("error", f"Erreur lors du traitement : {str(e)}")
                     logger.error(f"Erreur dans le traitement : {e}")
@@ -191,8 +198,10 @@ def process():
         return redirect(url_for("translation.processing"))
 
     except Exception as e:
-        logger.error(f"Erreur lors de l'upload du fichier : {str(e)}")
+        logger.error(f"Erreur lors du traitement du fichier : {str(e)}")
+        flash("Une erreur est survenue lors du traitement du fichier.", "danger")
         return redirect(url_for("translation.error"))
+
 
 @translation_bp.route('/download/<filename>')
 def download_file(filename):

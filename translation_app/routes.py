@@ -34,14 +34,12 @@ def index():
     
     try:
         # Vérifier l'existence des dossiers et les créer si nécessaires
-        if not os.path.exists(current_app.config["DEEPL_GLOSSARY_FOLDER"]):
-            os.makedirs(current_app.config["DEEPL_GLOSSARY_FOLDER"])
-            logger.info("Dossier Deepl Glossary créé.")
-        if not os.path.exists(current_app.config["GPT_GLOSSARY_FOLDER"]):
-            os.makedirs(current_app.config["GPT_GLOSSARY_FOLDER"])
-            logger.info("Dossier GPT Glossary créé.")
+        os.makedirs(current_app.config["DEEPL_GLOSSARY_FOLDER"], exist_ok=True)
+        os.makedirs(current_app.config["GPT_GLOSSARY_FOLDER"], exist_ok=True)
 
-         # Vérifier si les dossiers sont accessibles
+        logger.info("Les dossiers de glossaires sont vérifiés/créés.")
+
+        # Vérifier si les dossiers sont accessibles
         logger.info(f"Accès au dossier Deepl : {os.access(current_app.config['DEEPL_GLOSSARY_FOLDER'], os.R_OK)}")
         logger.info(f"Accès au dossier GPT : {os.access(current_app.config['GPT_GLOSSARY_FOLDER'], os.R_OK)}")
 
@@ -69,21 +67,40 @@ def index():
 @translation_bp.route("/upload_glossary", methods=["GET", "POST"])
 def upload_glossary():
     if request.method == "POST":
-        glossary_file = request.files.get("glossary_file")
-        glossary_type = request.form.get("glossary_type")
+        try:
+            glossary_file = request.files.get("glossary_file")
+            glossary_type = request.form.get("glossary_type")
 
-        if glossary_file and glossary_type in ["deepl", "chatgpt"]:
+            if not glossary_file:
+                flash("Aucun fichier sélectionné.", "danger")
+                logger.error("Aucun fichier sélectionné.")
+                return redirect(url_for('translation.upload_glossary'))
+
+            if glossary_type not in ["deepl", "chatgpt"]:
+                flash("Type de glossaire invalide.", "danger")
+                logger.error("Type de glossaire invalide sélectionné.")
+                return redirect(url_for('translation.upload_glossary'))
+
             save_folder = current_app.config["DEEPL_GLOSSARY_FOLDER"] if glossary_type == "deepl" else current_app.config["GPT_GLOSSARY_FOLDER"]
             file_path = os.path.join(save_folder, glossary_file.filename)
 
-            glossary_file.save(file_path)
-            logger.info(f"Glossaire sauvegardé à : {file_path}")
+            # Vérification de l'extension de fichier
+            allowed_extensions = {".csv", ".xlsx", ".docx"}
+            if not glossary_file.filename.lower().endswith(tuple(allowed_extensions)):
+                flash("Format de fichier non autorisé.", "danger")
+                logger.error("Format de fichier non autorisé.")
+                return redirect(url_for('translation.upload_glossary'))
 
+            glossary_file.save(file_path)
+            logger.info(f"Glossaire sauvegardé avec succès : {file_path}")
             flash("Glossaire uploadé avec succès !", "success")
+
             return redirect(url_for('translation.main_menu'))
-        else:
-            flash("Erreur lors de l'upload du glossaire. Veuillez vérifier le fichier et le type sélectionné.", "danger")
-            logger.error("Échec de l'upload du fichier. Vérifiez le type ou le fichier fourni.")
+
+        except Exception as e:
+            flash("Une erreur est survenue lors de l'upload.", "danger")
+            logger.error(f"Erreur lors de l'upload du glossaire : {str(e)}")
+            return redirect(url_for('translation.upload_glossary'))
 
     return render_template("upload_glossary.html")
     

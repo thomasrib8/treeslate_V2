@@ -72,7 +72,7 @@ def upload_glossary():
                 return redirect(url_for('translation.upload_glossary'))
 
             save_folder = current_app.config["DEEPL_GLOSSARY_FOLDER"] if glossary_type == "deepl" else current_app.config["GPT_GLOSSARY_FOLDER"]
-            file_path = os.path.join(save_folder, glossary_file.filename)
+            os.makedirs(save_folder, exist_ok=True)  # MODIFICATION
 
             allowed_extensions = {".csv", ".xlsx", ".docx"}
             if not glossary_file.filename.lower().endswith(tuple(allowed_extensions)):
@@ -122,6 +122,11 @@ def process():
 
         glossary_csv_path = request.form.get("deepl_glossary")
         glossary_gpt_path = request.form.get("gpt_glossary")
+
+        if not os.path.exists(glossary_gpt_path):  # MODIFICATION
+            logger.error(f"Glossary file not found: {glossary_gpt_path}")  # MODIFICATION
+            flash("Le fichier de glossaire GPT est introuvable.", "danger")  # MODIFICATION
+            return redirect(url_for("translation.index"))  # MODIFICATION
 
         form_data = {
             "target_language": request.form["target_language"],

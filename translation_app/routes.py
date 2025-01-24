@@ -74,13 +74,16 @@ def upload_glossary():
             save_folder = current_app.config["DEEPL_GLOSSARY_FOLDER"] if glossary_type == "deepl" else current_app.config["GPT_GLOSSARY_FOLDER"]
             os.makedirs(save_folder, exist_ok=True)  # MODIFICATION
 
+            # Définition correcte de file_path avant son utilisation
+            file_path = os.path.join(save_folder, glossary_file.filename)
+
             allowed_extensions = {".csv", ".xlsx", ".docx"}
             if not glossary_file.filename.lower().endswith(tuple(allowed_extensions)):
                 flash("Format de fichier non autorisé.", "danger")
                 logger.error("Format de fichier non autorisé.")
                 return redirect(url_for('translation.upload_glossary'))
 
-            glossary_file.save(file_path)
+            glossary_file.save(file_path)   # Enregistrer le fichier sur le serveur
             logger.info(f"Glossaire sauvegardé avec succès : {file_path}")
             flash("Glossaire uploadé avec succès !", "success")
 

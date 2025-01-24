@@ -170,6 +170,10 @@ def process():
                             glossary_csv_path
                         )
 
+                    with open(input_path, 'r', encoding='utf-8', errors='ignore') as f:
+                        file_content = f.read()
+                        logger.info("Fichier source lu avec succès.")
+
                     translate_docx_with_deepl(
                         api_key=app.config["DEEPL_API_KEY"],
                         input_file_path=input_path,
@@ -191,9 +195,10 @@ def process():
                     )
 
                     set_task_status("done", "Traduction terminée", os.path.basename(final_output_path))
+                    logger.info(f"Traduction terminée avec succès : {os.path.basename(final_output_path)}")
                 except Exception as e:
                     set_task_status("error", f"Erreur lors du traitement : {str(e)}")
-
+                    logger.error(f"Erreur dans le traitement : {e}")
         thread = threading.Thread(target=background_task)
         thread.start()
 

@@ -71,27 +71,37 @@ def upload_glossary():
             glossary_file = request.files.get("glossary_file")
             glossary_type = request.form.get("glossary_type")
 
-            if not glossary_file:
+            # Vérification si un fichier a été sélectionné
+            if not glossary_file or glossary_file.filename == "":
                 flash("Aucun fichier sélectionné.", "danger")
                 logger.error("Aucun fichier sélectionné.")
                 return redirect(url_for('translation.upload_glossary'))
 
+            # Vérification du type de glossaire
             if glossary_type not in ["deepl", "chatgpt"]:
                 flash("Type de glossaire invalide.", "danger")
                 logger.error("Type de glossaire invalide sélectionné.")
                 return redirect(url_for('translation.upload_glossary'))
 
+            # Déterminer le dossier de sauvegarde en fonction du type de glossaire
             save_folder = current_app.config["DEEPL_GLOSSARY_FOLDER"] if glossary_type == "deepl" else current_app.config["GPT_GLOSSARY_FOLDER"]
-            file_path = os.path.join(save_folder, glossary_file.filename)
 
-            # Vérification de l'extension de fichier
+            # Vérifier si le dossier de destination existe, sinon le créer
+            os.makedirs(save_folder, exist_ok=True)
+
+            # Vérification de l'extension de fichier autorisée
             allowed_extensions = {".csv", ".xlsx", ".docx"}
-            if not glossary_file.filename.lower().endswith(tuple(allowed_extensions)):
-                flash("Format de fichier non autorisé.", "danger")
-                logger.error("Format de fichier non autorisé.")
+            file_extension = os.path.splitext(glossary_file.filename)[1].lower()
+
+            if file_extension not in allowed_extensions:
+                flash("Format de fichier non autorisé. Formats autorisés: .csv, .xlsx, .docx", "danger")
+                logger.error(f"Format de fichier non autorisé: {file_extension}")
                 return redirect(url_for('translation.upload_glossary'))
 
+            # Sauvegarde du fichier
+            file_path = os.path.join(save_folder, glossary_file.filename)
             glossary_file.save(file_path)
+
             logger.info(f"Glossaire sauvegardé avec succès : {file_path}")
             flash("Glossaire uploadé avec succès !", "success")
 

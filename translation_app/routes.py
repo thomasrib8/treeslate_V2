@@ -69,31 +69,31 @@ def upload_glossary():
     if request.method == "POST":
         try:
             glossary_type = request.form.get("glossary_type")
-
-            if glossary_type == "deepl":
-                glossary_file = request.files.get("deepl_glossary")
-            elif glossary_type == "chatgpt":
-                glossary_file = request.files.get("gpt_glossary")
-            else:
-                flash("Type de glossaire invalide.", "danger")
-                logger.error("Type de glossaire invalide sélectionné.")
-                return redirect(url_for('translation.upload_glossary'))
+            glossary_file = request.files.get("glossary_file")
 
             if not glossary_file or glossary_file.filename == "":
                 flash("Aucun fichier sélectionné.", "danger")
                 logger.error("Aucun fichier sélectionné.")
                 return redirect(url_for('translation.upload_glossary'))
 
-            save_folder = current_app.config["DEEPL_GLOSSARY_FOLDER"] if glossary_type == "deepl" else current_app.config["GPT_GLOSSARY_FOLDER"]
-            file_path = os.path.join(save_folder, glossary_file.filename)
+            if glossary_type == "deepl":
+                save_folder = current_app.config["DEEPL_GLOSSARY_FOLDER"]
+                allowed_extensions = {".csv", ".xlsx"}
+            elif glossary_type == "chatgpt":
+                save_folder = current_app.config["GPT_GLOSSARY_FOLDER"]
+                allowed_extensions = {".docx"}
+            else:
+                flash("Type de glossaire invalide.", "danger")
+                logger.error("Type de glossaire invalide sélectionné.")
+                return redirect(url_for('translation.upload_glossary'))
 
             # Vérification de l'extension de fichier
-            allowed_extensions = {".csv", ".xlsx", ".docx"}
-            if not glossary_file.filename.lower().endswith(tuple(allowed_extensions)):
+            if not any(glossary_file.filename.lower().endswith(ext) for ext in allowed_extensions):
                 flash("Format de fichier non autorisé.", "danger")
                 logger.error("Format de fichier non autorisé.")
                 return redirect(url_for('translation.upload_glossary'))
 
+            file_path = os.path.join(save_folder, glossary_file.filename)
             glossary_file.save(file_path)
             logger.info(f"Glossaire sauvegardé avec succès : {file_path}")
             flash("Glossaire uploadé avec succès !", "success")
@@ -106,6 +106,7 @@ def upload_glossary():
             return redirect(url_for('translation.upload_glossary'))
 
     return render_template("upload_glossary.html")
+
 
     
 @translation_bp.route("/processing")

@@ -25,30 +25,31 @@
             <!-- Upload Glossaire Deepl -->
             <h2>Glossaire DeepL</h2>
             <label for="deepl_glossary">Sélectionnez un fichier (.xlsx ou .csv) :</label>
-            <input type="file" id="deepl_glossary" name="deepl_glossary" accept=".csv, .xlsx">
+            <input type="file" id="deepl_glossary" name="glossary_file" accept=".csv, .xlsx">
             <input type="hidden" name="glossary_type" value="deepl">
-            <button type="submit" class="upload-btn">Uploader Glossaire DeepL</button>
+            <button type="submit" class="upload-btn" name="upload_type" value="deepl">Uploader Glossaire DeepL</button>
 
             <hr>
 
             <!-- Upload Glossaire ChatGPT -->
             <h2>Glossaire ChatGPT</h2>
             <label for="gpt_glossary">Sélectionnez un fichier (.docx) :</label>
-            <input type="file" id="gpt_glossary" name="gpt_glossary" accept=".docx">
+            <input type="file" id="gpt_glossary" name="glossary_file" accept=".docx">
             <input type="hidden" name="glossary_type" value="chatgpt">
-            <button type="submit" class="upload-btn">Uploader Glossaire ChatGPT</button>
-
-            <!-- Bouton retour -->
-            <div class="button-container">
-                <a href="{{ url_for('main_menu') }}" class="menu-button">Menu Principal</a>
-            </div>
+            <button type="submit" class="upload-btn" name="upload_type" value="chatgpt">Uploader Glossaire ChatGPT</button>
         </form>
+
+        <!-- Bouton retour -->
+        <div class="button-container">
+            <a href="{{ url_for('main_menu') }}" class="menu-button">Menu Principal</a>
+        </div>
     </div>
+
     <script>
-        // Script pour vérifier la sélection de fichier avant la soumission
+        // Vérification avant soumission pour éviter un upload vide
         document.querySelectorAll('button[type="submit"]').forEach(button => {
             button.addEventListener('click', function(event) {
-                const glossaryType = this.previousElementSibling.value;
+                const glossaryType = this.getAttribute('value');
                 const fileInput = glossaryType === 'deepl' ? document.getElementById('deepl_glossary') : document.getElementById('gpt_glossary');
                 if (!fileInput.files.length) {
                     alert("Veuillez sélectionner un fichier avant d'uploader.");

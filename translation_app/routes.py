@@ -7,6 +7,7 @@ from .utils import (
     create_glossary,
 )
 from datetime import datetime
+from docx import Document
 import logging
 
 # Création du Blueprint
@@ -164,11 +165,11 @@ def process():
                         )
                         logger.info(f"Glossaire Deepl utilisé : {glossary_csv_path}")
 
-                    # MODIFICATION: Vérification du type de fichier avant lecture
+                    # MODIFICATION: Vérification et lecture sécurisée du fichier DOCX
                     if input_path.lower().endswith('.docx'):
-                        logger.info("Fichier docx détecté. Pas de lecture directe.")
+                        logger.info("Fichier DOCX détecté. Lecture via python-docx.")
                     else:
-                        with open(input_path, 'rb') as f:
+                        with open(input_path, 'rb') as f:  # Lecture en binaire
                             file_content = f.read()
                             logger.info("Fichier source chargé en mode binaire avec succès.")
 

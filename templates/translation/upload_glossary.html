@@ -10,7 +10,7 @@
     <div class="container">
         <h1>Uploader un Glossaire</h1>
 
-        <!-- Messages de confirmation ou d'erreur -->
+        <!-- Messages de confirmation -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 <div class="flash-messages">
@@ -25,7 +25,7 @@
             <!-- Upload Glossaire Deepl -->
             <h2>Glossaire DeepL</h2>
             <label for="deepl_glossary">Sélectionnez un fichier (.xlsx ou .csv) :</label>
-            <input type="file" id="deepl_glossary" name="deepl_glossary" accept=".csv, .xlsx" required>
+            <input type="file" id="deepl_glossary" name="deepl_glossary" accept=".csv, .xlsx">
             <input type="hidden" name="glossary_type" value="deepl">
             <button type="submit" class="upload-btn">Uploader Glossaire DeepL</button>
 
@@ -34,17 +34,16 @@
             <!-- Upload Glossaire ChatGPT -->
             <h2>Glossaire ChatGPT</h2>
             <label for="gpt_glossary">Sélectionnez un fichier (.docx) :</label>
-            <input type="file" id="gpt_glossary" name="gpt_glossary" accept=".docx" required>
+            <input type="file" id="gpt_glossary" name="gpt_glossary" accept=".docx">
             <input type="hidden" name="glossary_type" value="chatgpt">
             <button type="submit" class="upload-btn">Uploader Glossaire ChatGPT</button>
+
+            <!-- Bouton retour -->
+            <div class="button-container">
+                <a href="{{ url_for('main_menu') }}" class="menu-button">Menu Principal</a>
+            </div>
         </form>
-
-        <!-- Bouton retour -->
-        <div class="button-container">
-            <a href="{{ url_for('main_menu') }}" class="menu-button">Menu Principal</a>
-        </div>
     </div>
-
     <script>
         // Script pour vérifier la sélection de fichier avant la soumission
         document.querySelectorAll('button[type="submit"]').forEach(button => {
@@ -57,6 +56,6 @@
                 }
             });
         });
-    </script>
+    </script>    
 </body>
 </html>

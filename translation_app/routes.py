@@ -68,39 +68,37 @@ def index():
 def upload_glossary():
     if request.method == "POST":
         try:
-            glossary_file = request.files.get("glossary_file")
-            glossary_type = request.form.get("glossary_type")
+            # Identifier le type de fichier soumis
+            upload_type = request.form.get("upload_type")
+            if upload_type == "deepl":
+                glossary_file = request.files.get("deepl_glossary")
+                glossary_type = "deepl"
+            elif upload_type == "chatgpt":
+                glossary_file = request.files.get("gpt_glossary")
+                glossary_type = "chatgpt"
+            else:
+                flash("Type de glossaire invalide.", "danger")
+                logger.error("Type de glossaire invalide sélectionné.")
+                return redirect(url_for('translation.upload_glossary'))
 
-            # Vérification de la présence du fichier et du type de glossaire
             if not glossary_file or glossary_file.filename == "":
                 flash("Aucun fichier sélectionné.", "danger")
                 logger.error("Aucun fichier sélectionné.")
                 return redirect(url_for('translation.upload_glossary'))
 
-            if glossary_type not in ["deepl", "chatgpt"]:
-                flash("Type de glossaire invalide.", "danger")
-                logger.error("Type de glossaire invalide sélectionné.")
-                return redirect(url_for('translation.upload_glossary'))
-
-            # Déterminer le dossier de sauvegarde
             save_folder = current_app.config["DEEPL_GLOSSARY_FOLDER"] if glossary_type == "deepl" else current_app.config["GPT_GLOSSARY_FOLDER"]
-            os.makedirs(save_folder, exist_ok=True)  # Créer le dossier s'il n'existe pas
+            file_path = os.path.join(save_folder, glossary_file.filename)
 
-            # Vérification de l'extension autorisée
-            allowed_extensions = {".csv", ".xlsx"} if glossary_type == "deepl" else {".docx"}
-            file_extension = os.path.splitext(glossary_file.filename)[1].lower()
-
-            if file_extension not in allowed_extensions:
-                flash("Format de fichier non autorisé. Vérifiez votre sélection.", "danger")
-                logger.error(f"Format de fichier non autorisé: {file_extension}")
+            # Vérification de l'extension de fichier
+            allowed_extensions = {".csv", ".xlsx", ".docx"}
+            if not glossary_file.filename.lower().endswith(tuple(allowed_extensions)):
+                flash("Format de fichier non autorisé.", "danger")
+                logger.error("Format de fichier non autorisé.")
                 return redirect(url_for('translation.upload_glossary'))
 
-            # Sauvegarde du fichier
-            file_path = os.path.join(save_folder, glossary_file.filename)
             glossary_file.save(file_path)
-
             logger.info(f"Glossaire sauvegardé avec succès : {file_path}")
-            flash("Glossaire uploadé avec succès !", "success")
+            flash(f"Glossaire {glossary_type.upper()} uploadé avec succès !", "success")
 
             return redirect(url_for('translation.main_menu'))
 

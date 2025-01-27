@@ -75,15 +75,11 @@ def detect_and_convert_to_utf8(file_path):
         logger.error(f"Erreur inattendue dans la détection/conversion d'encodage : {e}")
         return False
 
-
-
-
-
 def verify_glossary_encoding(file_path):
-    """Vérifie si le glossaire est lisible avec son encodage détecté."""
-    if file_path.lower().endswith('.xlsx'):
-        logger.info(f"Le fichier {file_path} est un fichier Excel, pas besoin de vérification d'encodage.")
-        return True  # Supposer que le fichier est valide
+    """Vérifie si le glossaire est lisible avec son encodage détecté, sauf pour les fichiers binaires."""
+    if file_path.lower().endswith(('.xlsx', '.docx')):
+        logger.info(f"Le fichier {file_path} est un fichier binaire (Excel ou Word), pas besoin de vérification d'encodage.")
+        return True  # Supposer que le fichier est valide pour ces types
 
     encoding = detect_encoding(file_path)
     try:
@@ -226,7 +222,7 @@ def process():
         # Vérification de l'encodage des glossaires
         if glossary_csv_path and glossary_csv_path.lower().endswith('.csv'):
             encoding = detect_encoding(glossary_csv_path)
-            if encoding not in ['utf-8', 'utf-8-sig', 'ascii', 'binary']:
+            if encoding not in ['utf-8', 'utf-8-sig', 'ascii']:
                 flash("Le glossaire sélectionné a un encodage incompatible. Veuillez vérifier le fichier.", "danger")
                 logger.error(f"Encodage incompatible détecté pour {glossary_csv_path}: {encoding}")
                 return redirect(url_for("translation.index"))

@@ -34,14 +34,14 @@ def calculate_translation_cost(words, characters, translation_time_min):
 
 def calculate_review_cost(words, reviewer_choice):
     """Calcule le coût de relecture en fonction du choix du relecteur"""
-    valid_choices = ["TOBY", "TOBY+MIKE", "MIKE"]
-    if reviewer_choice not in valid_choices:
-        raise ValueError(f"Invalid reviewer choice. Choose from {valid_choices}")
-    
-    if reviewer_choice == "TOBY" or reviewer_choice == "TOBY+MIKE":
+    if reviewer_choice == "TOBY":
+        return words * 0.025
+    elif reviewer_choice == "TOBY+MIKE":
         return words * 0.025
     elif reviewer_choice == "MIKE":
-        return 0
+        return 0.0
+    else:
+        raise ValueError("Invalid reviewer choice")
 
 def get_reviewer_choice():
     """Demande à l'utilisateur de fournir un choix valide pour le relecteur"""
@@ -80,7 +80,7 @@ def main():
     review_cost = calculate_review_cost(words, reviewer_choice)
     
     # Affiche le coût de relecture
-    print(f"Review cost: ${review_cost:.6f}")
+    print(f"Review cost: ${review_cost:.2f}")
     
     # Calcule et affiche le coût total
     total_cost = translation_cost + review_cost

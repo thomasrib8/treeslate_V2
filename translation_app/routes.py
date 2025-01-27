@@ -388,6 +388,8 @@ def process():
         flash("Une erreur est survenue lors du traitement du fichier.", "danger")
         return redirect(url_for("translation.index"))
 
+    logger.info("Fin du thread de traitement.")  # Ajoute ce log pour vérifier la fin du thread
+
 @translation_bp.route('/download/<filename>')
 def download_file(filename):
     if ".." in filename or filename.startswith("/") or filename.startswith("\\"):
@@ -418,6 +420,8 @@ def main_menu():
 
 @translation_bp.route("/check_status")
 def check_status():
+    logger.info(f"Statut actuel: {task_status}")  # Ajoute ce log pour débogage
+
     if task_status["status"] == "done" and task_status["output_file_name"]:
         return jsonify({"status": "done", "filename": task_status["output_file_name"]})
     elif task_status["status"] == "error":

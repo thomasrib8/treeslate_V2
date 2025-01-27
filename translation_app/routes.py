@@ -403,3 +403,16 @@ def main_menu():
             translated_files.append({'filename': filename, 'created_at': created_at})
 
     return render_template("main_menu.html", translated_files=translated_files)
+
+
+@translation_bp.route("/check_status")
+def check_status():
+    translation_status = session.get("translation_status", "processing")
+    translated_file = session.get("translated_file", None)
+
+    if translation_status == "done" and translated_file:
+        return jsonify({"status": "done", "filename": translated_file})
+    elif translation_status == "error":
+        return jsonify({"status": "error"})
+    else:
+        return jsonify({"status": "processing"})

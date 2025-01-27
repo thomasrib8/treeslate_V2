@@ -154,12 +154,12 @@ def process():
         input_file.save(input_path)
 
         # Vérification de l'encodage et conversion si nécessaire (sauf pour les fichiers DOCX)
-    if not input_path.lower().endswith('.docx'):
-        encoding = detect_encoding(input_path)
-        if not detect_and_convert_to_utf8(input_path):
-            set_task_status("error", f"Erreur lors de la conversion en UTF-8 pour {input_path}")
-            flash("Erreur lors de la conversion du fichier en UTF-8.", "danger")
-            return redirect(url_for("translation.index"))
+        if not input_path.lower().endswith('.docx'):
+            encoding = detect_encoding(input_path)
+            if not detect_and_convert_to_utf8(input_path):
+                set_task_status("error", f"Erreur lors de la conversion en UTF-8 pour {input_path}")
+                flash("Erreur lors de la conversion du fichier en UTF-8.", "danger")
+                return redirect(url_for("translation.index"))
 
         glossary_csv_name = request.form.get("deepl_glossary")
         glossary_gpt_name = request.form.get("gpt_glossary")

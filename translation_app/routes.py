@@ -99,8 +99,8 @@ def index():
         os.makedirs(current_app.config["DEEPL_GLOSSARY_FOLDER"], exist_ok=True)
         os.makedirs(current_app.config["GPT_GLOSSARY_FOLDER"], exist_ok=True)
 
-        deepl_glossaries = os.listdir(current_app.config["DEEPL_GLOSSARY_FOLDER"])
-        gpt_glossaries = os.listdir(current_app.config["GPT_GLOSSARY_FOLDER"])
+        deepl_glossaries = [f for f in os.listdir(current_app.config["DEEPL_GLOSSARY_FOLDER"]) if f.lower().endswith('.csv')]
+        gpt_glossaries = [f for f in os.listdir(current_app.config["GPT_GLOSSARY_FOLDER"]) if f.lower().endswith('.docx')]
 
         return render_template(
             "index.html",
@@ -153,8 +153,9 @@ def upload_glossary():
                 temp_xlsx_path = os.path.join(save_folder, "temp_" + glossary_file.filename)
                 glossary_file.save(temp_xlsx_path)
 
-                # Conversion du fichier XLSX en CSV
-                csv_path = os.path.join(save_folder, glossary_file.filename.replace(".xlsx", ".csv"))
+                # Conversion en CSV
+                csv_filename = glossary_file.filename.replace(".xlsx", ".csv")
+                csv_path = os.path.join(save_folder, csv_filename)
                 convert_excel_to_csv(temp_xlsx_path, csv_path)
 
                 # Vérification de l'encodage après conversion
@@ -164,9 +165,15 @@ def upload_glossary():
                     os.remove(temp_xlsx_path)  # Nettoyage du fichier temporaire
                     return redirect(url_for('translation.upload_glossary'))
 
-                os.remove(temp_xlsx_path)  # Suppression du fichier XLSX original après conversion
-                file_path = csv_path
-                logger.info(f"Glossaire {glossary_file.filename} converti et sauvegardé sous {file_path}")
+                # Vérifie si le fichier converti existe bien avant de le garder
+                if os.path.exists(csv_path):
+                    os.remove(temp_xlsx_path)  # Supprimer le fichier temporaire Excel après conversion
+                    file_path = csv_path
+                    logger.info(f"Glossaire {glossary_file.filename} converti et sauvegardé sous {file_path}")
+                else:
+                    flash("Erreur lors de la conversion du fichier Excel en CSV.", "danger")
+                    os.remove(temp_xlsx_path)
+                    return redirect(url_for('translation.upload_glossary'))
 
             # Gestion des fichiers CSV
             elif glossary_file.filename.lower().endswith('.csv'):
@@ -190,12 +197,11 @@ def upload_glossary():
             return redirect(url_for('translation.upload_glossary'))
 
         finally:
-            # Suppression des fichiers intermédiaires en cas d'erreur
             if temp_xlsx_path is not None and os.path.exists(temp_xlsx_path):
                 os.remove(temp_xlsx_path)
                 logger.info(f"Fichier temporaire supprimé : {temp_xlsx_path}")
         
-            if csv_path is not None and os.path.exists(csv_path):
+            if csv_path is not None and os.path.exists(csv_path) and 'error' in str(e).lower():
                 os.remove(csv_path)
                 logger.info(f"Fichier CSV supprimé : {csv_path}")
 

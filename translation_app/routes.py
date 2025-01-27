@@ -141,7 +141,8 @@ def done():
         return render_template("error.html", message="Le fichier traduit est introuvable.")
 
     return render_template("done.html", output_file_name=filename)
-
+    
+@translation_bp.route("/process", methods=["POST"])
 def process():
     try:
         input_file = request.files["input_file"]

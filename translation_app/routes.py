@@ -5,6 +5,7 @@ from .utils import (
     translate_docx_with_deepl,
     improve_translation,
     create_glossary,
+    convert_excel_to_csv,
 )
 from datetime import datetime
 from docx import Document

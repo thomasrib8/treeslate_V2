@@ -9,7 +9,7 @@
 <body>
     <div class="container">
         <h1>3 MONKEYS TRANSLATION</h1>
-        <form id="translation-form" action="/translation/process" method="post" enctype="multipart/form-data">
+        <form action="{{ url_for('translation.process') }}" method="POST" enctype="multipart/form-data">
             <!-- Fichier principal -->
             <p class="info-text">Chargez le document à traduire</p>
             <label for="input_file">Fichier principal (.docx) :</label>

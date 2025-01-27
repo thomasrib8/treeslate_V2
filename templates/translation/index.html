@@ -17,10 +17,9 @@
 
             <!-- Liste déroulante pour les glossaires Deepl -->
 <label for="deepl_glossary">Sélectionner un glossaire DeepL:</label>
-    <select name="deepl_glossary" required>
-        <option value="">-- Choisir un glossaire Deepl --</option>
+    <select name="deepl_glossary" id="deepl_glossary">
         {% for glossary in deepl_glossaries %}
-        <option value="{{ glossary }}">{{ glossary }}</option>
+            <option value="{{ glossary }}">{{ glossary }}</option>
         {% endfor %}
     </select>
 

@@ -29,39 +29,42 @@ def set_task_status(status, message, output_file_name=None):
     })
 
 def detect_encoding(file_path):
-    if file_path.lower().endswith('.xlsx'):
-        logger.info(f"Le fichier {file_path} est un fichier Excel, pas besoin de détecter l'encodage.")
-        return 'binary'  # Retourne une valeur spécifique pour les fichiers binaires
+    if file_path.lower().endswith(('.xlsx', '.docx')):
+        logger.info(f"Le fichier {file_path} est un fichier binaire (Excel ou Word), pas besoin de détecter l'encodage.")
+        return 'binary'  # Ignorer la détection pour ces formats
 
     with open(file_path, 'rb') as f:
         raw_data = f.read(8192)
         result = chardet.detect(raw_data)
         detected_encoding = result.get('encoding')
 
-        if not detected_encoding:
-            logger.warning(f"Encodage non détecté pour {file_path}. Utilisation de 'ISO-8859-1' par défaut.")
-            detected_encoding = 'ISO-8859-1'
+        if detected_encoding is None or detected_encoding.lower() in ['ascii', 'binary']:
+            logger.warning(f"Encodage non détecté pour {file_path}. Utilisation de 'utf-8-sig' par défaut.")
+            detected_encoding = 'utf-8-sig'  # UTF-8 avec BOM comme fallback
 
         logger.info(f"Encodage détecté : {detected_encoding} pour {file_path}")
         return detected_encoding
 
 
+
 def detect_and_convert_to_utf8(file_path):
-    """Détecte et convertit un fichier en UTF-8 si nécessaire, sauf pour les fichiers binaires comme XLSX."""
+    """Détecte et convertit un fichier en UTF-8 si nécessaire, sauf pour les fichiers binaires."""
     try:
         if file_path.lower().endswith(('.xlsx', '.docx')):
-            logger.info(f"Le fichier {file_path} est un fichier Excel ou DOCX, pas besoin de conversion d'encodage.")
-            return True  # On considère les fichiers Excel et DOCX comme valides sans conversion
-        
+            logger.info(f"Le fichier {file_path} est un fichier binaire, pas besoin de conversion d'encodage.")
+            return True  # Pas de conversion nécessaire
+
         encoding = detect_encoding(file_path)
+        
         if encoding.lower() in ['utf-8', 'utf-8-sig']:
             logger.info(f"Aucune conversion nécessaire, fichier déjà en {encoding} : {file_path}")
             return True
 
         with open(file_path, 'r', encoding=encoding, errors='replace') as f:
             content = f.read()
-        with open(file_path, 'w', encoding='utf-8') as f:
+        with open(file_path, 'w', encoding='utf-8-sig') as f:
             f.write(content)
+        
         logger.info(f"Conversion réussie de {encoding} vers UTF-8 pour {file_path}")
         return True
 
@@ -71,6 +74,7 @@ def detect_and_convert_to_utf8(file_path):
     except Exception as e:
         logger.error(f"Erreur inattendue dans la détection/conversion d'encodage : {e}")
         return False
+
 
 
 
@@ -202,19 +206,18 @@ def process():
         gpt_model = request.form["gpt_model"]
         output_file_name = request.form.get("output_file_name", "improved_output.docx")
 
-        # Gestion spécifique pour les fichiers .docx : pas de conversion d'encodage
-        if input_path.lower().endswith('.docx'):
-            logger.info(f"Fichier DOCX détecté, pas de conversion d'encodage nécessaire : {input_path}")
+        # Gestion spécifique pour les fichiers .docx et .xlsx : pas de conversion d'encodage
+        if input_path.lower().endswith(('.docx', '.xlsx')):
+            logger.info(f"Fichier binaire détecté ({input_path}), pas de conversion d'encodage nécessaire.")
         else:
-            # Vérification et conversion de l'encodage pour les fichiers non-DOCX
+            # Vérification et conversion de l'encodage pour les fichiers texte
             encoding = detect_encoding(input_path)
             if not detect_and_convert_to_utf8(input_path):
                 set_task_status("error", f"Erreur lors de la conversion en UTF-8 pour {input_path}")
                 flash("Erreur lors de la conversion du fichier en UTF-8.", "danger")
                 return redirect(url_for("translation.index"))
-                
-        glossary_csv_name = request.form.get("deepl_glossary")
-        glossary_gpt_name = request.form.get("gpt_glossary")
+                glossary_csv_name = request.form.get("deepl_glossary")
+                glossary_gpt_name = request.form.get("gpt_glossary")
 
         glossary_csv_path = os.path.join(current_app.config["DEEPL_GLOSSARY_FOLDER"], glossary_csv_name) if glossary_csv_name else None
         glossary_gpt_path = os.path.join(current_app.config["GPT_GLOSSARY_FOLDER"], glossary_gpt_name) if glossary_gpt_name else None

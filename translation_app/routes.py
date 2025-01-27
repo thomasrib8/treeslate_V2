@@ -33,19 +33,24 @@ def set_task_status(status, message, output_file_name=None):
 def detect_encoding(file_path):
     if file_path.lower().endswith(('.xlsx', '.docx')):
         logger.info(f"Le fichier {file_path} est un fichier binaire (Excel ou Word), pas besoin de détecter l'encodage.")
-        return 'binary'  # Exclure la détection pour ces fichiers
+        return 'binary'
 
     with open(file_path, 'rb') as f:
         raw_data = f.read(8192)
         result = chardet.detect(raw_data)
         detected_encoding = result.get('encoding')
 
-        if detected_encoding is None or detected_encoding.lower() in ['ascii', 'binary']:
-            logger.warning(f"Encodage non détecté pour {file_path}. Utilisation de 'utf-8-sig' par défaut.")
-            detected_encoding = 'utf-8-sig'  # Fallback par défaut
+        # Si encodage détecté est UTF-8-SIG, le traiter comme UTF-8 normal
+        if detected_encoding and detected_encoding.lower() == 'utf-8-sig':
+            detected_encoding = 'utf-8'
+
+        if not detected_encoding or detected_encoding.lower() in ['ascii', 'binary']:
+            logger.warning(f"Encodage non détecté pour {file_path}. Utilisation de 'utf-8' par défaut.")
+            detected_encoding = 'utf-8'
 
         logger.info(f"Encodage détecté : {detected_encoding} pour {file_path}")
         return detected_encoding
+
 
 
 def detect_and_convert_to_utf8(file_path):
@@ -157,7 +162,15 @@ def upload_glossary():
                 # Conversion en CSV
                 csv_filename = glossary_file.filename.replace(".xlsx", ".csv")
                 csv_path = os.path.join(save_folder, csv_filename)
+   
+                # Conversion et ré-encodage forcé en UTF-8
                 convert_excel_to_csv(temp_xlsx_path, csv_path)
+            
+                with open(csv_path, 'r', encoding='utf-8-sig') as f:
+                    content = f.read()
+            
+                with open(csv_path, 'w', encoding='utf-8') as f:
+                    f.write(content)
 
                 # Vérification de l'encodage après conversion
                 if not verify_csv_encoding(csv_path):

@@ -239,7 +239,7 @@ def done():
 
     file_path = os.path.join(current_app.config["DOWNLOAD_FOLDER"], filename)
 
-    if not filename or not os.path.exists(file_path):
+    if not os.path.exists(file_path):
         logger.error(f"Le fichier traduit {filename} est introuvable.")
         return render_template("error.html", message="Le fichier traduit est introuvable ou corrompu.")
 
@@ -369,15 +369,13 @@ def process():
                     set_task_status("done", "Traduction terminée", os.path.basename(final_output_path))
 
                     # Mise à jour de la session pour check_status
-                    session["translation_status"] = "done"
-                    session["translated_file"] = os.path.basename(final_output_path)
-                    session.modified = True
+                    set_task_status("done", "Traduction terminée", os.path.basename(final_output_path))
             
                     logger.info(f"Traduction terminée avec succès : {final_output_path}")
 
                 except Exception as e:
                     set_task_status("error", f"Erreur lors du traitement : {str(e)}")
-                    session["translation_status"] = "error"
+                    set_task_status("error", "Erreur lors du traitement")
                     logger.error(f"Erreur dans le traitement : {e}")
 
         thread = threading.Thread(target=background_task)
@@ -392,7 +390,7 @@ def process():
 
 @translation_bp.route('/download/<filename>')
 def download_file(filename):
-    if ".." in filename or filename.startswith("/"):
+    if ".." in filename or filename.startswith("/") or filename.startswith("\\"):
         flash("Accès non autorisé.", "danger")
         return redirect(url_for('translation.main_menu'))
 
@@ -420,12 +418,9 @@ def main_menu():
 
 @translation_bp.route("/check_status")
 def check_status():
-    translation_status = session.get("translation_status", "processing")
-    translated_file = session.get("translated_file", None)
-
-    if translation_status == "done" and translated_file:
-        return jsonify({"status": "done", "filename": translated_file})
-    elif translation_status == "error":
+    if task_status["status"] == "done" and task_status["output_file_name"]:
+        return jsonify({"status": "done", "filename": task_status["output_file_name"]})
+    elif task_status["status"] == "error":
         return jsonify({"status": "error"})
     else:
         return jsonify({"status": "processing"})

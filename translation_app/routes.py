@@ -170,10 +170,16 @@ def process():
         # Vérification de l'encodage des glossaires
         if glossary_csv_path:
             encoding = detect_encoding(glossary_csv_path)
-            if encoding.lower() not in ['utf-8', 'ascii']:
+           if encoding.lower() not in ['utf-8', 'utf-8-sig', 'ascii']:
                 flash("Le glossaire sélectionné a un encodage incompatible. Veuillez vérifier le fichier.", "danger")
                 logger.error(f"Encodage incompatible détecté pour {glossary_csv_path}: {encoding}")
                 return redirect(url_for("translation.index"))
+            
+            # Si encodage est UTF-8-SIG, le traiter comme UTF-8
+            if encoding.lower() == 'utf-8-sig':
+                logger.info(f"Encodage UTF-8-SIG détecté, traitement comme UTF-8 pour {glossary_csv_path}")
+                encoding = 'utf-8'
+
 
         if glossary_gpt_path and not verify_glossary_encoding(glossary_gpt_path):
             set_task_status("error", "Erreur d'encodage du glossaire GPT")

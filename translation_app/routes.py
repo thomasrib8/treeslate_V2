@@ -111,6 +111,9 @@ def index():
 
 @translation_bp.route("/upload_glossary", methods=["GET", "POST"])
 def upload_glossary():
+    temp_xlsx_path = None  # Pour suivre le fichier temporaire XLSX
+    csv_path = None  # Pour suivre le fichier converti CSV
+
     if request.method == "POST":
         try:
             glossary_file = request.files.get("glossary_file")
@@ -124,7 +127,13 @@ def upload_glossary():
                 flash("Type de glossaire invalide.", "danger")
                 return redirect(url_for('translation.upload_glossary'))
 
-            save_folder = current_app.config["DEEPL_GLOSSARY_FOLDER"] if glossary_type == "deepl" else current_app.config["GPT_GLOSSARY_FOLDER"]
+            save_folder = (
+                current_app.config["DEEPL_GLOSSARY_FOLDER"]
+                if glossary_type == "deepl"
+                else current_app.config["GPT_GLOSSARY_FOLDER"]
+            )
+            os.makedirs(save_folder, exist_ok=True)
+
             file_path = os.path.join(save_folder, glossary_file.filename)
 
             allowed_extensions = {".csv", ".xlsx", ".docx"}
@@ -132,21 +141,43 @@ def upload_glossary():
                 flash("Format de fichier non autorisé.", "danger")
                 return redirect(url_for('translation.upload_glossary'))
 
-            # Gestion spécifique des fichiers .docx
-            if glossary_file.filename.lower().endswith('.docx') or glossary_file.filename.lower().endswith('.xlsx'):
-                glossary_file.save(file_path)  # Sauvegarde sans conversion d'encodage
-                logger.info(f"Fichier {glossary_file.filename} sauvegardé sans vérification d'encodage.")
-            else:
-                # Vérification stricte de l'encodage pour les fichiers CSV uniquement
+            # Gestion des fichiers .docx (aucune conversion requise)
+            if glossary_file.filename.lower().endswith('.docx'):
+                glossary_file.save(file_path)
+                logger.info(f"Fichier DOCX {glossary_file.filename} sauvegardé sans vérification d'encodage.")
+
+            # Gestion des fichiers .xlsx (conversion en CSV)
+            elif glossary_file.filename.lower().endswith('.xlsx'):
+                temp_xlsx_path = os.path.join(save_folder, "temp_" + glossary_file.filename)
+                glossary_file.save(temp_xlsx_path)
+
+                # Conversion du fichier XLSX en CSV
+                csv_path = os.path.join(save_folder, glossary_file.filename.replace(".xlsx", ".csv"))
+                convert_excel_to_csv(temp_xlsx_path, csv_path)
+
+                # Vérification de l'encodage après conversion
+                if not verify_csv_encoding(csv_path):
+                    flash("Erreur d'encodage dans le fichier converti en CSV. Veuillez vérifier son contenu.", "danger")
+                    os.remove(csv_path)  # Suppression du fichier problématique
+                    os.remove(temp_xlsx_path)  # Nettoyage du fichier temporaire
+                    return redirect(url_for('translation.upload_glossary'))
+
+                os.remove(temp_xlsx_path)  # Suppression du fichier XLSX original après conversion
+                file_path = csv_path
+                logger.info(f"Glossaire {glossary_file.filename} converti et sauvegardé sous {file_path}")
+
+            # Gestion des fichiers CSV
+            elif glossary_file.filename.lower().endswith('.csv'):
                 temp_path = os.path.join(save_folder, "temp_" + glossary_file.filename)
                 glossary_file.save(temp_path)
-            
+
                 if not detect_and_convert_to_utf8(temp_path):
                     flash("Le fichier ne peut pas être converti en UTF-8. Veuillez vérifier son encodage.", "danger")
                     os.remove(temp_path)
                     return redirect(url_for('translation.upload_glossary'))
-            
-                os.rename(temp_path, file_path)  # Renommer le fichier validé
+
+                os.rename(temp_path, file_path)
+                logger.info(f"Fichier CSV {glossary_file.filename} sauvegardé après vérification d'encodage.")
 
             flash("Glossaire uploadé avec succès !", "success")
             return redirect(url_for('translation.main_menu'))
@@ -155,6 +186,15 @@ def upload_glossary():
             flash("Une erreur est survenue lors de l'upload.", "danger")
             logger.error(f"Erreur lors de l'upload du glossaire: {e}")
             return redirect(url_for('translation.upload_glossary'))
+
+        finally:
+            # Suppression des fichiers temporaires en cas d'erreur
+            if temp_xlsx_path and os.path.exists(temp_xlsx_path):
+                os.remove(temp_xlsx_path)
+                logger.info(f"Fichier temporaire supprimé : {temp_xlsx_path}")
+            if csv_path and os.path.exists(csv_path) and 'error' in str(e).lower():
+                os.remove(csv_path)
+                logger.info(f"Fichier CSV problématique supprimé : {csv_path}")
 
     return render_template("upload_glossary.html")
 

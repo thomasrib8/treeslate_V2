@@ -6,6 +6,7 @@ from .utils import (
     improve_translation,
     create_glossary,
     convert_excel_to_csv,
+    verify_csv_encoding,
 )
 from datetime import datetime
 from docx import Document
@@ -189,13 +190,14 @@ def upload_glossary():
             return redirect(url_for('translation.upload_glossary'))
 
         finally:
-            # Suppression des fichiers temporaires en cas d'erreur
-            if temp_xlsx_path and os.path.exists(temp_xlsx_path):
+            # Suppression des fichiers intermédiaires en cas d'erreur
+            if 'temp_xlsx_path' in locals() and os.path.exists(temp_xlsx_path):
                 os.remove(temp_xlsx_path)
                 logger.info(f"Fichier temporaire supprimé : {temp_xlsx_path}")
-            if csv_path and os.path.exists(csv_path) and 'error' in str(e).lower():
+        
+            if 'csv_path' in locals() and os.path.exists(csv_path):
                 os.remove(csv_path)
-                logger.info(f"Fichier CSV problématique supprimé : {csv_path}")
+                logger.info(f"Fichier CSV supprimé : {csv_path}")
 
     return render_template("upload_glossary.html")
 

@@ -173,6 +173,14 @@ def process():
         input_path = os.path.join(current_app.config["UPLOAD_FOLDER"], input_file.filename)
         input_file.save(input_path)
 
+        # Capturer les valeurs du formulaire AVANT de lancer le thread
+        target_language = request.form["target_language"]
+        source_language = request.form["source_language"]
+        language_level = request.form["language_level"]
+        group_size = int(request.form["group_size"])
+        gpt_model = request.form["gpt_model"]
+        output_file_name = request.form.get("output_file_name", "improved_output.docx")
+
         # Vérification de l'encodage et conversion si nécessaire (sauf pour les fichiers DOCX)
         if not input_path.lower().endswith('.docx'):
             encoding = detect_encoding(input_path)
@@ -227,9 +235,9 @@ def process():
                         # Création du glossaire Deepl
                         glossary_id = create_glossary(
                             app.config["DEEPL_API_KEY"],
-                            f"Glossary_{request.form['source_language']}_to_{request.form['target_language']}",
-                            request.form["source_language"],
-                            request.form["target_language"],
+                            f"Glossary_{source_language}_to_{target_language}",
+                            source_language,
+                            target_language,
                             glossary_csv_path
                         )
                         logger.info(f"Glossaire Deepl utilisé : {glossary_csv_path}")
@@ -249,21 +257,21 @@ def process():
                         api_key=app.config["DEEPL_API_KEY"],
                         input_file_path=input_path,
                         output_file_path=final_output_path,
-                        target_language=request.form["target_language"],
-                        source_language=request.form["source_language"],
+                        target_language=target_language,
+                        source_language=source_language,
                         glossary_id=glossary_id,  # Utilisation du glossaire sélectionné
                     )
-                    logger.info(f"Traduction initiale terminée avec DeepL en utilisant le glossaire: {glossary_csv_path if glossary_csv_path else 'Aucun'}")
+                    logger.info(f"Traduction initiale terminée avec DeepL.")
 
                     improve_translation(
                         input_file=final_output_path,
                         glossary_path=glossary_gpt_path,
                         output_file=final_output_path,
-                        language_level=request.form["language_level"],
-                        source_language=request.form["source_language"],
-                        target_language=request.form["target_language"],
-                        group_size=int(request.form["group_size"]),
-                        model=request.form["gpt_model"],
+                        language_level=language_level,
+                        source_language=source_language,
+                        target_language=target_language,
+                        group_size=group_size,
+                        model=gpt_model,
                     )
                     logger.info(f"Amélioration de la traduction terminée avec ChatGPT en utilisant le glossaire: {glossary_gpt_path if glossary_gpt_path else 'Aucun'}")
 

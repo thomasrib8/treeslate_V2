@@ -29,22 +29,30 @@ def set_task_status(status, message, output_file_name=None):
     })
 
 def detect_encoding(file_path):
+    if file_path.lower().endswith('.xlsx'):
+        logger.info(f"Le fichier {file_path} est un fichier Excel, pas besoin de détecter l'encodage.")
+        return 'binary'  # Retourne une valeur spécifique pour les fichiers binaires
+
     with open(file_path, 'rb') as f:
-        raw_data = f.read(8192)  # Lire un plus grand volume de données pour une meilleure détection
+        raw_data = f.read(8192)
         result = chardet.detect(raw_data)
         detected_encoding = result.get('encoding')
 
         if not detected_encoding:
             logger.warning(f"Encodage non détecté pour {file_path}. Utilisation de 'ISO-8859-1' par défaut.")
-            detected_encoding = 'ISO-8859-1'  # Valeur de secours
+            detected_encoding = 'ISO-8859-1'
 
         logger.info(f"Encodage détecté : {detected_encoding} pour {file_path}")
         return detected_encoding
 
+
 def detect_and_convert_to_utf8(file_path):
-    """Détecte et convertit un fichier en UTF-8 si nécessaire."""
     try:
         encoding = detect_encoding(file_path)
+        if encoding is None:
+            logger.error(f"Impossible de détecter l'encodage pour {file_path}")
+            return False
+
         if encoding.lower() in ['utf-8', 'utf-8-sig']:
             logger.info(f"Aucune conversion nécessaire, fichier déjà en {encoding} : {file_path}")
             return True
@@ -55,7 +63,6 @@ def detect_and_convert_to_utf8(file_path):
             f.write(content)
         logger.info(f"Conversion réussie de {encoding} vers UTF-8 pour {file_path}")
         return True
-
     except UnicodeDecodeError as e:
         logger.error(f"Erreur de conversion d'encodage {encoding} -> UTF-8 : {e}")
         return False
@@ -63,8 +70,13 @@ def detect_and_convert_to_utf8(file_path):
         logger.error(f"Erreur inattendue dans la détection/conversion d'encodage : {e}")
         return False
 
+
 def verify_glossary_encoding(file_path):
     """Vérifie si le glossaire est lisible avec son encodage détecté."""
+    if file_path.lower().endswith('.xlsx'):
+        logger.info(f"Le fichier {file_path} est un fichier Excel, pas besoin de vérification d'encodage.")
+        return True  # Supposer que le fichier est valide
+
     encoding = detect_encoding(file_path)
     try:
         with open(file_path, 'r', encoding=encoding) as f:
@@ -150,6 +162,14 @@ def done():
 def process():
     try:
         input_file = request.files["input_file"]
+
+        # Vérification en amont du type de fichier
+        allowed_extensions = {".docx"}
+        if not input_file.filename.lower().endswith(tuple(allowed_extensions)):
+            flash("Seuls les fichiers .docx sont autorisés.", "danger")
+            logger.error(f"Type de fichier non autorisé: {input_file.filename}")
+            return redirect(url_for("translation.index"))
+
         input_path = os.path.join(current_app.config["UPLOAD_FOLDER"], input_file.filename)
         input_file.save(input_path)
 
@@ -170,19 +190,19 @@ def process():
         # Vérification de l'encodage des glossaires
         if glossary_csv_path:
             encoding = detect_encoding(glossary_csv_path)
-            if encoding.lower() not in ['utf-8', 'utf-8-sig', 'ascii']:
+            if encoding not in ['utf-8', 'utf-8-sig', 'ascii', 'binary']:
                 flash("Le glossaire sélectionné a un encodage incompatible. Veuillez vérifier le fichier.", "danger")
                 logger.error(f"Encodage incompatible détecté pour {glossary_csv_path}: {encoding}")
                 return redirect(url_for("translation.index"))
             
-            # Si encodage est UTF-8-SIG, le traiter comme UTF-8
-            if encoding.lower() == 'utf-8-sig':
-                logger.info(f"Encodage UTF-8-SIG détecté, traitement comme UTF-8 pour {glossary_csv_path}")
-                encoding = 'utf-8'
-
+            if encoding == 'binary' and not glossary_csv_path.lower().endswith('.xlsx'):
+                flash("Le fichier sélectionné ne semble pas être un fichier texte valide.", "danger")
+                logger.error(f"Fichier incompatible détecté pour {glossary_csv_path}")
+                return redirect(url_for("translation.index"))
+                
         if glossary_gpt_path and not verify_glossary_encoding(glossary_gpt_path):
             set_task_status("error", "Erreur d'encodage du glossaire GPT")
-            flash("Le fichier de glossaire GPT a un encodage non valide.", "danger")
+            flash(f"Le fichier de glossaire GPT '{glossary_gpt_path}' a un encodage non valide.", "danger")
             return redirect(url_for("translation.index"))
 
         output_file_name = request.form.get("output_file_name", "improved_output.docx")
@@ -197,15 +217,25 @@ def process():
                     logger.info("Début du processus de traduction.")
 
                     glossary_id = None
-                    if glossary_csv_path:
+                    if glossary_csv_path and os.path.exists(glossary_csv_path):
+                        # Vérifie si le fichier est au bon format (CSV ou XLSX)
+                        if not glossary_csv_path.lower().endswith(('.csv', '.xlsx')):
+                            flash("Le glossaire Deepl doit être au format CSV ou XLSX.", "danger")
+                            logger.error(f"Format non valide pour {glossary_csv_path}")
+                            return redirect(url_for("translation.index"))
+        
+                        # Création du glossaire Deepl
                         glossary_id = create_glossary(
                             app.config["DEEPL_API_KEY"],
-                            f"Glossary_{form_data['source_language']}_to_{form_data['target_language']}",
-                            form_data["source_language"],
-                            form_data["target_language"],
+                            f"Glossary_{request.form['source_language']}_to_{request.form['target_language']}",
+                            request.form["source_language"],
+                            request.form["target_language"],
                             glossary_csv_path
                         )
                         logger.info(f"Glossaire Deepl utilisé : {glossary_csv_path}")
+                    else:
+                        logger.warning("Aucun glossaire Deepl fourni ou fichier inexistant.")
+
 
                     if input_path.lower().endswith('.docx'):
                         logger.info("Fichier DOCX détecté, pas de conversion d'encodage nécessaire.")

@@ -115,6 +115,7 @@ def index():
 def upload_glossary():
     temp_xlsx_path = None  # Pour suivre le fichier temporaire XLSX
     csv_path = None  # Pour suivre le fichier converti CSV
+    e = None  # Assure que 'e' est défini pour éviter les erreurs
 
     if request.method == "POST":
         try:
@@ -191,19 +192,21 @@ def upload_glossary():
             flash("Glossaire uploadé avec succès !", "success")
             return redirect(url_for('translation.main_menu'))
 
-        except Exception as e:
+        except Exception as err:
+            e = err
             flash("Une erreur est survenue lors de l'upload.", "danger")
             logger.error(f"Erreur lors de l'upload du glossaire: {e}")
             return redirect(url_for('translation.upload_glossary'))
 
         finally:
-            if temp_xlsx_path is not None and os.path.exists(temp_xlsx_path):
+            # Suppression des fichiers intermédiaires en cas d'erreur
+            if temp_xlsx_path and os.path.exists(temp_xlsx_path):
                 os.remove(temp_xlsx_path)
                 logger.info(f"Fichier temporaire supprimé : {temp_xlsx_path}")
-        
-            if csv_path is not None and os.path.exists(csv_path) and 'error' in str(e).lower():
+
+            if csv_path and os.path.exists(csv_path) and e is not None:
                 os.remove(csv_path)
-                logger.info(f"Fichier CSV supprimé : {csv_path}")
+                logger.info(f"Fichier CSV problématique supprimé : {csv_path}")
 
 
     return render_template("upload_glossary.html")

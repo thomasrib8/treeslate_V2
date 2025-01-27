@@ -31,7 +31,7 @@ def set_task_status(status, message, output_file_name=None):
 def detect_encoding(file_path):
     if file_path.lower().endswith(('.xlsx', '.docx')):
         logger.info(f"Le fichier {file_path} est un fichier binaire (Excel ou Word), pas besoin de détecter l'encodage.")
-        return 'binary'  # Ignorer la détection pour ces formats
+        return 'binary'  # Exclure la détection pour ces fichiers
 
     with open(file_path, 'rb') as f:
         raw_data = f.read(8192)
@@ -40,11 +40,10 @@ def detect_encoding(file_path):
 
         if detected_encoding is None or detected_encoding.lower() in ['ascii', 'binary']:
             logger.warning(f"Encodage non détecté pour {file_path}. Utilisation de 'utf-8-sig' par défaut.")
-            detected_encoding = 'utf-8-sig'  # UTF-8 avec BOM comme fallback
+            detected_encoding = 'utf-8-sig'  # Fallback par défaut
 
         logger.info(f"Encodage détecté : {detected_encoding} pour {file_path}")
         return detected_encoding
-
 
 
 def detect_and_convert_to_utf8(file_path):
@@ -226,7 +225,7 @@ def process():
                 flash("Le glossaire sélectionné a un encodage incompatible. Veuillez vérifier le fichier.", "danger")
                 logger.error(f"Encodage incompatible détecté pour {glossary_csv_path}: {encoding}")
                 return redirect(url_for("translation.index"))
-            
+
             if encoding == 'binary' and not glossary_csv_path.lower().endswith('.xlsx'):
                 flash("Le fichier sélectionné ne semble pas être un fichier texte valide.", "danger")
                 logger.error(f"Fichier incompatible détecté pour {glossary_csv_path}")

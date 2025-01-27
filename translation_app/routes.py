@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify, current_app, send_from_directory, flash
+ofrom flask import Blueprint, render_template, request, redirect, url_for, jsonify, current_app, send_from_directory, flash, session
 import os
 import threading
 from .utils import (
@@ -238,11 +238,13 @@ def done():
         return render_template("error.html", message="Nom du fichier non spécifié.")
 
     file_path = os.path.join(current_app.config["DOWNLOAD_FOLDER"], filename)
-    if not os.path.exists(file_path):
+
+    if not filename or not os.path.exists(file_path):
         logger.error(f"Le fichier traduit {filename} est introuvable.")
-        return render_template("error.html", message="Le fichier traduit est introuvable.")
+        return render_template("error.html", message="Le fichier traduit est introuvable ou corrompu.")
 
     return render_template("done.html", output_file_name=filename)
+
     
 @translation_bp.route("/process", methods=["POST"])
 def process():
@@ -365,10 +367,17 @@ def process():
                     logger.info(f"Amélioration de la traduction terminée avec ChatGPT en utilisant le glossaire: {glossary_gpt_path if glossary_gpt_path else 'Aucun'}")
 
                     set_task_status("done", "Traduction terminée", os.path.basename(final_output_path))
+
+                    # Mise à jour de la session pour check_status
+                    session["translation_status"] = "done"
+                    session["translated_file"] = os.path.basename(final_output_path)
+                    session.modified = True
+            
                     logger.info(f"Traduction terminée avec succès : {final_output_path}")
 
                 except Exception as e:
                     set_task_status("error", f"Erreur lors du traitement : {str(e)}")
+                    session["translation_status"] = "error"
                     logger.error(f"Erreur dans le traitement : {e}")
 
         thread = threading.Thread(target=background_task)
@@ -383,6 +392,10 @@ def process():
 
 @translation_bp.route('/download/<filename>')
 def download_file(filename):
+    if ".." in filename or filename.startswith("/"):
+        flash("Accès non autorisé.", "danger")
+        return redirect(url_for('translation.main_menu'))
+
     download_folder = current_app.config["DOWNLOAD_FOLDER"]
     try:
         return send_from_directory(download_folder, filename, as_attachment=True)

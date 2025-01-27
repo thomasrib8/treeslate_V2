@@ -47,33 +47,31 @@ def detect_encoding(file_path):
 
 
 def detect_and_convert_to_utf8(file_path):
-    """Détecte et convertit un fichier en UTF-8 si nécessaire."""
+    """Détecte et convertit un fichier en UTF-8 si nécessaire, sauf pour les fichiers binaires comme XLSX."""
     try:
+        if file_path.lower().endswith('.xlsx'):
+            logger.info(f"Le fichier {file_path} est un fichier Excel, pas besoin de conversion d'encodage.")
+            return True  # On considère les fichiers Excel comme valides sans conversion
+        
         encoding = detect_encoding(file_path)
         if encoding.lower() in ['utf-8', 'utf-8-sig']:
             logger.info(f"Aucune conversion nécessaire, fichier déjà en {encoding} : {file_path}")
             return True
 
-        # Essayons de lire le fichier
-        try:
-            with open(file_path, 'r', encoding=encoding, errors='replace') as f:
-                content = f.read()
-            with open(file_path, 'w', encoding='utf-8') as f:
-                f.write(content)
-            logger.info(f"Conversion réussie de {encoding} vers UTF-8 pour {file_path}")
-            return True
-        except UnicodeDecodeError:
-            logger.warning(f"Erreur de lecture avec encodage {encoding}, tentative avec 'ISO-8859-1'")
-            with open(file_path, 'r', encoding='ISO-8859-1', errors='replace') as f:
-                content = f.read()
-            with open(file_path, 'w', encoding='utf-8') as f:
-                f.write(content)
-            logger.info(f"Conversion réussie avec encodage de secours ISO-8859-1 pour {file_path}")
-            return True
+        with open(file_path, 'r', encoding=encoding, errors='replace') as f:
+            content = f.read()
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        logger.info(f"Conversion réussie de {encoding} vers UTF-8 pour {file_path}")
+        return True
 
+    except UnicodeDecodeError as e:
+        logger.error(f"Erreur de conversion d'encodage {encoding} -> UTF-8 : {e}")
+        return False
     except Exception as e:
         logger.error(f"Erreur inattendue dans la détection/conversion d'encodage : {e}")
         return False
+
 
 
 
@@ -136,19 +134,19 @@ def upload_glossary():
                 return redirect(url_for('translation.upload_glossary'))
 
             # Gestion spécifique des fichiers .docx
-            if glossary_file.filename.lower().endswith('.docx'):
+            if glossary_file.filename.lower().endswith('.docx') or glossary_file.filename.lower().endswith('.xlsx'):
                 glossary_file.save(file_path)  # Sauvegarde sans conversion d'encodage
-                logger.info(f"Fichier DOCX sauvegardé sans vérification d'encodage: {file_path}")
+                logger.info(f"Fichier {glossary_file.filename} sauvegardé sans vérification d'encodage.")
             else:
                 # Vérification stricte de l'encodage pour les fichiers CSV uniquement
                 temp_path = os.path.join(save_folder, "temp_" + glossary_file.filename)
                 glossary_file.save(temp_path)
-
+            
                 if not detect_and_convert_to_utf8(temp_path):
                     flash("Le fichier ne peut pas être converti en UTF-8. Veuillez vérifier son encodage.", "danger")
                     os.remove(temp_path)
                     return redirect(url_for('translation.upload_glossary'))
-                
+            
                 os.rename(temp_path, file_path)  # Renommer le fichier validé
 
             flash("Glossaire uploadé avec succès !", "success")

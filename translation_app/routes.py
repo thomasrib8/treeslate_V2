@@ -29,11 +29,15 @@ def set_task_status(status, message, output_file_name=None):
     })
 
 def detect_encoding(file_path):
-    """Détecte l'encodage d'un fichier."""
     with open(file_path, 'rb') as f:
-        raw_data = f.read(8192)
+        raw_data = f.read(8192)  # Lire un plus grand volume de données pour une meilleure détection
         result = chardet.detect(raw_data)
-        detected_encoding = result.get('encoding', 'utf-8')
+        detected_encoding = result.get('encoding')
+
+        if not detected_encoding:
+            logger.warning(f"Encodage non détecté pour {file_path}. Utilisation de 'ISO-8859-1' par défaut.")
+            detected_encoding = 'ISO-8859-1'  # Valeur de secours
+
         logger.info(f"Encodage détecté : {detected_encoding} pour {file_path}")
         return detected_encoding
 
@@ -149,8 +153,11 @@ def process():
         input_path = os.path.join(current_app.config["UPLOAD_FOLDER"], input_file.filename)
         input_file.save(input_path)
 
+        # Vérification de l'encodage et conversion si nécessaire (sauf pour les fichiers DOCX)
+    if not input_path.lower().endswith('.docx'):
+        encoding = detect_encoding(input_path)
         if not detect_and_convert_to_utf8(input_path):
-            set_task_status("error", "Erreur lors de la conversion en UTF-8")
+            set_task_status("error", f"Erreur lors de la conversion en UTF-8 pour {input_path}")
             flash("Erreur lors de la conversion du fichier en UTF-8.", "danger")
             return redirect(url_for("translation.index"))
 
@@ -161,10 +168,12 @@ def process():
         glossary_gpt_path = os.path.join(current_app.config["GPT_GLOSSARY_FOLDER"], glossary_gpt_name) if glossary_gpt_name else None
 
         # Vérification de l'encodage des glossaires
-        if glossary_csv_path and not verify_glossary_encoding(glossary_csv_path):
-            set_task_status("error", "Erreur d'encodage du glossaire Deepl")
-            flash("Le fichier de glossaire Deepl a un encodage non valide.", "danger")
-            return redirect(url_for("translation.index"))
+        if glossary_csv_path:
+            encoding = detect_encoding(glossary_csv_path)
+            if encoding.lower() not in ['utf-8', 'ascii']:
+                flash("Le glossaire sélectionné a un encodage incompatible. Veuillez vérifier le fichier.", "danger")
+                logger.error(f"Encodage incompatible détecté pour {glossary_csv_path}: {encoding}")
+                return redirect(url_for("translation.index"))
 
         if glossary_gpt_path and not verify_glossary_encoding(glossary_gpt_path):
             set_task_status("error", "Erreur d'encodage du glossaire GPT")
@@ -183,12 +192,12 @@ def process():
                     logger.info("Début du processus de traduction.")
 
                     glossary_id = None
-                    if glossary_csv_path and os.path.exists(glossary_csv_path):
+                    if glossary_csv_path:
                         glossary_id = create_glossary(
                             app.config["DEEPL_API_KEY"],
-                            f"Glossary_{request.form['source_language']}_to_{request.form['target_language']}",
-                            request.form["source_language"],
-                            request.form["target_language"],
+                            f"Glossary_{form_data['source_language']}_to_{form_data['target_language']}",
+                            form_data["source_language"],
+                            form_data["target_language"],
                             glossary_csv_path
                         )
                         logger.info(f"Glossaire Deepl utilisé : {glossary_csv_path}")

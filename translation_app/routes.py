@@ -203,7 +203,7 @@ def upload_glossary():
                 logger.info(f"Fichier CSV {glossary_file.filename} sauvegardé après vérification d'encodage.")
 
             flash("Glossaire uploadé avec succès !", "success")
-            return redirect(url_for('translation.main_menu'))
+            return redirect(url_for('translation.upload_glossary')) 
 
         except Exception as err:
             e = err

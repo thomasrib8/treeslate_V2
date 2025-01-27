@@ -47,28 +47,34 @@ def detect_encoding(file_path):
 
 
 def detect_and_convert_to_utf8(file_path):
+    """Détecte et convertit un fichier en UTF-8 si nécessaire."""
     try:
         encoding = detect_encoding(file_path)
-        if encoding is None:
-            logger.error(f"Impossible de détecter l'encodage pour {file_path}")
-            return False
-
         if encoding.lower() in ['utf-8', 'utf-8-sig']:
             logger.info(f"Aucune conversion nécessaire, fichier déjà en {encoding} : {file_path}")
             return True
 
-        with open(file_path, 'r', encoding=encoding, errors='replace') as f:
-            content = f.read()
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.write(content)
-        logger.info(f"Conversion réussie de {encoding} vers UTF-8 pour {file_path}")
-        return True
-    except UnicodeDecodeError as e:
-        logger.error(f"Erreur de conversion d'encodage {encoding} -> UTF-8 : {e}")
-        return False
+        # Essayons de lire le fichier
+        try:
+            with open(file_path, 'r', encoding=encoding, errors='replace') as f:
+                content = f.read()
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            logger.info(f"Conversion réussie de {encoding} vers UTF-8 pour {file_path}")
+            return True
+        except UnicodeDecodeError:
+            logger.warning(f"Erreur de lecture avec encodage {encoding}, tentative avec 'ISO-8859-1'")
+            with open(file_path, 'r', encoding='ISO-8859-1', errors='replace') as f:
+                content = f.read()
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            logger.info(f"Conversion réussie avec encodage de secours ISO-8859-1 pour {file_path}")
+            return True
+
     except Exception as e:
         logger.error(f"Erreur inattendue dans la détection/conversion d'encodage : {e}")
         return False
+
 
 
 def verify_glossary_encoding(file_path):
@@ -129,15 +135,32 @@ def upload_glossary():
                 flash("Format de fichier non autorisé.", "danger")
                 return redirect(url_for('translation.upload_glossary'))
 
-            glossary_file.save(file_path)
+            # Gestion spécifique des fichiers .docx
+            if glossary_file.filename.lower().endswith('.docx'):
+                glossary_file.save(file_path)  # Sauvegarde sans conversion d'encodage
+                logger.info(f"Fichier DOCX sauvegardé sans vérification d'encodage: {file_path}")
+            else:
+                # Vérification stricte de l'encodage pour les fichiers CSV uniquement
+                temp_path = os.path.join(save_folder, "temp_" + glossary_file.filename)
+                glossary_file.save(temp_path)
+
+                if not detect_and_convert_to_utf8(temp_path):
+                    flash("Le fichier ne peut pas être converti en UTF-8. Veuillez vérifier son encodage.", "danger")
+                    os.remove(temp_path)
+                    return redirect(url_for('translation.upload_glossary'))
+                
+                os.rename(temp_path, file_path)  # Renommer le fichier validé
+
             flash("Glossaire uploadé avec succès !", "success")
             return redirect(url_for('translation.main_menu'))
 
         except Exception as e:
             flash("Une erreur est survenue lors de l'upload.", "danger")
+            logger.error(f"Erreur lors de l'upload du glossaire: {e}")
             return redirect(url_for('translation.upload_glossary'))
 
     return render_template("upload_glossary.html")
+
 
 @translation_bp.route("/processing")
 def processing():
@@ -181,14 +204,17 @@ def process():
         gpt_model = request.form["gpt_model"]
         output_file_name = request.form.get("output_file_name", "improved_output.docx")
 
-        # Vérification de l'encodage et conversion si nécessaire (sauf pour les fichiers DOCX)
-        if not input_path.lower().endswith('.docx'):
+        # Gestion spécifique pour les fichiers .docx : pas de conversion d'encodage
+        if input_path.lower().endswith('.docx'):
+            logger.info(f"Fichier DOCX détecté, pas de conversion d'encodage nécessaire : {input_path}")
+        else:
+            # Vérification et conversion de l'encodage pour les fichiers non-DOCX
             encoding = detect_encoding(input_path)
             if not detect_and_convert_to_utf8(input_path):
                 set_task_status("error", f"Erreur lors de la conversion en UTF-8 pour {input_path}")
                 flash("Erreur lors de la conversion du fichier en UTF-8.", "danger")
                 return redirect(url_for("translation.index"))
-
+                
         glossary_csv_name = request.form.get("deepl_glossary")
         glossary_gpt_name = request.form.get("gpt_glossary")
 
@@ -196,7 +222,7 @@ def process():
         glossary_gpt_path = os.path.join(current_app.config["GPT_GLOSSARY_FOLDER"], glossary_gpt_name) if glossary_gpt_name else None
 
         # Vérification de l'encodage des glossaires
-        if glossary_csv_path:
+        if glossary_csv_path and glossary_csv_path.lower().endswith('.csv'):
             encoding = detect_encoding(glossary_csv_path)
             if encoding not in ['utf-8', 'utf-8-sig', 'ascii', 'binary']:
                 flash("Le glossaire sélectionné a un encodage incompatible. Veuillez vérifier le fichier.", "danger")

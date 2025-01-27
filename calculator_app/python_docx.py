@@ -30,14 +30,14 @@ def calculate_translation_cost(words, characters, translation_time_min):
     step1_cost = tokens * 0.0000015  # Coût des tokens
     step2_cost = characters * 0.000021  # Coût DeepL
     step3_cost = translation_time_min * 0.005161  # Coût application web
-    return step1_cost + step2_cost + step3_cost
+    return round(step1_cost + step2_cost + step3_cost, 6)  # Précision à 6 décimales
 
 def calculate_review_cost(words, reviewer_choice):
     """Calcule le coût de relecture en fonction du choix du relecteur"""
     if reviewer_choice == "TOBY":
-        return words * 0.025
+        return round(words * 0.025, 6)
     elif reviewer_choice == "TOBY+MIKE":
-        return words * 0.025
+        return round(words * 0.025, 6)
     elif reviewer_choice == "MIKE":
         return 0.0
     else:
@@ -58,33 +58,27 @@ def main():
     words, characters, pages, paragraphs = get_docx_stats(file_path)
     
     # Affiche les statistiques du document
-    print(f"Words: {words}")
-    print(f"Characters: {characters}")
-    print(f"Pages: {pages}")
-    print(f"Paragraphs: {paragraphs}")
+    print(f"Nombre de mots: {words}")
+    print(f"Nombre de caractères: {characters}")
+    print(f"Nombre de paragraphes: {paragraphs}")
     
     # Taille du groupe pour la traduction
-    group_size = int(input("Enter the group size (1-10): "))
+    group_size = int(input("Entrez la taille du groupe (1-10): "))
     translation_time, translation_time_sec = calculate_translation_time(words, paragraphs, group_size)
     translation_time_min = translation_time_sec / 60
     
-    # Affiche le temps de traduction
-    print(f"Translation time: {str(translation_time)}")
-    
-    # Calcule et affiche le coût de traduction
+    # Calcule le coût de traduction
     translation_cost = calculate_translation_cost(words, characters, translation_time_min)
-    print(f"Translation cost: ${translation_cost:.6f}")
+    print(f"Coût estimé de traduction: ${translation_cost:.6f}")
     
     # Demande le choix du relecteur
     reviewer_choice = get_reviewer_choice()
     review_cost = calculate_review_cost(words, reviewer_choice)
-    
-    # Affiche le coût de relecture
-    print(f"Review cost: ${review_cost:.2f}")
+    print(f"Coût estimé de relecture: ${review_cost:.6f}")
     
     # Calcule et affiche le coût total
-    total_cost = translation_cost + review_cost
-    print(f"Total cost: ${total_cost:.6f}")
+    total_cost = round(translation_cost + review_cost, 6)
+    print(f"Total estimé du coût de traduction: ${total_cost:.6f}")
 
 if __name__ == "__main__":
     main()

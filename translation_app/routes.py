@@ -38,33 +38,38 @@ def detect_encoding(file_path):
         logger.info(f"Encodage détecté : {detected_encoding}")
         return detected_encoding
 
-def convert_to_utf8(file_path):
-    try:
-        with open(file_path, 'rb') as f:
-            raw_data = f.read(8192)
-            detected = chardet.detect(raw_data)
-            encoding = detected['encoding']
-            confidence = detected['confidence']
+def detect_and_convert_to_utf8(file_path):
+    """Détecte l'encodage d'un fichier et le convertit en UTF-8 si nécessaire."""
+    with open(file_path, 'rb') as f:
+        raw_data = f.read(4096)  # Lire une partie du fichier pour détecter l'encodage
+        result = chardet.detect(raw_data)
+        detected_encoding = result['encoding']
+        confidence = result['confidence']
 
-            if not encoding or confidence < 0.5:
-                logger.warning(f"Encodage incertain, utilisation de 'ISO-8859-1' par défaut.")
-                encoding = 'ISO-8859-1'  # Encodage par défaut en cas d'incertitude
+    if detected_encoding and confidence > 0.5:
+        try:
+            with open(file_path, 'r', encoding=detected_encoding) as f:
+                content = f.read()
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            logger.info(f"Fichier converti avec succès de {detected_encoding} vers UTF-8.")
+            return True
+        except Exception as e:
+            logger.error(f"Erreur lors de la conversion de l'encodage: {e}")
+            return False
+    else:
+        logger.warning(f"Encodage incertain ({detected_encoding}), utilisation de 'ISO-8859-1' par défaut.")
+        try:
+            with open(file_path, 'r', encoding='ISO-8859-1') as f:
+                content = f.read()
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            logger.info("Fichier converti de ISO-8859-1 vers UTF-8 par défaut.")
+            return True
+        except Exception as e:
+            logger.error(f"Échec de la conversion de secours en UTF-8: {e}")
+            return False
 
-        logger.info(f"Encodage détecté : {encoding} avec une confiance de {confidence}")
-
-        with open(file_path, 'r', encoding=encoding) as f:
-            content = f.read()
-
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.write(content)
-        return True
-
-    except UnicodeDecodeError as e:
-        logger.error(f"Erreur lors de la conversion en UTF-8: {e}")
-        return False
-    except Exception as e:
-        logger.error(f"Erreur inconnue lors de la conversion : {e}")
-        return False
 
 @translation_bp.route("/")
 def index():
@@ -162,10 +167,11 @@ def process():
         logger.info(f"Fichier source enregistré à : {input_path}")
 
         # Vérification et conversion en UTF-8 après enregistrement du fichier
-        if not convert_to_utf8(input_path):
+        if not detect_and_convert_to_utf8(input_path):
             set_task_status("error", "Erreur lors de la conversion en UTF-8")
+            flash("Erreur lors de la conversion du fichier en UTF-8.", "danger")
             return redirect(url_for("translation.index"))
-
+            
         glossary_csv_name = request.form.get("deepl_glossary")
         glossary_gpt_name = request.form.get("gpt_glossary")
 
@@ -174,9 +180,14 @@ def process():
         glossary_gpt_path = os.path.join(current_app.config["GPT_GLOSSARY_FOLDER"], glossary_gpt_name) if glossary_gpt_name else None
 
         # Vérification de l'existence du glossaire GPT
+        if glossary_csv_path and not os.path.exists(glossary_csv_path):
+            logger.error(f"Glossaire Deepl introuvable: {glossary_csv_path}")
+            flash("Le fichier de glossaire Deepl est introuvable.", "danger")
+            return redirect(url_for("translation.index"))
+
         if glossary_gpt_path and not os.path.exists(glossary_gpt_path):
-            logger.error(f"Glossary GPT introuvable : {glossary_gpt_path}")
-            flash(f"Le fichier de glossaire GPT {glossary_gpt_name} est introuvable.", "danger")
+            logger.error(f"Glossaire GPT introuvable: {glossary_gpt_path}")
+            flash("Le fichier de glossaire GPT est introuvable.", "danger")
             return redirect(url_for("translation.index"))
 
         form_data = {
@@ -213,8 +224,9 @@ def process():
                     if input_path.lower().endswith('.docx'):
                         logger.info("Fichier DOCX détecté, pas de conversion d'encodage nécessaire.")
                     else:
-                        if not convert_to_utf8(input_path):
+                        if not detect_and_convert_to_utf8(input_path):
                             set_task_status("error", "Erreur lors de la conversion en UTF-8")
+                            flash("Erreur lors de la conversion du fichier en UTF-8.", "danger")
                             return redirect(url_for("translation.index"))
 
                     translate_docx_with_deepl(

@@ -49,9 +49,9 @@ def detect_encoding(file_path):
 def detect_and_convert_to_utf8(file_path):
     """Détecte et convertit un fichier en UTF-8 si nécessaire, sauf pour les fichiers binaires comme XLSX."""
     try:
-        if file_path.lower().endswith('.xlsx'):
-            logger.info(f"Le fichier {file_path} est un fichier Excel, pas besoin de conversion d'encodage.")
-            return True  # On considère les fichiers Excel comme valides sans conversion
+        if file_path.lower().endswith(('.xlsx', '.docx')):
+            logger.info(f"Le fichier {file_path} est un fichier Excel ou DOCX, pas besoin de conversion d'encodage.")
+            return True  # On considère les fichiers Excel et DOCX comme valides sans conversion
         
         encoding = detect_encoding(file_path)
         if encoding.lower() in ['utf-8', 'utf-8-sig']:

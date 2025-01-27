@@ -8,7 +8,7 @@ from .utils import (
 )
 from datetime import datetime
 from docx import Document
-import chardet  # MODIFICATION
+import chardet
 import logging
 
 # Création du Blueprint
@@ -27,49 +27,49 @@ def set_task_status(status, message, output_file_name=None):
         "message": message,
         "output_file_name": output_file_name,
     })
-    
+
 def detect_encoding(file_path):
+    """Détecte l'encodage d'un fichier."""
     with open(file_path, 'rb') as f:
-        raw_data = f.read(8192)  # Augmenter la taille de lecture
+        raw_data = f.read(8192)
         result = chardet.detect(raw_data)
-        detected_encoding = result['encoding']
-        if not detected_encoding:
-            detected_encoding = 'utf-8'  # Défaut à UTF-8 si non détecté
-        logger.info(f"Encodage détecté : {detected_encoding}")
+        detected_encoding = result.get('encoding', 'utf-8')
+        logger.info(f"Encodage détecté : {detected_encoding} pour {file_path}")
         return detected_encoding
 
 def detect_and_convert_to_utf8(file_path):
-    """Détecte l'encodage d'un fichier et le convertit en UTF-8 si nécessaire."""
-    with open(file_path, 'rb') as f:
-        raw_data = f.read(4096)  # Lire une partie du fichier pour détecter l'encodage
-        result = chardet.detect(raw_data)
-        detected_encoding = result['encoding']
-        confidence = result['confidence']
-
-    if detected_encoding and confidence > 0.5:
-        try:
-            with open(file_path, 'r', encoding=detected_encoding) as f:
-                content = f.read()
-            with open(file_path, 'w', encoding='utf-8') as f:
-                f.write(content)
-            logger.info(f"Fichier converti avec succès de {detected_encoding} vers UTF-8.")
+    """Détecte et convertit un fichier en UTF-8 si nécessaire."""
+    try:
+        encoding = detect_encoding(file_path)
+        if encoding.lower() == 'utf-8':
+            logger.info(f"Aucune conversion nécessaire, fichier déjà en UTF-8 : {file_path}")
             return True
-        except Exception as e:
-            logger.error(f"Erreur lors de la conversion de l'encodage: {e}")
-            return False
-    else:
-        logger.warning(f"Encodage incertain ({detected_encoding}), utilisation de 'ISO-8859-1' par défaut.")
-        try:
-            with open(file_path, 'r', encoding='ISO-8859-1') as f:
-                content = f.read()
-            with open(file_path, 'w', encoding='utf-8') as f:
-                f.write(content)
-            logger.info("Fichier converti de ISO-8859-1 vers UTF-8 par défaut.")
-            return True
-        except Exception as e:
-            logger.error(f"Échec de la conversion de secours en UTF-8: {e}")
-            return False
 
+        with open(file_path, 'r', encoding=encoding) as f:
+            content = f.read()
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        logger.info(f"Conversion réussie de {encoding} vers UTF-8 pour {file_path}")
+        return True
+
+    except UnicodeDecodeError as e:
+        logger.error(f"Erreur de conversion d'encodage {encoding} -> UTF-8 : {e}")
+        return False
+    except Exception as e:
+        logger.error(f"Erreur inattendue dans la détection/conversion d'encodage : {e}")
+        return False
+
+def verify_glossary_encoding(file_path):
+    """Vérifie si le glossaire est lisible avec son encodage détecté."""
+    encoding = detect_encoding(file_path)
+    try:
+        with open(file_path, 'r', encoding=encoding) as f:
+            f.read()
+        logger.info(f"Le fichier {file_path} est lisible avec l'encodage {encoding}.")
+        return True
+    except UnicodeDecodeError:
+        logger.error(f"Erreur de lecture du fichier {file_path} avec l'encodage détecté {encoding}.")
+        return False
 
 @translation_bp.route("/")
 def index():
@@ -78,23 +78,14 @@ def index():
         os.makedirs(current_app.config["DEEPL_GLOSSARY_FOLDER"], exist_ok=True)
         os.makedirs(current_app.config["GPT_GLOSSARY_FOLDER"], exist_ok=True)
 
-        logger.info(f"Accès au dossier Deepl : {os.access(current_app.config['DEEPL_GLOSSARY_FOLDER'], os.R_OK)}")
-        logger.info(f"Accès au dossier GPT : {os.access(current_app.config['GPT_GLOSSARY_FOLDER'], os.R_OK)}")
-
         deepl_glossaries = os.listdir(current_app.config["DEEPL_GLOSSARY_FOLDER"])
         gpt_glossaries = os.listdir(current_app.config["GPT_GLOSSARY_FOLDER"])
-
-        logger.info(f"Glossaires Deepl trouvés: {deepl_glossaries}")
-        logger.info(f"Glossaires GPT trouvés: {gpt_glossaries}")
 
         return render_template(
             "index.html",
             deepl_glossaries=deepl_glossaries,
             gpt_glossaries=gpt_glossaries
         )
-    except KeyError as e:
-        logger.error(f"Erreur de configuration: {e}")
-        return "Erreur de configuration. Vérifiez les variables de configuration.", 500
     except Exception as e:
         logger.error(f"Erreur inattendue: {e}")
         return "Erreur interne du serveur", 500
@@ -108,33 +99,26 @@ def upload_glossary():
 
             if not glossary_file:
                 flash("Aucun fichier sélectionné.", "danger")
-                logger.error("Aucun fichier sélectionné.")
                 return redirect(url_for('translation.upload_glossary'))
 
             if glossary_type not in ["deepl", "chatgpt"]:
                 flash("Type de glossaire invalide.", "danger")
-                logger.error("Type de glossaire invalide sélectionné.")
                 return redirect(url_for('translation.upload_glossary'))
 
             save_folder = current_app.config["DEEPL_GLOSSARY_FOLDER"] if glossary_type == "deepl" else current_app.config["GPT_GLOSSARY_FOLDER"]
-            os.makedirs(save_folder, exist_ok=True)  # MODIFICATION
-            file_path = os.path.join(save_folder, glossary_file.filename)  # MODIFICATION
+            file_path = os.path.join(save_folder, glossary_file.filename)
 
             allowed_extensions = {".csv", ".xlsx", ".docx"}
             if not glossary_file.filename.lower().endswith(tuple(allowed_extensions)):
                 flash("Format de fichier non autorisé.", "danger")
-                logger.error("Format de fichier non autorisé.")
                 return redirect(url_for('translation.upload_glossary'))
 
-            glossary_file.save(file_path)   # Enregistrer le fichier sur le serveur
-            logger.info(f"Glossaire sauvegardé avec succès : {file_path}")
+            glossary_file.save(file_path)
             flash("Glossaire uploadé avec succès !", "success")
-
             return redirect(url_for('translation.main_menu'))
 
         except Exception as e:
             flash("Une erreur est survenue lors de l'upload.", "danger")
-            logger.error(f"Erreur lors de l'upload du glossaire : {str(e)}")
             return redirect(url_for('translation.upload_glossary'))
 
     return render_template("upload_glossary.html")
@@ -158,45 +142,33 @@ def done():
 
     return render_template("done.html", output_file_name=filename)
 
-@translation_bp.route("/process", methods=["POST"])
 def process():
     try:
         input_file = request.files["input_file"]
         input_path = os.path.join(current_app.config["UPLOAD_FOLDER"], input_file.filename)
         input_file.save(input_path)
-        logger.info(f"Fichier source enregistré à : {input_path}")
 
-        # Vérification et conversion en UTF-8 après enregistrement du fichier
         if not detect_and_convert_to_utf8(input_path):
             set_task_status("error", "Erreur lors de la conversion en UTF-8")
             flash("Erreur lors de la conversion du fichier en UTF-8.", "danger")
             return redirect(url_for("translation.index"))
-            
+
         glossary_csv_name = request.form.get("deepl_glossary")
         glossary_gpt_name = request.form.get("gpt_glossary")
 
-        # Construction des chemins complets des glossaires
         glossary_csv_path = os.path.join(current_app.config["DEEPL_GLOSSARY_FOLDER"], glossary_csv_name) if glossary_csv_name else None
         glossary_gpt_path = os.path.join(current_app.config["GPT_GLOSSARY_FOLDER"], glossary_gpt_name) if glossary_gpt_name else None
 
-        # Vérification de l'existence du glossaire GPT
-        if glossary_csv_path and not os.path.exists(glossary_csv_path):
-            logger.error(f"Glossaire Deepl introuvable: {glossary_csv_path}")
-            flash("Le fichier de glossaire Deepl est introuvable.", "danger")
+        # Vérification de l'encodage des glossaires
+        if glossary_csv_path and not verify_glossary_encoding(glossary_csv_path):
+            set_task_status("error", "Erreur d'encodage du glossaire Deepl")
+            flash("Le fichier de glossaire Deepl a un encodage non valide.", "danger")
             return redirect(url_for("translation.index"))
 
-        if glossary_gpt_path and not os.path.exists(glossary_gpt_path):
-            logger.error(f"Glossaire GPT introuvable: {glossary_gpt_path}")
-            flash("Le fichier de glossaire GPT est introuvable.", "danger")
+        if glossary_gpt_path and not verify_glossary_encoding(glossary_gpt_path):
+            set_task_status("error", "Erreur d'encodage du glossaire GPT")
+            flash("Le fichier de glossaire GPT a un encodage non valide.", "danger")
             return redirect(url_for("translation.index"))
-
-        form_data = {
-            "target_language": request.form["target_language"],
-            "source_language": request.form["source_language"],
-            "language_level": request.form["language_level"],
-            "group_size": int(request.form["group_size"]),
-            "gpt_model": request.form["gpt_model"],
-        }
 
         output_file_name = request.form.get("output_file_name", "improved_output.docx")
         final_output_path = os.path.join(current_app.config["DOWNLOAD_FOLDER"], output_file_name)
@@ -213,14 +185,13 @@ def process():
                     if glossary_csv_path and os.path.exists(glossary_csv_path):
                         glossary_id = create_glossary(
                             app.config["DEEPL_API_KEY"],
-                            f"Glossary_{form_data['source_language']}_to_{form_data['target_language']}",
-                            form_data["source_language"],
-                            form_data["target_language"],
+                            f"Glossary_{request.form['source_language']}_to_{request.form['target_language']}",
+                            request.form["source_language"],
+                            request.form["target_language"],
                             glossary_csv_path
                         )
                         logger.info(f"Glossaire Deepl utilisé : {glossary_csv_path}")
 
-                    # Ajout du contrôle d'encodage
                     if input_path.lower().endswith('.docx'):
                         logger.info("Fichier DOCX détecté, pas de conversion d'encodage nécessaire.")
                     else:
@@ -233,26 +204,27 @@ def process():
                         api_key=app.config["DEEPL_API_KEY"],
                         input_file_path=input_path,
                         output_file_path=final_output_path,
-                        target_language=form_data["target_language"],
-                        source_language=form_data["source_language"],
-                        glossary_id=glossary_id,
+                        target_language=request.form["target_language"],
+                        source_language=request.form["source_language"],
+                        glossary_id=glossary_id,  # Utilisation du glossaire sélectionné
                     )
-                    logger.info("Traduction initiale terminée avec DeepL.")
+                    logger.info(f"Traduction initiale terminée avec DeepL en utilisant le glossaire: {glossary_csv_path if glossary_csv_path else 'Aucun'}")
 
                     improve_translation(
                         input_file=final_output_path,
                         glossary_path=glossary_gpt_path,
                         output_file=final_output_path,
-                        language_level=form_data["language_level"],
-                        source_language=form_data["source_language"],
-                        target_language=form_data["target_language"],
-                        group_size=form_data["group_size"],
-                        model=form_data["gpt_model"],
+                        language_level=request.form["language_level"],
+                        source_language=request.form["source_language"],
+                        target_language=request.form["target_language"],
+                        group_size=int(request.form["group_size"]),
+                        model=request.form["gpt_model"],
                     )
-                    logger.info(f"Amélioration de la traduction terminée avec ChatGPT : {glossary_gpt_path}")
+                    logger.info(f"Amélioration de la traduction terminée avec ChatGPT en utilisant le glossaire: {glossary_gpt_path if glossary_gpt_path else 'Aucun'}")
 
                     set_task_status("done", "Traduction terminée", os.path.basename(final_output_path))
                     logger.info(f"Traduction terminée avec succès : {final_output_path}")
+
                 except Exception as e:
                     set_task_status("error", f"Erreur lors du traitement : {str(e)}")
                     logger.error(f"Erreur dans le traitement : {e}")
@@ -265,8 +237,7 @@ def process():
     except Exception as e:
         logger.error(f"Erreur lors du traitement du fichier : {str(e)}")
         flash("Une erreur est survenue lors du traitement du fichier.", "danger")
-        return redirect(url_for("translation.error"))
-
+        return redirect(url_for("translation.index"))
 
 @translation_bp.route('/download/<filename>')
 def download_file(filename):

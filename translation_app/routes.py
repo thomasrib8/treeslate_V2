@@ -208,7 +208,7 @@ def process():
 
         # Gestion spécifique pour les fichiers .docx et .xlsx : pas de conversion d'encodage
         if input_path.lower().endswith(('.docx', '.xlsx')):
-            logger.info(f"Fichier binaire détecté ({input_path}), pas de conversion d'encodage nécessaire.")
+            logger.info(f"Fichier DOCX ou XLSX détecté, pas de conversion d'encodage nécessaire : {input_path}")
         else:
             # Vérification et conversion de l'encodage pour les fichiers texte
             encoding = detect_encoding(input_path)
@@ -216,8 +216,9 @@ def process():
                 set_task_status("error", f"Erreur lors de la conversion en UTF-8 pour {input_path}")
                 flash("Erreur lors de la conversion du fichier en UTF-8.", "danger")
                 return redirect(url_for("translation.index"))
-                glossary_csv_name = request.form.get("deepl_glossary")
-                glossary_gpt_name = request.form.get("gpt_glossary")
+                
+        glossary_csv_name = request.form.get("deepl_glossary", None)
+        glossary_gpt_name = request.form.get("gpt_glossary", None)
 
         glossary_csv_path = os.path.join(current_app.config["DEEPL_GLOSSARY_FOLDER"], glossary_csv_name) if glossary_csv_name else None
         glossary_gpt_path = os.path.join(current_app.config["GPT_GLOSSARY_FOLDER"], glossary_gpt_name) if glossary_gpt_name else None

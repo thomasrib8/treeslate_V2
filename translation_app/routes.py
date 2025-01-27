@@ -191,13 +191,14 @@ def upload_glossary():
 
         finally:
             # Suppression des fichiers intermédiaires en cas d'erreur
-            if 'temp_xlsx_path' in locals() and os.path.exists(temp_xlsx_path):
+            if temp_xlsx_path is not None and os.path.exists(temp_xlsx_path):
                 os.remove(temp_xlsx_path)
                 logger.info(f"Fichier temporaire supprimé : {temp_xlsx_path}")
         
-            if 'csv_path' in locals() and os.path.exists(csv_path):
+            if csv_path is not None and os.path.exists(csv_path):
                 os.remove(csv_path)
                 logger.info(f"Fichier CSV supprimé : {csv_path}")
+
 
     return render_template("upload_glossary.html")
 

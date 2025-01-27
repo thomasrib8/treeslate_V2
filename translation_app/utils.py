@@ -117,14 +117,20 @@ def convert_excel_to_csv(excel_path, csv_path):
         logger.error(f"Excel file not found: {excel_path}")
         raise FileNotFoundError(f"Excel file not found: {excel_path}")
 
-    try:
-        df = pd.read_excel(excel_path, header=None)
-        df.to_csv(csv_path, index=False, header=False, encoding='utf-8-sig')
-        logger.info(f"Converted Excel file to CSV: {csv_path} with UTF-8 encoding")
-        return csv_path
-    except Exception as e:
-        logger.error(f"Error converting Excel to CSV: {e}")
-        raise
+    df = pd.read_excel(excel_path, header=None)
+    
+    # Enregistrement en UTF-8 strict (sans BOM)
+    df.to_csv(csv_path, index=False, header=False, encoding='utf-8')
+    
+    logger.info(f"Converted Excel file to CSV: {csv_path} with UTF-8 encoding")
+
+    # Vérification du contenu après conversion pour debug
+    with open(csv_path, 'r', encoding='utf-8') as f:
+        sample_content = f.read(200)  # Lire les 200 premiers caractères pour vérification
+        logger.info(f"CSV Sample Content: {sample_content}")
+
+    return csv_path
+
 
 def verify_csv_encoding(csv_path):
     try:

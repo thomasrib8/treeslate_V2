@@ -16,22 +16,22 @@
             <input type="file" id="input_file" name="input_file" required>
 
             <!-- Liste déroulante pour les glossaires Deepl -->
-<label for="deepl_glossary">Sélectionnez un glossaire Deepl :</label>
-<select id="deepl_glossary" name="deepl_glossary">
-    <option value="" disabled selected>Choisissez un glossaire</option>
-    {% for glossary in deepl_glossaries %}
+<label for="deepl_glossary">Sélectionner un glossaire DeepL:</label>
+    <select name="deepl_glossary" required>
+        <option value="">-- Choisir un glossaire Deepl --</option>
+        {% for glossary in deepl_glossaries %}
         <option value="{{ glossary }}">{{ glossary }}</option>
-    {% endfor %}
-</select>
+        {% endfor %}
+    </select>
 
 <!-- Liste déroulante pour les glossaires GPT -->
-<label for="gpt_glossary">Sélectionnez un glossaire GPT :</label>
-<select id="gpt_glossary" name="gpt_glossary">
-    <option value="" disabled selected>Choisissez un glossaire</option>
-    {% for glossary in gpt_glossaries %}
+<label for="gpt_glossary">Sélectionner un glossaire GPT:</label>
+    <select name="gpt_glossary" required>
+        <option value="">-- Choisir un glossaire GPT --</option>
+        {% for glossary in gpt_glossaries %}
         <option value="{{ glossary }}">{{ glossary }}</option>
-    {% endfor %}
-</select>
+        {% endfor %}
+    </select>
             
             <!-- Message Flash pour le feedback -->
             {% with messages = get_flashed_messages(with_categories=true) %}

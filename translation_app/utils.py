@@ -117,17 +117,24 @@ def convert_excel_to_csv(excel_path, csv_path):
         logger.error(f"Excel file not found: {excel_path}")
         raise FileNotFoundError(f"Excel file not found: {excel_path}")
 
-    df = pd.read_excel(excel_path, header=None)
-
     try:
+        df = pd.read_excel(excel_path, header=None)
         df.to_csv(csv_path, index=False, header=False, encoding='utf-8-sig')
-        logger.info(f"Converted Excel file to CSV with UTF-8 encoding: {csv_path}")
+        logger.info(f"Converted Excel file to CSV: {csv_path} with UTF-8 encoding")
+        return csv_path
     except Exception as e:
         logger.error(f"Error converting Excel to CSV: {e}")
         raise
 
-    return csv_path
-
+def verify_csv_encoding(csv_path):
+    try:
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            sample = f.read(100)
+            logger.info(f"CSV Sample Content: {sample[:100]}")
+        return True
+    except UnicodeDecodeError as e:
+        logger.error(f"Encoding issue detected in {csv_path}: {e}")
+        return False
 
 def read_glossary(glossary_path):
     """

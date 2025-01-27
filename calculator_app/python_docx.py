@@ -30,7 +30,8 @@ def calculate_translation_cost(words, characters, translation_time_min):
     step1_cost = tokens * 0.0000015  # Coût des tokens
     step2_cost = characters * 0.000021  # Coût DeepL
     step3_cost = translation_time_min * 0.005161  # Coût application web
-    return round(step1_cost + step2_cost + step3_cost, 6)  # Précision à 6 décimales
+    total_translation_cost = step1_cost + step2_cost + step3_cost
+    return round(total_translation_cost, 6)
 
 def calculate_review_cost(words, reviewer_choice):
     """Calcule le coût de relecture en fonction du choix du relecteur"""
@@ -76,7 +77,7 @@ def main():
     review_cost = calculate_review_cost(words, reviewer_choice)
     print(f"Coût estimé de relecture: ${review_cost:.6f}")
     
-    # Calcule et affiche le coût total
+    # Calcule et affiche le coût total (après arrondi des deux parties)
     total_cost = round(translation_cost + review_cost, 6)
     print(f"Total estimé du coût de traduction: ${total_cost:.6f}")
 

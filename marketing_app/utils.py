@@ -33,85 +33,76 @@ SHOPIFY_PROMPT = """
 3 - Points Forts : Identifie quatre aspects majeurs qui rendent ce livre unique ou particulièrement intéressant (ex. style, originalité, pertinence, sources utilisées, etc.). Décris chaque point fort par une phrase courte, percutante et convaincante.
 """
 
-def extract_text_from_file(file_path):
-    """Extraire le texte d'un fichier DOCX."""
-    logger.info(f"Fichier DOCX détecté : {file_path}")
+def convert_docx_to_txt(docx_path, txt_path):
+    """Convertit un fichier DOCX en fichier TXT."""
     try:
-        doc = Document(file_path)
+        doc = Document(docx_path)
         content = "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
-        logger.info(f"Extraction du contenu du DOCX réussie. Longueur : {len(content)} caractères.")
-        return content
+        with open(txt_path, "w", encoding="utf-8") as txt_file:
+            txt_file.write(content)
+        logger.info(f"Conversion DOCX vers TXT réussie : {txt_path}")
+        return txt_path
     except Exception as e:
-        logger.error(f"Erreur lors de l'extraction du contenu du fichier DOCX : {e}")
-        raise ValueError("Impossible d'extraire le contenu du fichier .docx.")
+        logger.error(f"Erreur lors de la conversion DOCX -> TXT : {e}")
+        raise ValueError("Impossible de convertir le fichier DOCX en TXT.")
 
-def split_text_into_chunks(text, max_length=1000):
-    """Divise le texte en morceaux pour respecter la limite de tokens."""
+def split_text_into_chunks(text, max_length=3000):
+    """Divise le texte en morceaux de taille maximale."""
     return [text[i:i + max_length] for i in range(0, len(text), max_length)]
 
 def analyze_chunks(file_path):
-    """Analyse chaque chunk d'un fichier DOCX."""
-    content = extract_text_from_file(file_path)
-    chunks = split_text_into_chunks(content, max_length=800)  # Réduction de la taille des chunks
-    analysis_results = []
+    """Analyse chaque chunk d'un fichier TXT après regroupement."""
+    with open(file_path, "r", encoding="utf-8") as f:
+        content = f.read()
 
-    for i, chunk in enumerate(chunks, start=1):
+    # Diviser le texte en chunks de 3000 caractères
+    chunks = split_text_into_chunks(content, max_length=3000)
+
+    # Regrouper les chunks par paquets de 3
+    grouped_chunks = ["\n".join(chunks[i:i + 3]) for i in range(0, len(chunks), 3)]
+
+    analysis_results = []
+    for i, group in enumerate(grouped_chunks, start=1):
         start_time = time.time()
-        logger.info(f"Envoi du chunk {i}/{len(chunks)} à OpenAI...")
-        
+        logger.info(f"Envoi du groupe {i}/{len(grouped_chunks)} à OpenAI...")
+
         try:
-            analysis_prompt = f"Voici une partie d'un livre. Analyse ce contenu : {chunk}"
+            analysis_prompt = f"Voici une partie d'un livre. Analyse ce contenu : {group}"
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[{"role": "user", "content": analysis_prompt}]
             )["choices"][0]["message"]["content"]
             analysis_results.append(response)
-            logger.info(f"Chunk {i} analysé avec succès en {time.time() - start_time:.2f} secondes")
+            logger.info(f"Groupe {i} analysé avec succès en {time.time() - start_time:.2f} secondes")
         except Exception as e:
-            logger.error(f"Erreur lors de l'analyse du chunk {i}: {e}")
+            logger.error(f"Erreur lors de l'analyse du groupe {i}: {e}")
             raise
 
     consolidated_analysis = "\n".join(analysis_results)
-    logger.info("Analyse consolidée générée avec succès.")
     return consolidated_analysis
 
-def generate_final_fiche(consolidated_analysis, prompt_type):
+def generate_final_fiche(consolidated_analysis, prompt_template):
     """Génère une fiche commerciale ou produit Shopify."""
-    if prompt_type == "COMMERCIAL_PROMPT":
-        prompt_template = COMMERCIAL_PROMPT
-    elif prompt_type == "SHOPIFY_PROMPT":
-        prompt_template = SHOPIFY_PROMPT
-    else:
-        raise ValueError("Type de prompt inconnu.")
-
     final_prompt = f"{prompt_template}\n\nVoici une analyse globale du livre :\n{consolidated_analysis}"
     logger.info("Envoi du prompt global à OpenAI.")
 
-    try:
-        french_response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": final_prompt + "\nLangue: Français"}]
-        )["choices"][0]["message"]["content"]
+    french_response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": final_prompt + "\nLangue: Français"}]
+    )["choices"][0]["message"]["content"]
 
-        english_response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": final_prompt + "\nLangue: Anglais"}]
-        )["choices"][0]["message"]["content"]
+    english_response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": final_prompt + "\nLangue: Anglais"}]
+    )["choices"][0]["message"]["content"]
 
-        return french_response, english_response
-    except Exception as e:
-        logger.error(f"Erreur lors de la génération des fiches finales : {e}")
-        raise
+    return french_response, english_response
 
 def save_pdf(content, path):
     """Sauvegarde le contenu dans un fichier PDF."""
-    try:
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("Arial", size=12)
-        pdf.multi_cell(0, 10, content)
-        pdf.output(path)
-        logger.info(f"PDF sauvegardé : {path}")
-    except Exception as e:
-        logger.error(f"Erreur lors de la sauvegarde du PDF : {e}")
-        raise
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.multi_cell(0, 10, content)
+    pdf.output(path)
+    logger.info(f"PDF sauvegardé : {path}")

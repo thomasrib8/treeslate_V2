@@ -67,7 +67,7 @@ def _generate_pdf(file_path, prompt_template, doc_type, output_folder):
             content = file.read()
 
     # Diviser le contenu en morceaux
-    max_length = 4000
+    max_length = 2000
     chunks = split_text_into_chunks(content, max_length)
 
     french_text, english_text = "", ""

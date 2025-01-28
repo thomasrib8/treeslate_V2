@@ -11,67 +11,69 @@ logger = logging.getLogger(__name__)
 
 # Prompts pour ChatGPT
 COMMERCIAL_PROMPT = """
-À partir de l'analyse suivante d'un livre, génère une fiche commerciale détaillée et captivante qui donne envie de découvrir le contenu, en respectant la structure suivante :
+À partir de l'analyse suivante d'un livre de magie, génère une fiche commerciale détaillée avec les sections suivantes :
 
-1 - **Présentation Générale** :  
-   Rédige un paragraphe engageant qui présente le livre en mentionnant son titre, son auteur, son genre (par exemple : un livre de magie ou d’illusionnisme). Explique l’objectif principal de l’ouvrage (par exemple : transmettre des connaissances, inspirer des magiciens, ou détailler des tours inédits). Décris brièvement le public cible (débutants, amateurs passionnés ou professionnels) et la philosophie générale adoptée par l’auteur dans sa démarche.
+1. **Titre et Auteur** :
+   - Extrais le titre exact et le nom de l'auteur directement du texte analysé.
+   
+2. **Présentation Générale** :
+   - Présente le livre en précisant son titre, son auteur, et le contexte de création.
+   - Développe l'objectif principal du livre et donne un aperçu des thématiques abordées (par exemple : philosophie de la magie, minimalisme, importance des réactions spectateurs).
 
-2 - **Résumé Détail des Chapitres** :  
-   Développe un résumé pour chaque chapitre ou section importante du livre. Pour chaque chapitre :
-   - Explique les thématiques abordées (par exemple : psychologie des spectateurs, techniques de manipulation, ou théorie magique).
-   - Décris les concepts clés ou enseignements spécifiques que le lecteur peut attendre.
-   - Donne des exemples d’effets magiques ou de principes présentés dans ce chapitre sans dévoiler les secrets, mais en créant de l’intrigue. Par exemple : "Ce chapitre explore comment une carte choisie au hasard peut se retrouver dans un endroit impossible."
+3. **Résumé des Chapitres** :
+   - Décris chaque chapitre ou tour de magie présenté dans le livre. Pour chaque chapitre :
+     - Donne un titre s'il est mentionné.
+     - Résume en quelques phrases le contenu du chapitre ou du tour (sans dévoiler les secrets).
+     - Décris les effets magiques tels qu'ils sont perçus par les spectateurs, leur originalité, et leur impact.
+     - Mentionne en quoi ce tour est adapté pour des magiciens débutants ou confirmés.
 
-3 - **Description des Effets Magiques Présentés** :  
-   Ajoute une description détaillée des types d’effets magiques expliqués dans le livre. Par exemple : des disparitions d’objets, des prédictions impossibles, ou des transformations visuelles spectaculaires. Présente les effets comme des outils créatifs, et insiste sur leur originalité et leur impact potentiel sur les spectateurs.
+4. **Description des Effets Magiques** :
+   - Détaille les effets magiques expliqués dans le livre, en mettant l'accent sur leur impact émotionnel ou visuel (sans dévoiler les secrets techniques). Explique pourquoi ils captivent l'audience.
 
-4 - **Points Forts du Livre** :  
-   Liste les éléments qui rendent ce livre incontournable pour les magiciens, en utilisant des tirets pour clarifier les idées. Par exemple :
-   - Une approche pédagogique claire et accessible.
-   - Des effets originaux et percutants, adaptés à différentes situations (close-up, scène, etc.).
-   - Une attention particulière portée à la psychologie des spectateurs.
-   - Des illustrations ou explications visuelles pour chaque effet.
+5. **Points Forts** (liste à puces) :
+   - Identifie et développe au moins 5 aspects qui rendent ce livre unique :
+     - Originalité des tours ou techniques.
+     - Approche pédagogique et facilité de compréhension.
+     - Adaptabilité des tours à différents contextes (scène, close-up, etc.).
+     - Philosophie ou théories sur la magie développées par l'auteur.
+     - Autres qualités spécifiques (comme la structure claire du livre ou des illustrations utiles).
 
-5 - **Bénéfices pour le Lecteur** :  
-   Explique comment ce livre enrichit le magicien dans sa pratique. Développe les avantages tels que :
-   - Améliorer la compréhension des principes magiques.
-   - Inspirer des créations originales grâce aux concepts partagés.
-   - Renforcer la capacité à captiver et émerveiller un public.
-   - Offrir des techniques qui s’adaptent aussi bien à des performances professionnelles qu’à des spectacles plus intimes.
-
-6 - **Conclusion** :  
-   Termine avec un paragraphe motivant qui récapitule les points clés du livre et incite à l'achat. Mets l’accent sur la valeur ajoutée que ce livre peut apporter à un magicien et sur son caractère indispensable.
+6. **Conclusion** :
+   - Résume les points clés du livre.
+   - Incite à la lecture ou à l'achat en mettant en avant les bénéfices pour le lecteur.
 
 """
 
 SHOPIFY_PROMPT = """
-À partir de l'analyse suivante d'un livre, génère une fiche produit captivante pour un site internet en respectant la structure suivante :
+À partir de l'analyse suivante d'un livre de magie, génère une fiche produit détaillée pour un site internet. Suis cette structure :
 
-1 - **Présentation Générale** :  
-   Introduis brièvement le livre en une ou deux phrases en mentionnant son titre, son auteur, et son genre. Développe ensuite en détail en quoi ce livre est une ressource unique pour les magiciens, qu’ils soient débutants ou confirmés. Donne un aperçu clair de la thématique générale du livre et des objectifs poursuivis par l’auteur.
+1. **Titre et Auteur** :
+   - Extrais et présente le titre du livre et le nom de l'auteur depuis le texte.
 
-2 - **Résumé Détail des Chapitres** :  
-   Pour chaque chapitre ou section majeure du livre :
-   - Fournis un résumé détaillé expliquant les concepts traités.
-   - Décris les sujets spécifiques abordés (exemple : techniques avancées de manipulation, stratégies pour renforcer l’impact émotionnel des tours, ou secrets psychologiques pour influencer les spectateurs).
-   - Ajoute des exemples d’effets magiques expliqués dans ce chapitre sans dévoiler les secrets, pour attiser la curiosité.
+2. **Introduction** :
+   - Développe une introduction engageante en une ou deux phrases, précisant l'objectif principal du livre et les thèmes abordés.
 
-3 - **Description des Effets Magiques Présentés** :  
-   Rédige un texte captivant décrivant les effets expliqués dans le livre, en mettant l’accent sur leur impact émotionnel et leur originalité. Par exemple : "Apprenez à réaliser des transformations impossibles, des disparitions spectaculaires, et des prédictions qui laissent les spectateurs sans voix." Insiste sur la diversité et la puissance des tours pour captiver le public.
+3. **Résumé des Chapitres** :
+   - Résume chaque chapitre de manière détaillée en expliquant :
+     - Les effets magiques décrits (sans dévoiler les secrets techniques).
+     - Le contexte ou la philosophie de chaque chapitre.
+     - Comment ces effets ou réflexions aident les magiciens dans leur pratique.
 
-4 - **Points Forts** :  
-   Liste les points forts du livre de manière concise et percutante :
-   - Une riche collection d’effets magiques testés par des professionnels.
-   - Une structure pédagogique pour guider les magiciens de tous niveaux.
-   - Des illustrations ou explications claires pour chaque tour.
-   - Une approche unique qui mêle théorie, pratique et psychologie.
+4. **Description des Effets Magiques** :
+   - Décris les tours de magie et leurs effets sur les spectateurs.
+   - Explique pourquoi ces effets se démarquent (par exemple, par leur simplicité, leur impact émotionnel, ou leur originalité).
 
-5 - **Pourquoi acheter ce livre ?** :  
-   Développe les raisons pour lesquelles ce livre est indispensable à tout magicien. Par exemple :
-   - Acquérir des techniques originales pour enrichir son répertoire.
-   - S’inspirer des réflexions de l’auteur pour développer des créations personnelles.
-   - Maîtriser des effets qui s’adaptent à divers contextes (scène, close-up, spectacles privés).
-   - Améliorer sa capacité à émerveiller et captiver un public varié.
+5. **Points Forts** (liste à puces) :
+   - Identifie et énumère 5 à 7 points forts du livre :
+     - Originalité et pertinence des effets magiques.
+     - Accessibilité pour différents niveaux de magiciens.
+     - Philosophie unique de l'auteur sur la magie.
+     - Adaptabilité des tours aux contextes variés.
+     - Présentation claire et soignée.
+
+6. **Appel à l'Action** :
+   - Termine par un appel à l'action engageant qui motive l'utilisateur à acheter le livre (par exemple : "Explorez ces effets magiques et enrichissez votre répertoire dès maintenant !").
+
 """
 
 def convert_docx_to_txt(docx_path, txt_path):

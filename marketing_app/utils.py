@@ -58,8 +58,8 @@ def analyze_chunks(file_path):
     # Diviser le texte en chunks de 3000 caractères
     chunks = split_text_into_chunks(content, max_length=3000)
 
-    # Regrouper les chunks par paquets de 3
-    grouped_chunks = ["\n".join(chunks[i:i + 3]) for i in range(0, len(chunks), 3)]
+    # Regrouper les chunks par paquets de 1 ou 2 pour éviter les retards excessifs
+    grouped_chunks = ["\n".join(chunks[i:i + 2]) for i in range(0, len(chunks), 2)]
 
     analysis_results = []
     for i, group in enumerate(grouped_chunks, start=1):

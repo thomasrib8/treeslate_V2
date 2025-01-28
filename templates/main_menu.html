@@ -116,6 +116,23 @@
                 {% endfor %}
             </tbody>
         </table>
+
+        <h2>Fichiers Marketing</h2>
+        <table>
+            <tr>
+                <th>Nom du fichier</th>
+                <th>Date de création</th>
+                <th>Actions</th>
+            </tr>
+            {% for file in marketing_files %}
+            <tr>
+                <td>{{ file.filename }}</td>
+                <td>{{ file.created_at }}</td>
+                <td><a href="{{ url_for('marketing.download_file', filename=file.filename) }}">Télécharger</a></td>
+            </tr>
+            {% endfor %}
+        </table
+        
         <div class="footer">
             ©3 Monkeys Publishing, all rights reserved
         </div>

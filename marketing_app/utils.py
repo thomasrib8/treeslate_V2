@@ -50,8 +50,21 @@ def split_text_into_chunks(text, max_length):
     return [text[i:i+max_length] for i in range(0, len(text), max_length)]
 
 def _generate_pdf(file_path, prompt_template, doc_type, output_folder):
-    with open(file_path, 'r', encoding='utf-8') as file:
-        content = file.read()
+    # Détection de l'encodage du fichier
+    with open(file_path, 'rb') as f:  # Lire en mode binaire pour détecter l'encodage
+        raw_data = f.read()
+        detected = detect(raw_data)
+        encoding = detected.get('encoding', 'latin-1')  # Utiliser latin-1 par défaut si aucun encodage n'est trouvé
+        logger.info(f"Encodage détecté pour {file_path}: {encoding}")
+
+    # Lecture du fichier avec l'encodage détecté
+    try:
+        with open(file_path, 'r', encoding=encoding) as file:
+            content = file.read()
+    except UnicodeDecodeError as e:
+        logger.warning(f"Erreur de décodage avec l'encodage {encoding}. Utilisation de latin-1 par défaut. Erreur: {e}")
+        with open(file_path, 'r', encoding='latin-1') as file:
+            content = file.read()
 
     # Diviser le contenu en morceaux
     max_length = 4000
@@ -62,9 +75,8 @@ def _generate_pdf(file_path, prompt_template, doc_type, output_folder):
     logger.info(f"Nombre total de tokens dans le fichier d'entrée : {len(content)}")
     logger.info(f"Fichier divisé en {len(chunks)} morceaux de {max_length} tokens maximum chacun.")
 
-
     # Appeler l'API pour chaque morceau
-    for chunk in chunks:
+    for i, chunk in enumerate(chunks, start=1):
         french_prompt = f"{prompt_template}\n\nContenu du fichier:\n{chunk}\n\nLangue: Français"
         english_prompt = f"{prompt_template}\n\nContenu du fichier:\n{chunk}\n\nLangue: Anglais"
 

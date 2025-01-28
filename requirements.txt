@@ -44,3 +44,4 @@ chardet
 fpdf==1.7.2
 charset-normalizer
 PyPDF2
+fpdf2>=2.4.0

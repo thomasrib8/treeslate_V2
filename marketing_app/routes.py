@@ -6,6 +6,12 @@ marketing_bp = Blueprint('marketing', __name__)
 UPLOAD_FOLDER = "uploads"
 DOWNLOAD_FOLDER = "downloads/marketing"
 
+# Extensions autorisées
+ALLOWED_EXTENSIONS = {'docx'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 @marketing_bp.route('/marketing', methods=['GET'])
 def marketing_home():
     return render_template('marketing/upload.html')
@@ -18,8 +24,8 @@ def upload_marketing_file():
         os.makedirs(DOWNLOAD_FOLDER)
 
     file = request.files.get('file')
-    if not file:
-        return jsonify({'error': 'Aucun fichier fourni'}), 400
+    if not file or not allowed_file(file.filename):
+        return jsonify({'error': 'Type de fichier non pris en charge. Veuillez fournir un fichier .docx.'}), 400
 
     file_path = os.path.join(UPLOAD_FOLDER, file.filename)
     file.save(file_path)
@@ -33,9 +39,9 @@ def upload_marketing_file():
 
     # Génération des fiches
     if action == 'generate_commercial':
-        french_text, english_text = generate_final_fiche(consolidated_analysis, COMMERCIAL_PROMPT)
+        french_text, english_text = generate_final_fiche(consolidated_analysis, "COMMERCIAL_PROMPT")
     elif action == 'generate_shopify':
-        french_text, english_text = generate_final_fiche(consolidated_analysis, SHOPIFY_PROMPT)
+        french_text, english_text = generate_final_fiche(consolidated_analysis, "SHOPIFY_PROMPT")
     else:
         return jsonify({'error': 'Action inconnue'}), 400
 

@@ -43,3 +43,4 @@ Flask-Session>=0.4.0
 chardet
 fpdf==1.7.2
 charset-normalizer
+PyPDF2

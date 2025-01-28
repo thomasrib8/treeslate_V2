@@ -1,6 +1,7 @@
 from flask import render_template, request, jsonify, current_app, send_file
 import os
 from .utils import process_commercial_sheet, process_shopify_sheet
+from . import marketing_bp  # Importez le blueprint correctement
 
 @marketing_bp.route('/marketing', methods=['GET'])
 def marketing_home():
@@ -8,7 +9,6 @@ def marketing_home():
 
 @marketing_bp.route('/marketing/upload', methods=['POST'])
 def upload_marketing_file():
-    # Utiliser les chemins dans le contexte de la requête
     upload_folder = current_app.config["UPLOAD_FOLDER"]
     download_folder = current_app.config["DOWNLOAD_FOLDER"]
 

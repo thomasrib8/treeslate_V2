@@ -95,7 +95,9 @@ def verify_password(username, password):
 @auth.login_required
 def main_menu():
     translated_files = []
+    marketing_files = []
     download_folder = current_app.config.get("DOWNLOAD_FOLDER")
+    marketing_folder = os.path.join(download_folder, "marketing")
 
     # Fichiers pour la traduction
     if os.path.exists(download_folder):

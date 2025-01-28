@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, current_app, send_file
 import os
-from .utils import analyze_chunks, generate_final_fiche, save_pdf, convert_docx_to_txt
+from .utils import analyze_chunks, generate_final_fiche, save_pdf, convert_docx_to_txt, COMMERCIAL_PROMPT, SHOPIFY_PROMPT
 
 marketing_bp = Blueprint('marketing', __name__)
 UPLOAD_FOLDER = "uploads"

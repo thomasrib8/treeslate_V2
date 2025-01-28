@@ -63,7 +63,7 @@ def analyze_chunks(file_path, max_length=2000):
         analysis_prompt = f"Voici une partie d'un livre. Analyse ce contenu : {chunk}"
         logger.info(f"Envoi du chunk {i} à OpenAI...")
         response = openai.ChatCompletion.create(
-            model="gpt-4-32k",
+            model="gpt-4",
             messages=[{"role": "user", "content": analysis_prompt}]
         )["choices"][0]["message"]["content"]
 
@@ -80,12 +80,12 @@ def generate_final_fiche(consolidated_analysis, prompt_template):
     logger.info("Envoi du prompt global à OpenAI.")
 
     french_response = openai.ChatCompletion.create(
-        model="gpt-4-32k",
+        model="gpt-4",
         messages=[{"role": "user", "content": final_prompt + "\nLangue: Français"}]
     )["choices"][0]["message"]["content"]
 
     english_response = openai.ChatCompletion.create(
-        model="gpt-4-32k",
+        model="gpt-4",
         messages=[{"role": "user", "content": final_prompt + "\nLangue: Anglais"}]
     )["choices"][0]["message"]["content"]
 

@@ -2,7 +2,7 @@ import openai
 import os
 from fpdf import FPDF
 from flask import current_app
-from PyPDF2 import PdfReader
+from docx import Document
 import logging
 
 logger = logging.getLogger(__name__)
@@ -32,28 +32,25 @@ SHOPIFY_PROMPT = """
 3 - Points Forts : Identifie quatre aspects majeurs qui rendent ce livre unique ou particulièrement intéressant (ex. style, originalité, pertinence, sources utilisées, etc.). Décris chaque point fort par une phrase courte, percutante et convaincante.
 """
 
+def extract_text_from_file(file_path):
+    """Extraire le texte d'un fichier DOCX."""
+    logger.info(f"Fichier DOCX détecté : {file_path}")
+    try:
+        doc = Document(file_path)
+        content = "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
+        logger.info(f"Extraction du contenu du DOCX réussie. Longueur : {len(content)} caractères.")
+        return content
+    except Exception as e:
+        logger.error(f"Erreur lors de l'extraction du contenu du fichier DOCX : {e}")
+        raise ValueError("Impossible d'extraire le contenu du fichier .docx.")
+
 def split_text_into_chunks(text, max_length):
     """Divise le texte en morceaux pour respecter la limite de tokens."""
     return [text[i:i+max_length] for i in range(0, len(text), max_length)]
 
 def analyze_chunks(file_path, max_length=2000):
-    """Analyse chaque chunk d'un fichier et renvoie une analyse consolidée."""
-    # Vérifier si le fichier est un PDF
-    if file_path.lower().endswith('.pdf'):
-        logger.info(f"Fichier PDF détecté : {file_path}")
-        try:
-            reader = PdfReader(file_path)
-            content = ""
-            for page in reader.pages:
-                content += page.extract_text()
-            logger.info(f"Extraction du contenu du PDF réussie. Longueur : {len(content)} caractères.")
-        except Exception as e:
-            logger.error(f"Erreur lors de l'extraction du PDF : {e}")
-            raise ValueError("Impossible d'extraire le contenu du PDF.")
-    else:
-        # Lire le fichier texte
-        with open(file_path, 'r', encoding='utf-8') as file:
-            content = file.read()
+    """Analyse chaque chunk d'un fichier DOCX et renvoie une analyse consolidée."""
+    content = extract_text_from_file(file_path)
 
     # Diviser le contenu en chunks
     chunks = split_text_into_chunks(content, max_length)

@@ -1,0 +1,5 @@
+<form method="POST" action="{{ url_for('marketing.upload_marketing_file') }}" enctype="multipart/form-data">
+    <input type="file" name="file" required>
+    <button type="submit" name="action" value="generate_commercial">Générer une Fiche Commerciale</button>
+    <button type="submit" name="action" value="generate_shopify">Générer une Fiche Shopify</button>
+</form>

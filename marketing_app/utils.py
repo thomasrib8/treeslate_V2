@@ -52,7 +52,7 @@ def split_text_into_chunks(text, max_length=1000):
 def analyze_chunks(file_path):
     """Analyse chaque chunk d'un fichier DOCX."""
     content = extract_text_from_file(file_path)
-    chunks = split_text_into_chunks(content, max_length=1000)
+    chunks = split_text_into_chunks(content, max_length=800)  # Réduction de la taille des chunks
     analysis_results = []
 
     for i, chunk in enumerate(chunks, start=1):
@@ -62,7 +62,7 @@ def analyze_chunks(file_path):
         try:
             analysis_prompt = f"Voici une partie d'un livre. Analyse ce contenu : {chunk}"
             response = openai.ChatCompletion.create(
-                model="gpt-4-32k",
+                model="gpt-4",
                 messages=[{"role": "user", "content": analysis_prompt}]
             )["choices"][0]["message"]["content"]
             analysis_results.append(response)
@@ -89,12 +89,12 @@ def generate_final_fiche(consolidated_analysis, prompt_type):
 
     try:
         french_response = openai.ChatCompletion.create(
-            model="gpt-4-32k",
+            model="gpt-4",
             messages=[{"role": "user", "content": final_prompt + "\nLangue: Français"}]
         )["choices"][0]["message"]["content"]
 
         english_response = openai.ChatCompletion.create(
-            model="gpt-4-32k",
+            model="gpt-4",
             messages=[{"role": "user", "content": final_prompt + "\nLangue: Anglais"}]
         )["choices"][0]["message"]["content"]
 

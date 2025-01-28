@@ -144,14 +144,14 @@ def save_pdf(content, path):
     pdf = FPDF()
     pdf.add_page()
     
-    # Ajouter une police compatible Unicode (FreeSerif ou autre)
-    font_path = os.path.join(current_app.root_path, "static", "fonts", "FreeSerif.ttf")
+    # Ajouter une police compatible Unicode (FreeSerif)
+    font_path = os.path.join(current_app.root_path, "static", "fonts", "FreeSerif-4aeK.ttf")
     pdf.add_font("FreeSerif", "", font_path, uni=True)
     pdf.set_font("FreeSerif", size=12)
     
-    # Ajout du texte
+    # Ajouter le contenu au PDF
     pdf.multi_cell(0, 10, content)
     
-    # Sauvegarde du fichier
+    # Sauvegarde du fichier PDF
     pdf.output(path)
     logger.info(f"PDF sauvegardé : {path}")

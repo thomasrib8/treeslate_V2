@@ -11,11 +11,15 @@ def marketing_home():
 
 @marketing_bp.route('/marketing/upload', methods=['POST'])
 def upload_marketing_file():
+    # Utiliser les chemins dans le contexte de la requête
+    upload_folder = current_app.config["UPLOAD_FOLDER"]
+    download_folder = current_app.config["DOWNLOAD_FOLDER"]
+
     file = request.files.get('file')
     if not file:
         return jsonify({'error': 'Aucun fichier fourni'}), 400
     
-    file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    file_path = os.path.join(upload_folder, file.filename)
     file.save(file_path)
 
     action = request.form.get('action')

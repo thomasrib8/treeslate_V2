@@ -1,3 +1,16 @@
-<h2>Résultats : Fiche Commerciale</h2>
-<a href="{{ url_for('marketing.download_file', filename=french_pdf) }}">Télécharger la version française</a>
-<a href="{{ url_for('marketing.download_file', filename=english_pdf) }}">Télécharger la version anglaise</a>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Résultat</title>
+</head>
+<body>
+    <h1>Résultats générés</h1>
+    <p>Téléchargez les fiches générées :</p>
+    <ul>
+        <li><a href="{{ url_for('marketing.download_file', filename='french.pdf') }}" target="_blank">Fiche en français</a></li>
+        <li><a href="{{ url_for('marketing.download_file', filename='english.pdf') }}" target="_blank">Fiche en anglais</a></li>
+    </ul>
+</body>
+</html>

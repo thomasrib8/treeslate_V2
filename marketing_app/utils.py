@@ -33,43 +33,43 @@ Adopte un ton engageant et professionnel, avec un style fluide et convaincant, e
 """
 
 def process_commercial_sheet(file_path):
-    return _generate_pdf(file_path, COMMERCIAL_PROMPT, "commercial")
+    output_folder = os.path.join("downloads", "marketing")
+    return _generate_pdf(file_path, COMMERCIAL_PROMPT, "commercial", output_folder)
 
 def process_shopify_sheet(file_path):
-    return _generate_pdf(file_path, SHOPIFY_PROMPT, "shopify")
+    output_folder = os.path.join("downloads", "marketing")
+    return _generate_pdf(file_path, SHOPIFY_PROMPT, "shopify", output_folder)
 
-def _generate_pdf(file_path, prompt_template, doc_type):
-    with current_app.app_context():  # Assure que nous avons un contexte actif
-        # Lire le contenu du fichier
-        with open(file_path, 'r', encoding='utf-8') as file:
-            content = file.read()
+def _generate_pdf(file_path, prompt_template, doc_type, output_folder):
+    # Lire le contenu du fichier
+    with open(file_path, 'r', encoding='utf-8') as file:
+        content = file.read()
 
-        # Générer les prompts pour ChatGPT
-        french_prompt = f"{prompt_template}\n\nContenu du fichier:\n{content}\n\nLangue: Français"
-        english_prompt = f"{prompt_template}\n\nContenu du fichier:\n{content}\n\nLangue: Anglais"
+    # Générer les prompts pour ChatGPT
+    french_prompt = f"{prompt_template}\n\nContenu du fichier:\n{content}\n\nLangue: Français"
+    english_prompt = f"{prompt_template}\n\nContenu du fichier:\n{content}\n\nLangue: Anglais"
 
-        # Appeler l'API ChatGPT
-        french_text = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": french_prompt}]
-        )["choices"][0]["message"]["content"]
+    # Appeler l'API ChatGPT
+    french_text = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": french_prompt}]
+    )["choices"][0]["message"]["content"]
 
-        english_text = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": english_prompt}]
-        )["choices"][0]["message"]["content"]
+    english_text = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": english_prompt}]
+    )["choices"][0]["message"]["content"]
 
-        # Définir les chemins pour sauvegarder les fichiers
-        output_folder = os.path.join(current_app.config["DOWNLOAD_FOLDER"], "marketing")
-        os.makedirs(output_folder, exist_ok=True)
-        french_pdf = os.path.join(output_folder, f"french_{doc_type}.pdf")
-        english_pdf = os.path.join(output_folder, f"english_{doc_type}.pdf")
+    # Créer le dossier de sortie
+    os.makedirs(output_folder, exist_ok=True)
+    french_pdf = os.path.join(output_folder, f"french_{doc_type}.pdf")
+    english_pdf = os.path.join(output_folder, f"english_{doc_type}.pdf")
 
-        # Sauvegarder les fichiers PDF
-        _save_pdf(french_text, french_pdf)
-        _save_pdf(english_text, english_pdf)
+    # Sauvegarder les fichiers PDF
+    _save_pdf(french_text, french_pdf)
+    _save_pdf(english_text, english_pdf)
 
-        return french_pdf, english_pdf
+    return french_pdf, english_pdf
 
 def _save_pdf(content, path):
     pdf = FPDF()

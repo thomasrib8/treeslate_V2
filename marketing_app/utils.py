@@ -6,6 +6,7 @@ from charset_normalizer import detect
 import logging
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 # Prompts pour ChatGPT
 COMMERCIAL_PROMPT = """
@@ -44,45 +45,55 @@ def process_shopify_sheet(file_path):
     output_folder = os.path.join("downloads", "marketing")
     return _generate_pdf(file_path, SHOPIFY_PROMPT, "shopify", output_folder)
 
+def split_text_into_chunks(text, max_length):
+    """Divise le texte en morceaux pour respecter la limite de tokens."""
+    return [text[i:i+max_length] for i in range(0, len(text), max_length)]
+
 def _generate_pdf(file_path, prompt_template, doc_type, output_folder):
-    with open(file_path, 'rb') as f:
-        raw_data = f.read()
-        detected = detect(raw_data)
-        encoding = detected.get('encoding', 'latin-1')
-        logger.info(f"Encodage détecté : {encoding}")
+    with open(file_path, 'r', encoding='utf-8') as file:
+        content = file.read()
 
-    try:
-        with open(file_path, 'r', encoding=encoding) as file:
-            content = file.read()
-    except UnicodeDecodeError as e:
-        logger.warning(f"Erreur de décodage avec l'encodage {encoding}, utilisation de latin-1. Erreur : {e}")
-        with open(file_path, 'r', encoding='latin-1') as file:
-            content = file.read()
+    # Diviser le contenu en morceaux
+    max_length = 4000
+    chunks = split_text_into_chunks(content, max_length)
 
-    # Générer les prompts pour ChatGPT
-    french_prompt = f"{prompt_template}\n\nContenu du fichier:\n{content}\n\nLangue: Français"
-    english_prompt = f"{prompt_template}\n\nContenu du fichier:\n{content}\n\nLangue: Anglais"
+    french_text, english_text = "", ""
 
-    # Appeler l'API ChatGPT
-    french_text = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": french_prompt}]
-    )["choices"][0]["message"]["content"]
+    logger.info(f"Nombre total de tokens dans le fichier d'entrée : {len(content)}")
+    logger.info(f"Fichier divisé en {len(chunks)} morceaux de {max_length} tokens maximum chacun.")
 
-    english_text = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": english_prompt}]
-    )["choices"][0]["message"]["content"]
 
-    # Créer le dossier de sortie
-    os.makedirs(output_folder, exist_ok=True)
+    # Appeler l'API pour chaque morceau
+    for chunk in chunks:
+        french_prompt = f"{prompt_template}\n\nContenu du fichier:\n{chunk}\n\nLangue: Français"
+        english_prompt = f"{prompt_template}\n\nContenu du fichier:\n{chunk}\n\nLangue: Anglais"
+
+        logger.info(f"[Chunk {i}] Longueur du prompt français : {len(french_prompt)} tokens")
+        logger.info(f"[Chunk {i}] Longueur du prompt anglais : {len(english_prompt)} tokens")
+
+        french_response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": french_prompt}]
+        )["choices"][0]["message"]["content"]
+
+        english_response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": english_prompt}]
+        )["choices"][0]["message"]["content"]
+
+        logger.info(f"[Chunk {i}] Longueur de la réponse française : {len(french_response)} tokens")
+        logger.info(f"[Chunk {i}] Longueur de la réponse anglaise : {len(english_response)} tokens")
+
+        french_text += french_response + "\n"
+        english_text += english_response + "\n"
+
+    # Sauvegarder les fichiers générés
     french_pdf = os.path.join(output_folder, f"french_{doc_type}.pdf")
     english_pdf = os.path.join(output_folder, f"english_{doc_type}.pdf")
-
-    # Sauvegarder les fichiers PDF
     _save_pdf(french_text, french_pdf)
     _save_pdf(english_text, english_pdf)
 
+    logger.info(f"PDF générés : {french_pdf} et {english_pdf}")
     return french_pdf, english_pdf
 
 def _save_pdf(content, path):
@@ -91,4 +102,5 @@ def _save_pdf(content, path):
     pdf.set_font("Arial", size=12)
     pdf.multi_cell(0, 10, content)
     pdf.output(path)
+    logger.info(f"PDF sauvegardé : {path}")
 

@@ -16,9 +16,9 @@ COMMERCIAL_PROMPT = """
 1. **Titre et Auteur** :
    - Extrais le titre exact et le nom de l'auteur directement du texte analysé.
    
-2. **Présentation Générale** :
+2. **Présentation Générale** (pas de listes à puces ni de tirets) :
    - Présente le livre en précisant son titre, son auteur, et le contexte de création.
-   - Développe l'objectif principal du livre et donne un aperçu des thématiques abordées (par exemple : philosophie de la magie, minimalisme, importance des réactions spectateurs).
+   - Développe l'objectif principal du livre et donne un aperçu des thématiques abordées (par exemple : philosophie de la magie, minimalisme, importance des réactions spectateurs) (pas de listes à puces ni de tirets).
 
 3. **Résumé des Chapitres** :
    - Décris chaque chapitre ou tour de magie présenté dans le livre. Pour chaque chapitre :
@@ -38,7 +38,7 @@ COMMERCIAL_PROMPT = """
      - Philosophie ou théories sur la magie développées par l'auteur.
      - Autres qualités spécifiques (comme la structure claire du livre ou des illustrations utiles).
 
-6. **Conclusion** :
+6. **Conclusion** (pas de listes à puces ni de tirets) :
    - Résume les points clés du livre.
    - Incite à la lecture ou à l'achat en mettant en avant les bénéfices pour le lecteur.
 
@@ -50,7 +50,7 @@ SHOPIFY_PROMPT = """
 1. **Titre et Auteur** :
    - Extrais et présente le titre du livre et le nom de l'auteur depuis le texte.
 
-2. **Introduction** :
+2. **Introduction** (pas de listes à puces ni de tirets) :
    - Développe une introduction engageante en une ou deux phrases, précisant l'objectif principal du livre et les thèmes abordés.
 
 3. **Résumé des Chapitres** :

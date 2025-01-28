@@ -97,13 +97,26 @@ def main_menu():
     translated_files = []
     download_folder = current_app.config.get("DOWNLOAD_FOLDER")
 
+    # Fichiers pour la traduction
     if os.path.exists(download_folder):
         for filename in os.listdir(download_folder):
             file_path = os.path.join(download_folder, filename)
             created_at = datetime.fromtimestamp(os.path.getctime(file_path)).strftime('%Y-%m-%d %H:%M:%S')
             translated_files.append({'filename': filename, 'created_at': created_at})
 
-    return render_template('main_menu.html', translated_files=translated_files)
+    # Fichiers pour le marketing
+    if os.path.exists(marketing_folder):
+        for filename in os.listdir(marketing_folder):
+            file_path = os.path.join(marketing_folder, filename)
+            if os.path.isfile(file_path):
+                created_at = datetime.fromtimestamp(os.path.getctime(file_path)).strftime('%Y-%m-%d %H:%M:%S')
+                marketing_files.append({'filename': filename, 'created_at': created_at})
+
+    return render_template(
+        'main_menu.html',
+        translated_files=translated_files,
+        marketing_files=marketing_files
+    )
 
 @app.route("/upload", methods=["POST"])
 @auth.login_required

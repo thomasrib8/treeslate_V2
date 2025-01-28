@@ -5,6 +5,7 @@ from flask import current_app
 from docx import Document
 import logging
 import time
+from fpdf.enums import XPos, YPos
 
 logger = logging.getLogger(__name__)
 
@@ -139,10 +140,18 @@ def generate_final_fiche(consolidated_analysis, prompt_template):
     return french_response, english_response
 
 def save_pdf(content, path):
-    """Sauvegarde le contenu dans un fichier PDF."""
+    """Sauvegarde le contenu dans un fichier PDF avec support Unicode."""
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", size=12)
+    
+    # Ajouter une police compatible Unicode (FreeSerif ou autre)
+    font_path = os.path.join(current_app.root_path, "static", "fonts", "FreeSerif.ttf")
+    pdf.add_font("FreeSerif", "", font_path, uni=True)
+    pdf.set_font("FreeSerif", size=12)
+    
+    # Ajout du texte
     pdf.multi_cell(0, 10, content)
+    
+    # Sauvegarde du fichier
     pdf.output(path)
     logger.info(f"PDF sauvegardé : {path}")

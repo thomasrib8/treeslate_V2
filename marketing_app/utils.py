@@ -3,6 +3,9 @@ import os
 from fpdf import FPDF
 from flask import current_app
 from charset_normalizer import detect
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Prompts pour ChatGPT
 COMMERCIAL_PROMPT = """
@@ -42,15 +45,19 @@ def process_shopify_sheet(file_path):
     return _generate_pdf(file_path, SHOPIFY_PROMPT, "shopify", output_folder)
 
 def _generate_pdf(file_path, prompt_template, doc_type, output_folder):
-    # Tenter de détecter l'encodage
-    with open(file_path, 'rb') as f:  # Ouvrir en mode binaire pour détecter l'encodage
+    with open(file_path, 'rb') as f:
         raw_data = f.read()
         detected = detect(raw_data)
-        encoding = detected['encoding']  # Détection automatique de l'encodage
+        encoding = detected.get('encoding', 'latin-1')
+        logger.info(f"Encodage détecté : {encoding}")
 
-    # Lire le contenu du fichier avec l'encodage détecté
-    with open(file_path, 'r', encoding=encoding) as file:
-        content = file.read()
+    try:
+        with open(file_path, 'r', encoding=encoding) as file:
+            content = file.read()
+    except UnicodeDecodeError as e:
+        logger.warning(f"Erreur de décodage avec l'encodage {encoding}, utilisation de latin-1. Erreur : {e}")
+        with open(file_path, 'r', encoding='latin-1') as file:
+            content = file.read()
 
     # Générer les prompts pour ChatGPT
     french_prompt = f"{prompt_template}\n\nContenu du fichier:\n{content}\n\nLangue: Français"
@@ -84,3 +91,4 @@ def _save_pdf(content, path):
     pdf.set_font("Arial", size=12)
     pdf.multi_cell(0, 10, content)
     pdf.output(path)
+

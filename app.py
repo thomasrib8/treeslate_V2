@@ -8,6 +8,7 @@ from translation_app.routes import translation_bp
 from calculator_app.routes import calculator_bp
 from datetime import datetime
 from config import DevelopmentConfig
+from marketing_app.routes import marketing_bp
 
 # Initialisation de l'application Flask
 app = Flask(__name__)
@@ -37,6 +38,7 @@ os.makedirs(app.config["GPT_GLOSSARY_FOLDER"], exist_ok=True)
 # Enregistrer les blueprints
 app.register_blueprint(translation_bp, url_prefix="/translation")
 app.register_blueprint(calculator_bp, url_prefix="/calculator")
+app.register_blueprint(marketing_bp, url_prefix="/marketing")
 
 # Dictionnaire pour suivre le statut des tâches
 task_status = {

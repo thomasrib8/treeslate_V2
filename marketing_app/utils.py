@@ -72,30 +72,46 @@ def analyze_chunks(file_path):
             raise
 
     consolidated_analysis = "\n".join(analysis_results)
+    logger.info("Analyse consolidée générée avec succès.")
     return consolidated_analysis
 
-def generate_final_fiche(consolidated_analysis, prompt_template):
+def generate_final_fiche(consolidated_analysis, prompt_type):
     """Génère une fiche commerciale ou produit Shopify."""
+    if prompt_type == "COMMERCIAL_PROMPT":
+        prompt_template = COMMERCIAL_PROMPT
+    elif prompt_type == "SHOPIFY_PROMPT":
+        prompt_template = SHOPIFY_PROMPT
+    else:
+        raise ValueError("Type de prompt inconnu.")
+
     final_prompt = f"{prompt_template}\n\nVoici une analyse globale du livre :\n{consolidated_analysis}"
     logger.info("Envoi du prompt global à OpenAI.")
 
-    french_response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": final_prompt + "\nLangue: Français"}]
-    )["choices"][0]["message"]["content"]
+    try:
+        french_response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": final_prompt + "\nLangue: Français"}]
+        )["choices"][0]["message"]["content"]
 
-    english_response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": final_prompt + "\nLangue: Anglais"}]
-    )["choices"][0]["message"]["content"]
+        english_response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": final_prompt + "\nLangue: Anglais"}]
+        )["choices"][0]["message"]["content"]
 
-    return french_response, english_response
+        return french_response, english_response
+    except Exception as e:
+        logger.error(f"Erreur lors de la génération des fiches finales : {e}")
+        raise
 
 def save_pdf(content, path):
     """Sauvegarde le contenu dans un fichier PDF."""
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    pdf.multi_cell(0, 10, content)
-    pdf.output(path)
-    logger.info(f"PDF sauvegardé : {path}")
+    try:
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+        pdf.multi_cell(0, 10, content)
+        pdf.output(path)
+        logger.info(f"PDF sauvegardé : {path}")
+    except Exception as e:
+        logger.error(f"Erreur lors de la sauvegarde du PDF : {e}")
+        raise

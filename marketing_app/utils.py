@@ -4,6 +4,7 @@ from fpdf import FPDF
 from flask import current_app
 from docx import Document
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -44,31 +45,33 @@ def extract_text_from_file(file_path):
         logger.error(f"Erreur lors de l'extraction du contenu du fichier DOCX : {e}")
         raise ValueError("Impossible d'extraire le contenu du fichier .docx.")
 
-def split_text_into_chunks(text, max_length):
+def split_text_into_chunks(text, max_length=1000):
     """Divise le texte en morceaux pour respecter la limite de tokens."""
-    return [text[i:i+max_length] for i in range(0, len(text), max_length)]
+    return [text[i:i + max_length] for i in range(0, len(text), max_length)]
 
-def analyze_chunks(file_path, max_length=2000):
-    """Analyse chaque chunk d'un fichier DOCX et renvoie une analyse consolidée."""
+def analyze_chunks(file_path):
+    """Analyse chaque chunk d'un fichier DOCX."""
     content = extract_text_from_file(file_path)
-
-    # Diviser le contenu en chunks
-    chunks = split_text_into_chunks(content, max_length)
+    chunks = split_text_into_chunks(content, max_length=1000)
     analysis_results = []
 
     for i, chunk in enumerate(chunks, start=1):
-        analysis_prompt = f"Voici une partie d'un livre. Analyse ce contenu : {chunk}"
-        logger.info(f"Envoi du chunk {i} à OpenAI...")
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": analysis_prompt}]
-        )["choices"][0]["message"]["content"]
-
-        analysis_results.append(response)
-        logger.info(f"Chunk {i} analysé avec succès.")
+        start_time = time.time()
+        logger.info(f"Envoi du chunk {i}/{len(chunks)} à OpenAI...")
+        
+        try:
+            analysis_prompt = f"Voici une partie d'un livre. Analyse ce contenu : {chunk}"
+            response = openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=[{"role": "user", "content": analysis_prompt}]
+            )["choices"][0]["message"]["content"]
+            analysis_results.append(response)
+            logger.info(f"Chunk {i} analysé avec succès en {time.time() - start_time:.2f} secondes")
+        except Exception as e:
+            logger.error(f"Erreur lors de l'analyse du chunk {i}: {e}")
+            raise
 
     consolidated_analysis = "\n".join(analysis_results)
-    logger.info("Analyse globale consolidée.")
     return consolidated_analysis
 
 def generate_final_fiche(consolidated_analysis, prompt_template):

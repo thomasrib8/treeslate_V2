@@ -2,9 +2,6 @@ from flask import render_template, request, jsonify, current_app, send_file
 import os
 from .utils import process_commercial_sheet, process_shopify_sheet
 
-UPLOAD_FOLDER = current_app.config["UPLOAD_FOLDER"]
-DOWNLOAD_FOLDER = current_app.config["DOWNLOAD_FOLDER"]
-
 @marketing_bp.route('/marketing', methods=['GET'])
 def marketing_home():
     return render_template('marketing/upload.html')
@@ -38,7 +35,8 @@ def upload_marketing_file():
 
 @marketing_bp.route('/marketing/download/<filename>', methods=['GET'])
 def download_file(filename):
-    file_path = os.path.join(DOWNLOAD_FOLDER, filename)
+    download_folder = current_app.config["DOWNLOAD_FOLDER"]
+    file_path = os.path.join(download_folder, filename)
     if os.path.exists(file_path):
         return send_file(file_path, as_attachment=True)
     return jsonify({'error': 'Fichier non trouvé'}), 404

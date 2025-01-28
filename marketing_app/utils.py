@@ -1,6 +1,7 @@
 import openai
 import os
 from fpdf import FPDF
+from flask import current_app
 
 # Prompts pour ChatGPT
 COMMERCIAL_PROMPT = """
@@ -38,36 +39,34 @@ def process_shopify_sheet(file_path):
     return _generate_pdf(file_path, SHOPIFY_PROMPT, "shopify")
 
 def _generate_pdf(file_path, prompt_template, doc_type):
-    # Lire le contenu du fichier
-    with open(file_path, 'r', encoding='utf-8') as file:
-        content = file.read()
+    # Obtenez le chemin des dossiers en utilisant un contexte d'application
+    with current_app.app_context():
+        content = _read_file(file_path)
 
-    # Générer les prompts pour ChatGPT
-    french_prompt = f"{prompt_template}\n\nContenu du fichier:\n{content}\n\nLangue: Français"
-    english_prompt = f"{prompt_template}\n\nContenu du fichier:\n{content}\n\nLangue: Anglais"
+        # Générer les prompts
+        french_prompt = f"{prompt_template}\n\nContenu du fichier:\n{content}\n\nLangue: Français"
+        english_prompt = f"{prompt_template}\n\nContenu du fichier:\n{content}\n\nLangue: Anglais"
 
-    # Appeler ChatGPT pour les deux langues
-    french_text = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": french_prompt}]
-    )["choices"][0]["message"]["content"]
+        french_text = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": french_prompt}]
+        )["choices"][0]["message"]["content"]
 
-    english_text = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": english_prompt}]
-    )["choices"][0]["message"]["content"]
+        english_text = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": english_prompt}]
+        )["choices"][0]["message"]["content"]
 
-    # Définir les chemins pour sauvegarder les fichiers
-    output_folder = os.path.join("downloads", "marketing")
-    os.makedirs(output_folder, exist_ok=True)
-    french_pdf = os.path.join(output_folder, f"french_{doc_type}.pdf")
-    english_pdf = os.path.join(output_folder, f"english_{doc_type}.pdf")
+        # Sauvegarder les fichiers générés
+        output_folder = os.path.join(current_app.config["DOWNLOAD_FOLDER"], "marketing")
+        os.makedirs(output_folder, exist_ok=True)
+        french_pdf = os.path.join(output_folder, f"french_{doc_type}.pdf")
+        english_pdf = os.path.join(output_folder, f"english_{doc_type}.pdf")
 
-    # Sauvegarder les fichiers PDF
-    _save_pdf(french_text, french_pdf)
-    _save_pdf(english_text, english_pdf)
+        _save_pdf(french_text, french_pdf)
+        _save_pdf(english_text, english_pdf)
 
-    return french_pdf, english_pdf
+        return french_pdf, english_pd
 
 def _save_pdf(content, path):
     pdf = FPDF()

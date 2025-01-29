@@ -42,6 +42,11 @@ def upload_marketing_file():
 
     return jsonify({'success': True, 'message': 'Fichier uploadé avec succès', 'filename': file.filename})
 
+@marketing_bp.route('/marketing/files', methods=['GET'])
+def list_files():
+    files = os.listdir(DOWNLOAD_FOLDER)
+    return jsonify(files)
+
 @marketing_bp.route('/marketing/download/<filename>', methods=['GET'])
 def download_file(filename):
     file_path = os.path.join(UPLOAD_FOLDER, filename)

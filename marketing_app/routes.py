@@ -33,20 +33,25 @@ def marketing_home():
     
 @marketing_bp.route('/marketing/upload', methods=['POST'])
 def upload_marketing_file():
+    if not os.path.exists(DOWNLOAD_FOLDER):
+        os.makedirs(DOWNLOAD_FOLDER)
+
     file = request.files.get('file')
-    if not file:
+    if not file or file.filename == '':
         return jsonify({'error': 'Aucun fichier sélectionné'}), 400
 
-    file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    file_path = os.path.join(DOWNLOAD_FOLDER, file.filename)
     file.save(file_path)
 
-    return jsonify({'success': True, 'message': 'Fichier uploadé avec succès', 'filename': file.filename})
+    return jsonify({'success': 'Fichier uploadé avec succès', 'filename': file.filename})
+
 
 @marketing_bp.route('/marketing/get_uploaded_files', methods=['GET'])
 def get_uploaded_files():
-    """Récupère la liste des fichiers présents dans le dossier des téléchargements."""
+    """Retourne la liste des fichiers dans le dossier marketing/download."""
     try:
         files = os.listdir(DOWNLOAD_FOLDER)
+        files = [{"name": f, "url": url_for('marketing.download_file', filename=f)} for f in files]
         return jsonify(files)
     except Exception as e:
         return jsonify({'error': str(e)}), 500

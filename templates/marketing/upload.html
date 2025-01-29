@@ -155,18 +155,18 @@ Un document en anglais et l'autre en français.
 
         // Récupération des fichiers uploadés
         async function fetchFiles() {
-            const response = await fetch("/marketing/get_uploaded_files");
+            const response = await fetch("{{ url_for('marketing.get_uploaded_files') }}");
             const files = await response.json();
             const list = document.getElementById('file-list');
             list.innerHTML = "";
             files.forEach(file => {
                 const li = document.createElement('li');
-                li.innerHTML = `<a href="/marketing/download/${file}" download>${file}</a>`;
+                li.innerHTML = `<a href="/marketing/download/${file.name}" download>${file.name}</a>`;
                 list.appendChild(li);
             });
         }
 
-        fetchFiles();
+        document.addEventListener("DOMContentLoaded", fetchFiles);
     </script>
 </body>
 </html>

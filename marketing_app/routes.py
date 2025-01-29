@@ -13,6 +13,10 @@ def allowed_file(filename):
     """ Vérifie si l'extension du fichier est autorisée (ici, DOCX et TXT). """
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'docx', 'txt'}
 
+@marketing_bp.route('/')
+def index():
+    return render_template('upload.html')  # ou une autre page
+
 @marketing_bp.route('/marketing', methods=['GET'])
 def marketing_home():
     """ Affiche la page d'upload. """

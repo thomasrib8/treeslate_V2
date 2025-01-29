@@ -101,17 +101,16 @@ Un document en anglais et l'autre en français.
         <a href="https://chatgpt.com/" target="_blank" class="button">Aller sur ChatGPT</a>
 
         <!-- Section Upload -->
-        <p>Uploader un fichier (.docx) pour l'enregistrer dans l'application.</p>
-    
-        <form action="{{ url_for('marketing.upload_marketing_file') }}" method="post" enctype="multipart/form-data">
+        <h2>Uploader un fichier :</h2>
+        <form id="upload-form" action="{{ url_for('marketing.upload_marketing_file') }}" method="post" enctype="multipart/form-data">
             <input type="file" name="file" required>
             <button type="submit">Uploader</button>
         </form>
 
+        <!-- Message de confirmation -->
         <div id="upload-message" style="display: none; color: green; margin-top: 10px;"></div>
 
-        <br>
-    
+        <!-- Liste des fichiers disponibles -->
         <h2>Fichiers disponibles :</h2>
         <ul id="file-list"></ul>
 
@@ -130,9 +129,33 @@ Un document en anglais et l'autre en français.
         function goToMainMenu() {
             window.location.href = "/";
         }
-        // Afficher la liste des fichiers disponibles
+
+        // Gestion de l'upload avec affichage du message et mise à jour de la liste
+        document.getElementById("upload-form").addEventListener("submit", function(event) {
+            event.preventDefault();
+            
+            var formData = new FormData(this);
+            fetch("{{ url_for('marketing.upload_marketing_file') }}", {
+                method: "POST",
+                body: formData
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      document.getElementById("upload-message").style.display = "block";
+                      document.getElementById("upload-message").textContent = "Fichier " + data.filename + " uploadé avec succès.";
+                      fetchFiles();  // Met à jour la liste après l'upload
+                  } else {
+                      document.getElementById("upload-message").style.display = "block";
+                      document.getElementById("upload-message").textContent = "Erreur : " + data.error;
+                      document.getElementById("upload-message").style.color = "red";
+                  }
+              })
+              .catch(error => console.error("Erreur :", error));
+        });
+
+        // Récupération des fichiers uploadés
         async function fetchFiles() {
-            const response = await fetch("{{ url_for('marketing.download_file', filename='') }}");
+            const response = await fetch("{{ url_for('marketing.get_uploaded_files') }}");
             const files = await response.json();
             const list = document.getElementById('file-list');
             list.innerHTML = "";
@@ -145,28 +168,5 @@ Un document en anglais et l'autre en français.
 
         fetchFiles();
     </script>
-
-    <script>
-document.getElementById("upload-form").addEventListener("submit", function(event) {
-    event.preventDefault();
-    
-    var formData = new FormData(this);
-    fetch("/marketing/upload", {
-        method: "POST",
-        body: formData
-    }).then(response => response.json())
-      .then(data => {
-          if (data.success) {
-              document.getElementById("upload-message").style.display = "block";
-              document.getElementById("upload-message").textContent = "Fichier " + data.filename + " uploadé avec succès.";
-          } else {
-              document.getElementById("upload-message").style.display = "block";
-              document.getElementById("upload-message").textContent = "Erreur : " + data.error;
-              document.getElementById("upload-message").style.color = "red";
-          }
-      })
-      .catch(error => console.error("Erreur :", error));
-});
-</script>
 </body>
 </html>

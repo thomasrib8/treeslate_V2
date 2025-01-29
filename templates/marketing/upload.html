@@ -54,7 +54,7 @@
    - Résume les points clés du livre.
    - Incite à la lecture ou à l'achat en mettant en avant les bénéfices pour le lecteur.
 
-Fais moi un rendu sous la forme d'un document Word de type .docx.
+Fais-moi un rendu sous la forme d'un document Word de type .docx.
 Le document devra être dans la langue anglaise.
                 </textarea>
                 <button onclick="copyToClipboard('commercialPrompt')">Copier</button>
@@ -112,6 +112,7 @@ Un document en anglais et l'autre en français.
 
         <!-- Liste des fichiers disponibles -->
         <h2>Fichiers disponibles :</h2>
+        <button onclick="fetchFiles()">🔄 Rafraîchir la liste</button>
         <ul id="file-list"></ul>
 
         <!-- Bouton Menu Principal -->
@@ -130,49 +131,52 @@ Un document en anglais et l'autre en français.
             window.location.href = "/";
         }
 
-        // Gestion de l'upload avec affichage du message et mise à jour de la liste
-        document.getElementById("upload-form").addEventListener("submit", function(event) {
-            event.preventDefault();
-        
-            var formData = new FormData(this);
-            fetch("{{ url_for('marketing.upload_marketing_file') }}", {
-                method: "POST",
-                body: formData
-            }).then(response => response.json())
-              .then(data => {
-                  if (data.success) {
-                      document.getElementById("upload-message").style.display = "block";
-                      document.getElementById("upload-message").textContent = "Fichier " + data.filename + " uploadé avec succès.";
-                      document.getElementById("upload-message").style.color = "green";
-                      fetchFiles();  // Met à jour la liste après l'upload
-                  } else {
-                      document.getElementById("upload-message").style.display = "block";
-                      document.getElementById("upload-message").textContent = "Erreur : " + data.error;
-                      document.getElementById("upload-message").style.color = "red";
-                  }
-              })
-              .catch(error => console.error("Erreur :", error));
-        });
-        
         // Fonction pour récupérer et afficher les fichiers uploadés
         async function fetchFiles() {
-            const response = await fetch("{{ url_for('marketing.get_uploaded_files') }}");
-            const files = await response.json();
-            const list = document.getElementById('file-list');
-            list.innerHTML = "";  // Efface la liste avant de la re-remplir
-        
-            if (files.length === 0) {
-                list.innerHTML = "<li>Aucun fichier disponible.</li>";
-            } else {
+            try {
+                const response = await fetch("{{ url_for('marketing.get_uploaded_files') }}");
+                const files = await response.json();
+                const list = document.getElementById('file-list');
+                list.innerHTML = "";
                 files.forEach(file => {
                     const li = document.createElement('li');
                     li.innerHTML = `<a href="/marketing/download/${file.filename}" download>${file.filename}</a>`;
                     list.appendChild(li);
                 });
+            } catch (error) {
+                console.error("Erreur lors de la récupération des fichiers :", error);
             }
         }
-        
-        fetchFiles();  // Charger la liste des fichiers au chargement de la page
+
+        // Gestion de l'upload avec affichage du message et mise à jour de la liste
+        document.getElementById("upload-form").addEventListener("submit", async function(event) {
+            event.preventDefault();
+
+            var formData = new FormData(this);
+            try {
+                const response = await fetch("{{ url_for('marketing.upload_marketing_file') }}", {
+                    method: "POST",
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById("upload-message").style.display = "block";
+                    document.getElementById("upload-message").textContent = "Fichier " + data.filename + " uploadé avec succès.";
+                    document.getElementById("upload-message").style.color = "green";
+                    fetchFiles(); // Met à jour la liste après l'upload
+                } else {
+                    document.getElementById("upload-message").style.display = "block";
+                    document.getElementById("upload-message").textContent = "Erreur : " + data.error;
+                    document.getElementById("upload-message").style.color = "red";
+                }
+            } catch (error) {
+                console.error("Erreur :", error);
+            }
+        });
+
+        // Charger la liste des fichiers au chargement de la page
+        fetchFiles();
     </script>
 </body>
 </html>

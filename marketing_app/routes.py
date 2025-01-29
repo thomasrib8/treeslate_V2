@@ -42,6 +42,15 @@ def upload_marketing_file():
 
     return jsonify({'success': True, 'message': 'Fichier uploadé avec succès', 'filename': file.filename})
 
+@marketing_bp.route('/marketing/get_uploaded_files', methods=['GET'])
+def get_uploaded_files():
+    """Récupère la liste des fichiers présents dans le dossier des téléchargements."""
+    try:
+        files = os.listdir(DOWNLOAD_FOLDER)
+        return jsonify(files)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @marketing_bp.route('/marketing/files', methods=['GET'])
 def list_files():
     files = os.listdir(DOWNLOAD_FOLDER)

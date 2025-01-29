@@ -1,7 +1,127 @@
-<form action="/marketing/marketing/upload" method="POST" enctype="multipart/form-data">
-    <label for="file">Upload de fichier (uniquement .docx) :</label>
-    <input type="file" id="file" name="file" accept=".docx" required>
-    <button type="submit" name="action" value="generate_commercial">Générer une fiche commerciale</button>
-    <button type="submit" name="action" value="generate_shopify">Générer une fiche produit Shopify</button>
-</form>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketing Produit</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Marketing Produit</h1>
 
+        <p><strong>Instructions :</strong></p>
+        <p>
+            1 - Copiez le script de votre choix (fiche commerciale ou fiche produit).<br>
+            2 - Cliquez sur le bouton "Créer ma fiche".<br>
+            3 - Collez le script dans ChatGPT et importez le document du livre.<br>
+            4 - Laissez ChatGPT générer votre fiche.<br>
+            5 - Importez la fiche dans le module ci-dessous pour la sauvegarder dans l'application.
+        </p>
+
+        <div class="prompts-container">
+            <!-- Fiche Commerciale -->
+            <div class="prompt-box">
+                <h2>Fiche Commerciale</h2>
+                <textarea id="commercialPrompt" readonly>
+À partir du fichier, génère une fiche commerciale détaillée de ce livre de magie avec les sections suivantes :
+
+1. **Titre et Auteur** :
+   - Extrais le titre exact et le nom de l'auteur directement du texte analysé.
+   
+2. **Présentation Générale** (pas de listes à puces ni de tirets) :
+   - Présente le livre en précisant son titre, son auteur, et le contexte de création.
+   - Développe l'objectif principal du livre et donne un aperçu des thématiques abordées.
+   - Rédige une description commerciale approfondie du livre en mettant en avant son originalité et son contenu unique.
+
+3. **Résumé des Chapitres** :
+   - Décris chaque chapitre ou tour de magie présenté dans le livre.
+   - Donne un titre s'il est mentionné.
+   - Résume en quelques phrases le contenu du chapitre ou du tour (sans dévoiler les secrets).
+   - Décris les effets magiques et leur impact.
+
+4. **Description des Effets Magiques** :
+   - Détaille les effets magiques expliqués dans le livre sans révéler les secrets techniques.
+   - Explique pourquoi ils captivent l’audience.
+
+5. **Points Forts** (liste à puces) :
+   - Originalité des tours ou techniques.
+   - Approche pédagogique et facilité de compréhension.
+   - Adaptabilité des tours à différents contextes.
+   - Philosophie ou théories sur la magie développées par l'auteur.
+
+6. **Conclusion** :
+   - Résume les points clés du livre.
+   - Incite à la lecture ou à l'achat en mettant en avant les bénéfices pour le lecteur.
+
+Fais moi un rendu sous la forme d'un document Word de type .docx.
+Le document devra être dans la langue anglaise.
+                </textarea>
+                <button onclick="copyToClipboard('commercialPrompt')">Copier</button>
+            </div>
+
+            <!-- Fiche Produit Shopify -->
+            <div class="prompt-box">
+                <h2>Fiche Produit Shopify</h2>
+                <textarea id="shopifyPrompt" readonly>
+À partir du fichier, génère une fiche produit détaillée d'un livre de magie pour un site internet :
+
+1. **Titre et Auteur** :
+   - Extrais et présente le titre du livre et le nom de l’auteur depuis le texte.
+
+2. **Introduction et Description Commerciale** :
+   - Développe une introduction engageante précisant l’objectif principal du livre et les thèmes abordés.
+   - Rédige une description approfondie en mettant en avant l’originalité du livre et son apport pour les magiciens.
+
+3. **Résumé des Chapitres** :
+   - Résume chaque chapitre en expliquant les effets magiques décrits (sans dévoiler les secrets techniques).
+   - Explique comment ces effets aident les magiciens dans leur pratique.
+
+4. **Description des Effets Magiques** :
+   - Décris les tours de magie et leurs effets sur les spectateurs.
+   - Explique pourquoi ces effets se démarquent.
+
+5. **Points Forts** (liste à puces) :
+   - Originalité et pertinence des effets magiques.
+   - Accessibilité pour différents niveaux de magiciens.
+   - Philosophie unique de l’auteur sur la magie.
+   - Adaptabilité des tours aux contextes variés.
+
+6. **Appel à l’Action** :
+   - Termine par un appel à l’action engageant pour inciter à l’achat.
+
+Fais-moi un rendu sous la forme de 2 documents Word de type .docx.
+Un document en anglais et l'autre en français.
+                </textarea>
+                <button onclick="copyToClipboard('shopifyPrompt')">Copier</button>
+            </div>
+        </div>
+
+        <!-- Lien vers ChatGPT -->
+        <a href="https://chatgpt.com/" target="_blank" class="button">Aller sur ChatGPT</a>
+
+        <!-- Section Upload -->
+        <h2>Uploader votre fiche</h2>
+        <form action="{{ url_for('marketing.upload_marketing_file') }}" method="post" enctype="multipart/form-data">
+            <input type="file" name="file" required>
+            <button type="submit">Envoyer</button>
+        </form>
+
+        <!-- Bouton Menu Principal -->
+        <button class="menu-button" onclick="goToMainMenu()">Menu Principal</button>
+    </div>
+
+    <script>
+        function copyToClipboard(id) {
+            var copyText = document.getElementById(id);
+            copyText.select();
+            document.execCommand("copy");
+            alert("Le prompt a été copié !");
+        }
+
+        function goToMainMenu() {
+            window.location.href = "{{ url_for('main.index') }}";
+        }
+    </script>
+</body>
+</html>

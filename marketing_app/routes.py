@@ -19,34 +19,32 @@ def index():
 
 @marketing_bp.route('/marketing', methods=['GET'])
 def marketing_home():
-    """ Affiche la page d'upload. """
-    return render_template('marketing/upload.html')
+    # Liste les fichiers présents dans le dossier marketing/download
+    files = []
+    for filename in os.listdir(UPLOAD_FOLDER):
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        if os.path.isfile(filepath):
+            files.append({
+                'filename': filename,
+                'created_at': datetime.fromtimestamp(os.path.getctime(filepath)).strftime('%Y-%m-%d %H:%M:%S')
+            })
 
+    return render_template('marketing/upload.html', marketing_files=files)
+    
 @marketing_bp.route('/marketing/upload', methods=['POST'])
 def upload_marketing_file():
-    """ Gère l'upload et enregistre le fichier dans `marketing/download`. """
-    if 'file' not in request.files:
-        return jsonify({'error': 'Aucun fichier fourni.'}), 400
-
-    file = request.files['file']
-    
-    if file.filename == '':
-        return jsonify({'error': 'Aucun fichier sélectionné.'}), 400
-
-    if not allowed_file(file.filename):
-        return jsonify({'error': 'Type de fichier non pris en charge. Seuls les fichiers .docx et .txt sont acceptés.'}), 400
+    file = request.files.get('file')
+    if not file:
+        return jsonify({'error': 'Aucun fichier sélectionné'}), 400
 
     file_path = os.path.join(UPLOAD_FOLDER, file.filename)
     file.save(file_path)
 
-    return jsonify({'message': 'Fichier uploadé avec succès.', 'filename': file.filename}), 200
+    return jsonify({'success': True, 'message': 'Fichier uploadé avec succès', 'filename': file.filename})
 
 @marketing_bp.route('/marketing/download/<filename>', methods=['GET'])
 def download_file(filename):
-    """ Permet de télécharger un fichier depuis `marketing/download`. """
     file_path = os.path.join(UPLOAD_FOLDER, filename)
-    
     if os.path.exists(file_path):
         return send_file(file_path, as_attachment=True)
-    
     return jsonify({'error': 'Fichier non trouvé'}), 404

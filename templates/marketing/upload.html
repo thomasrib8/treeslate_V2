@@ -101,11 +101,17 @@ Un document en anglais et l'autre en français.
         <a href="https://chatgpt.com/" target="_blank" class="button">Aller sur ChatGPT</a>
 
         <!-- Section Upload -->
-        <h2>Uploader votre fiche</h2>
+        <p>Uploader un fichier (.docx) pour l'enregistrer dans l'application.</p>
+    
         <form action="{{ url_for('marketing.upload_marketing_file') }}" method="post" enctype="multipart/form-data">
             <input type="file" name="file" required>
-            <button type="submit">Envoyer</button>
+            <button type="submit">Uploader</button>
         </form>
+
+        <br>
+    
+        <h2>Fichiers disponibles :</h2>
+        <ul id="file-list"></ul>
 
         <!-- Bouton Menu Principal -->
         <button class="menu-button" onclick="goToMainMenu()">Menu Principal</button>
@@ -122,6 +128,20 @@ Un document en anglais et l'autre en français.
         function goToMainMenu() {
             window.location.href = "{{ url_for('main.index') }}";
         }
+        // Afficher la liste des fichiers disponibles
+        async function fetchFiles() {
+            const response = await fetch("{{ url_for('marketing.download_file', filename='') }}");
+            const files = await response.json();
+            const list = document.getElementById('file-list');
+            list.innerHTML = "";
+            files.forEach(file => {
+                const li = document.createElement('li');
+                li.innerHTML = `<a href="/marketing/download/${file}" download>${file}</a>`;
+                list.appendChild(li);
+            });
+        }
+
+        fetchFiles();
     </script>
 </body>
 </html>

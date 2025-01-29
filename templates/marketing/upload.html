@@ -155,7 +155,7 @@ Un document en anglais et l'autre en français.
 
         // Récupération des fichiers uploadés
         async function fetchFiles() {
-            const response = await fetch("{{ url_for('marketing.get_uploaded_files') }}");
+            const response = await fetch("/marketing/get_uploaded_files");
             const files = await response.json();
             const list = document.getElementById('file-list');
             list.innerHTML = "";

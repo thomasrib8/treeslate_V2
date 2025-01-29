@@ -76,6 +76,8 @@ def list_files():
 
 @marketing_bp.route('/marketing/download/<filename>', methods=['GET'])
 def download_file(filename):
-    return send_from_directory(DOWNLOAD_FOLDER, filename, as_attachment=True)
+    file_path = os.path.join(DOWNLOAD_FOLDER, filename)
+    if os.path.exists(file_path):
         return send_file(file_path, as_attachment=True)
-    return jsonify({'error': 'Fichier non trouvé'}), 404
+    else:
+        return jsonify({"error": "Fichier non trouvé"}), 404

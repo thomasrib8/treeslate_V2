@@ -108,6 +108,8 @@ Un document en anglais et l'autre en français.
             <button type="submit">Uploader</button>
         </form>
 
+        <div id="upload-message" style="display: none; color: green; margin-top: 10px;"></div>
+
         <br>
     
         <h2>Fichiers disponibles :</h2>
@@ -143,5 +145,28 @@ Un document en anglais et l'autre en français.
 
         fetchFiles();
     </script>
+
+    <script>
+document.getElementById("upload-form").addEventListener("submit", function(event) {
+    event.preventDefault();
+    
+    var formData = new FormData(this);
+    fetch("/marketing/upload", {
+        method: "POST",
+        body: formData
+    }).then(response => response.json())
+      .then(data => {
+          if (data.success) {
+              document.getElementById("upload-message").style.display = "block";
+              document.getElementById("upload-message").textContent = "Fichier " + data.filename + " uploadé avec succès.";
+          } else {
+              document.getElementById("upload-message").style.display = "block";
+              document.getElementById("upload-message").textContent = "Erreur : " + data.error;
+              document.getElementById("upload-message").style.color = "red";
+          }
+      })
+      .catch(error => console.error("Erreur :", error));
+});
+</script>
 </body>
 </html>

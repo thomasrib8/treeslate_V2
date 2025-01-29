@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, send_file
 import os
+from datetime import datetime
 
 marketing_bp = Blueprint('marketing', __name__)
 
@@ -18,8 +19,17 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'docx', 'txt'}
 
 @marketing_bp.route('/')
-def index():
-    return render_template('upload.html')  # ou une autre page
+def main_menu():
+    files = []
+    if os.path.exists(DOWNLOAD_FOLDER):
+        for filename in os.listdir(DOWNLOAD_FOLDER):
+            filepath = os.path.join(DOWNLOAD_FOLDER, filename)
+            if os.path.isfile(filepath):
+                files.append({
+                    'filename': filename,
+                    'created_at': datetime.fromtimestamp(os.path.getctime(filepath)).strftime('%Y-%m-%d %H:%M:%S')
+                })
+    return render_template('main_menu.html', marketing_files=files)
 
 @marketing_bp.route('/marketing', methods=['GET'])
 def marketing_home():
@@ -55,18 +65,15 @@ def upload_marketing_file():
 
 @marketing_bp.route('/marketing/get_uploaded_files', methods=['GET'])
 def get_uploaded_files():
-    if not os.path.exists(DOWNLOAD_FOLDER):
-        return jsonify([])  # Si le dossier n'existe pas encore, on retourne une liste vide
-
     files = []
-    for filename in os.listdir(DOWNLOAD_FOLDER):
-        file_path = os.path.join(DOWNLOAD_FOLDER, filename)
-        if os.path.isfile(file_path):
-            files.append({
-                "filename": filename,
-                "created_at": os.path.getctime(file_path)  # Timestamp de création du fichier
-            })
-
+    if os.path.exists(DOWNLOAD_FOLDER):
+        for filename in os.listdir(DOWNLOAD_FOLDER):
+            filepath = os.path.join(DOWNLOAD_FOLDER, filename)
+            if os.path.isfile(filepath):
+                files.append({
+                    'filename': filename,
+                    'created_at': datetime.fromtimestamp(os.path.getctime(filepath)).strftime('%Y-%m-%d %H:%M:%S')
+                })
     return jsonify(files)
 
 @marketing_bp.route('/marketing/files', methods=['GET'])

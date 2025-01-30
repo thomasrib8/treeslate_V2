@@ -124,7 +124,7 @@ Un document en anglais et l'autre en français.
         </div>
 
         <!-- Lien vers ChatGPT -->
-        <a href="https://chatgpt.com/" target="_blank" class="button">Aller sur ChatGPT</a>
+        <a href="https://chatgpt.com/" target="_blank" class="menu-button">Aller sur ChatGPT</a>
 
         <!-- Section Upload -->
         <div class="file-header">
@@ -172,19 +172,30 @@ Un document en anglais et l'autre en français.
             const list = document.getElementById('file-list');
             list.innerHTML = "";
 
-            if (files.length === 0) {
-                list.innerHTML = "<p>Aucun fichier disponible.</p>";
-            } else {
-                files.forEach(file => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `<a href="/marketing/download/${file.filename}" download>${file.filename}</a>`;
-                    list.appendChild(li);
-                });
-            }
+            files.forEach(file => {
+                const li = document.createElement('li');
+                li.innerHTML = `<a href="/marketing/download/${file.filename}" download>${file.filename}</a>`;
+                list.appendChild(li);
+            });
+
         } catch (error) {
             console.error("Erreur lors de la récupération des fichiers :", error);
         }
     }
+
+    document.getElementById("upload-form").addEventListener("submit", async function(event) {
+        event.preventDefault();
+        var formData = new FormData(this);
+
+        const response = await fetch("{{ url_for('marketing.upload_marketing_file') }}", {
+            method: "POST",
+            body: formData
+        });
+
+        document.getElementById("upload-message").style.display = "block";
+        document.getElementById("upload-message").textContent = "Fichier uploadé avec succès.";
+        fetchFiles();
+    });
 
     fetchFiles();
     </script>

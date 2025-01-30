@@ -139,31 +139,29 @@
 <script>
     async function fetchMarketingFiles() {
         try {
-            const response = await fetch("{{ url_for('marketing.get_uploaded_files') }}");
+            const response = await fetch("/marketing/get_uploaded_files");
             const files = await response.json();
-            const tableBody = document.getElementById('file-table-body');
-            tableBody.innerHTML = "";
-
-            files.forEach(file => {
-                const row = document.createElement('tr');
-
-                // Convertir la date ISO en format lisible
-                let formattedDate = new Date(file.created_at);
-                formattedDate = isNaN(formattedDate) ? "Date non disponible" : formattedDate.toLocaleString('fr-FR');
-
-                row.innerHTML = `
-                    <td>${file.filename}</td>
-                    <td>${formattedDate}</td>
-                    <td><a href="/marketing/download/${file.filename}">Télécharger</a></td>
-                `;
-                tableBody.appendChild(row);
-            });
+            const tableBody = document.getElementById("marketing-files-table");
+            tableBody.innerHTML = "";  // Nettoie la table avant de l'actualiser
+    
+            if (files.length === 0) {
+                tableBody.innerHTML = "<tr><td colspan='3'>Aucun fichier disponible</td></tr>";
+            } else {
+                files.forEach(file => {
+                    let row = `<tr>
+                        <td>${file.filename}</td>
+                        <td>${new Date(file.created_at * 1000).toLocaleString()}</td>
+                        <td><a href="/marketing/download/${file.filename}">Télécharger</a></td>
+                    </tr>`;
+                    tableBody.innerHTML += row;
+                });
+            }
         } catch (error) {
-            console.error("Erreur lors de la récupération des fichiers marketing :", error);
+            console.error("Erreur lors de la récupération des fichiers :", error);
         }
     }
-
-    // Charger les fichiers au démarrage
+    
+    // Charger la liste des fichiers au chargement de la page
     fetchMarketingFiles();
-</script>
+    </script>
 </html>

@@ -120,63 +120,89 @@ Un document en anglais et l'autre en français.
     </div>
 
     <script>
-        function copyToClipboard(id) {
-            var copyText = document.getElementById(id);
-            copyText.select();
-            document.execCommand("copy");
-            alert("Le prompt a été copié !");
-        }
+    function copyToClipboard(id) {
+        var copyText = document.getElementById(id);
+        copyText.select();
+        document.execCommand("copy");
+        alert("Le prompt a été copié !");
+    }
 
-        function goToMainMenu() {
-            window.location.href = "/";
-        }
+    function goToMainMenu() {
+        window.location.href = "/";
+    }
 
-        // Fonction pour récupérer et afficher les fichiers uploadés
-        async function fetchFiles() {
-            try {
-                const response = await fetch("{{ url_for('marketing.get_uploaded_files') }}");
-                const files = await response.json();
-                const list = document.getElementById('file-list');
-                list.innerHTML = "";
+    // Fonction pour récupérer et afficher les fichiers uploadés
+    async function fetchFiles() {
+        try {
+            const response = await fetch("{{ url_for('marketing.get_uploaded_files') }}");
+
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP : ${response.status}`);
+            }
+
+            const files = await response.json();
+            const list = document.getElementById('file-list');
+
+            list.innerHTML = ""; // Vide la liste avant de la remplir
+
+            if (files.length === 0) {
+                list.innerHTML = "<p>Aucun fichier disponible.</p>";
+            } else {
                 files.forEach(file => {
                     const li = document.createElement('li');
-                    li.innerHTML = `<a href="/marketing/download/${file.filename}" download>${file.filename}</a>`;
+                    const filename = typeof file === "string" ? file : file.filename; // Gère les deux formats possibles
+
+                    li.innerHTML = `<a href="/marketing/download/${filename}" download>${filename}</a>`;
                     list.appendChild(li);
                 });
-            } catch (error) {
-                console.error("Erreur lors de la récupération des fichiers :", error);
             }
+        } catch (error) {
+            console.error("Erreur lors de la récupération des fichiers :", error);
+            document.getElementById('file-list').innerHTML = "<p>Erreur lors du chargement des fichiers.</p>";
         }
+    }
 
-        // Gestion de l'upload avec affichage du message et mise à jour de la liste
-        document.getElementById("upload-form").addEventListener("submit", async function(event) {
-            event.preventDefault();
+    // Gestion de l'upload avec affichage du message et mise à jour de la liste
+    document.getElementById("upload-form").addEventListener("submit", async function(event) {
+        event.preventDefault();
 
-            var formData = new FormData(this);
-            try {
-                const response = await fetch("{{ url_for('marketing.upload_marketing_file') }}", {
-                    method: "POST",
-                    body: formData
-                });
-                const data = await response.json();
+        var formData = new FormData(this);
 
-                if (data.success) {
-                    document.getElementById("upload-message").style.display = "block";
-                    document.getElementById("upload-message").textContent = "Fichier " + data.filename + " uploadé avec succès.";
-                    document.getElementById("upload-message").style.color = "green";
-                    fetchFiles(); // Met à jour la liste après l'upload
-                } else {
-                    document.getElementById("upload-message").style.display = "block";
-                    document.getElementById("upload-message").textContent = "Erreur : " + data.error;
-                    document.getElementById("upload-message").style.color = "red";
-                }
-            } catch (error) {
-                console.error("Erreur :", error);
+        try {
+            const response = await fetch("{{ url_for('marketing.upload_marketing_file') }}", {
+                method: "POST",
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP : ${response.status}`);
             }
-        });
 
-        // Charger la liste des fichiers au chargement de la page
-        fetchFiles();
-    </script>
+            const data = await response.json();
+
+            let messageElement = document.getElementById("upload-message");
+            messageElement.style.display = "block";
+
+            if (data.success) {
+                messageElement.textContent = "Fichier " + data.filename + " uploadé avec succès.";
+                messageElement.style.color = "green";
+                fetchFiles(); // Met à jour la liste après l'upload
+            } else {
+                messageElement.textContent = "Erreur : " + data.error;
+                messageElement.style.color = "red";
+            }
+        } catch (error) {
+            console.error("Erreur lors de l'upload :", error);
+            let messageElement = document.getElementById("upload-message");
+            messageElement.style.display = "block";
+            messageElement.textContent = "Erreur lors de l'upload du fichier.";
+            messageElement.style.color = "red";
+        }
+    });
+
+    // Charger la liste des fichiers au chargement de la page
+    fetchFiles();
+</script>
+
 </body>
 </html>

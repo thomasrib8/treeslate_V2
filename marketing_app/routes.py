@@ -6,7 +6,7 @@ marketing_bp = Blueprint('marketing', __name__)
 marketing_bp = Blueprint('marketing', __name__, url_prefix='/marketing')
 
 UPLOAD_FOLDER = "marketing_app/uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Assure que le dossier existe
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Vérifier si le dossier de téléchargement existe, sinon le créer
 if not os.path.exists(UPLOAD_FOLDER):
@@ -21,17 +21,11 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'docx', 'txt'}
 
 @marketing_bp.route('/')
-def main_menu():
-    files = []
-    if os.path.exists(DOWNLOAD_FOLDER):
-        for filename in os.listdir(DOWNLOAD_FOLDER):
-            filepath = os.path.join(DOWNLOAD_FOLDER, filename)
-            if os.path.isfile(filepath):
-                files.append({
-                    'filename': filename,
-                    'created_at': datetime.fromtimestamp(os.path.getctime(filepath)).strftime('%Y-%m-%d %H:%M:%S')
-                })
-    return render_template('main_menu.html', marketing_files=files)
+def marketing_home():
+    """Affiche la page d'upload des fichiers marketing"""
+    files = get_uploaded_files_data()
+    print("DEBUG - Fichiers récupérés pour la page marketing :", files)  # Vérification en logs
+    return render_template('marketing/upload.html', marketing_files=files)
 
 @marketing_bp.route('/marketing', methods=['GET'])
 def marketing_home():
@@ -40,7 +34,7 @@ def marketing_home():
     print("DEBUG - Fichiers récupérés pour la page marketing :", files)  # Vérification en logs
     return render_template('marketing/upload.html', marketing_files=files)
     
-@marketing_bp.route('/marketing/upload', methods=['POST'])
+@marketing_bp.route('/upload', methods=['POST'])
 def upload_marketing_file():
     """Gère l'upload des fichiers"""
     if 'file' not in request.files:
@@ -53,12 +47,15 @@ def upload_marketing_file():
     file_path = os.path.join(UPLOAD_FOLDER, file.filename)
     file.save(file_path)
     
+    print(f"DEBUG - Fichier {file.filename} sauvegardé dans {UPLOAD_FOLDER}")  # Log pour voir l'upload
+
     return jsonify({"success": True, "filename": file.filename})
 
-@marketing_bp.route('/marketing/get_uploaded_files', methods=['GET'])
+@marketing_bp.route('/get_uploaded_files', methods=['GET'])
 def get_uploaded_files():
     """Renvoie la liste des fichiers uploadés en JSON"""
     files = get_uploaded_files_data()
+    print("DEBUG - Liste des fichiers envoyée au client :", files)  # Vérification en logs
     return jsonify(files)
     
 @marketing_bp.route('/marketing/files', methods=['GET'])
@@ -66,9 +63,10 @@ def list_files():
     files = os.listdir(DOWNLOAD_FOLDER)
     return jsonify(files)
 
-@marketing_bp.route('/marketing/download/<filename>', methods=['GET'])
+@marketing_bp.route('/download/<filename>', methods=['GET'])
 def download_file(filename):
     """Permet de télécharger un fichier depuis le dossier upload"""
+    print(f"DEBUG - Tentative de téléchargement du fichier : {filename}")  # Log pour voir si Flask tente bien un téléchargement
     return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
 
 def get_uploaded_files_data():

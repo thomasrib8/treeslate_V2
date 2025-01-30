@@ -58,6 +58,6 @@ def get_uploaded_files_data():
         if os.path.isfile(filepath):
             files.append({
                 "filename": filename,
-                "created_at": datetime.fromtimestamp(os.path.getctime(filepath)).strftime('%Y-%m-%d %H:%M:%S')
+                "created_at": datetime.fromtimestamp(os.path.getctime(filepath)).isoformat()  # Format ISO
             })
     return files

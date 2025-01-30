@@ -5,6 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Marketing Produit</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .prompt-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .title-left {
+            text-align: left;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .button-right {
+            display: flex;
+            justify-content: flex-end;
+        }
+        .file-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -22,8 +44,10 @@
         <div class="prompts-container">
             <!-- Fiche Commerciale -->
             <div class="prompt-box">
-                <h2>Fiche Commerciale</h2>
-                <button class="action-button" onclick="copyToClipboard('commercialPrompt')">Copier</button>
+                <div class="prompt-container">
+                    <h2 class="title-left">Fiche Commerciale</h2>
+                    <button class="action-button" onclick="copyToClipboard('commercialPrompt')">Copier</button>
+                </div>
                 <textarea id="commercialPrompt" readonly>
 À partir du fichier, génère une fiche commerciale détaillée de ce livre de magie avec les sections suivantes :
 
@@ -62,8 +86,10 @@ Le document devra être dans la langue anglaise.
 
             <!-- Fiche Produit Shopify -->
             <div class="prompt-box">
-                <h2>Fiche Produit Shopify</h2>
-                <button class="action-button" onclick="copyToClipboard('shopifyPrompt')">Copier</button>
+                <div class="prompt-container">
+                    <h2 class="title-left">Fiche Produit Shopify</h2>
+                    <button class="action-button" onclick="copyToClipboard('shopifyPrompt')">Copier</button>
+                </div>
                 <textarea id="shopifyPrompt" readonly>
 À partir du fichier, génère une fiche produit détaillée d'un livre de magie pour un site internet :
 
@@ -101,11 +127,7 @@ Un document en anglais et l'autre en français.
         <a href="https://chatgpt.com/" target="_blank" class="buttons">Aller sur ChatGPT</a>
 
         <!-- Section Upload -->
-
-        <div class="title-container">
-            <h2 style="margin: 0;">Uploader un fichier</h2>
-        </div>
-                
+        <h2>Uploader un fichier :</h2>
         <form id="upload-form" action="{{ url_for('marketing.upload_marketing_file') }}" method="post" enctype="multipart/form-data">
             <input type="file" name="file" required>
             <button type="submit">Uploader</button>
@@ -115,8 +137,8 @@ Un document en anglais et l'autre en français.
         <div id="upload-message" style="display: none; color: green; margin-top: 10px;"></div>
 
         <!-- Liste des fichiers disponibles -->
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h2 style="text-align: center; flex-grow: 1;">Fichiers disponibles</h2>
+        <div class="file-header">
+            <h2>Fichiers disponibles</h2>
             <button class="action-button" onclick="fetchFiles()">🔄 Rafraîchir la liste</button>
         </div>
 
@@ -160,20 +182,6 @@ Un document en anglais et l'autre en français.
             console.error("Erreur lors de la récupération des fichiers :", error);
         }
     }
-
-    document.getElementById("upload-form").addEventListener("submit", async function(event) {
-        event.preventDefault();
-        var formData = new FormData(this);
-        try {
-            const response = await fetch("/marketing/upload", { method: "POST", body: formData });
-            if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
-            const data = await response.json();
-            document.getElementById("upload-message").textContent = data.success ? `Fichier ${data.filename} uploadé avec succès.` : `Erreur : ${data.error}`;
-            fetchFiles();
-        } catch (error) {
-            console.error("Erreur lors de l'upload :", error);
-        }
-    });
 
     fetchFiles();
     </script>

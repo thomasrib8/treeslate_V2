@@ -106,14 +106,15 @@ Un document en anglais et l'autre en français.
             <input type="file" name="file" required>
             <button type="submit">Uploader</button>
         </form>
-
+        
         <!-- Message de confirmation -->
         <div id="upload-message" style="display: none; color: green; margin-top: 10px;"></div>
-
+        
         <!-- Liste des fichiers disponibles -->
         <h2>Fichiers disponibles :</h2>
         <button onclick="fetchFiles()">🔄 Rafraîchir la liste</button>
         <ul id="file-list"></ul>
+
 
         <!-- Bouton Menu Principal -->
         <button class="menu-button" onclick="goToMainMenu()">Menu Principal</button>
@@ -135,24 +136,18 @@ Un document en anglais et l'autre en français.
     async function fetchFiles() {
         try {
             const response = await fetch("{{ url_for('marketing.get_uploaded_files') }}");
-
-            if (!response.ok) {
-                throw new Error(`Erreur HTTP : ${response.status}`);
-            }
-
+            if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
+    
             const files = await response.json();
             const list = document.getElementById('file-list');
-
-            list.innerHTML = ""; // Vide la liste avant de la remplir
-
+            list.innerHTML = "";  // Vide la liste avant de la remplir
+    
             if (files.length === 0) {
                 list.innerHTML = "<p>Aucun fichier disponible.</p>";
             } else {
                 files.forEach(file => {
                     const li = document.createElement('li');
-                    const filename = typeof file === "string" ? file : file.filename; // Gère les deux formats possibles
-
-                    li.innerHTML = `<a href="/marketing/download/${filename}" download>${filename}</a>`;
+                    li.innerHTML = `<a href="/marketing/download/${file.filename}" download>${file.filename}</a>`;
                     list.appendChild(li);
                 });
             }
@@ -161,28 +156,24 @@ Un document en anglais et l'autre en français.
             document.getElementById('file-list').innerHTML = "<p>Erreur lors du chargement des fichiers.</p>";
         }
     }
-
+    
     // Gestion de l'upload avec affichage du message et mise à jour de la liste
     document.getElementById("upload-form").addEventListener("submit", async function(event) {
         event.preventDefault();
-
+    
         var formData = new FormData(this);
-
         try {
             const response = await fetch("{{ url_for('marketing.upload_marketing_file') }}", {
                 method: "POST",
                 body: formData
             });
-
-            if (!response.ok) {
-                throw new Error(`Erreur HTTP : ${response.status}`);
-            }
-
+    
+            if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
+            
             const data = await response.json();
-
             let messageElement = document.getElementById("upload-message");
             messageElement.style.display = "block";
-
+    
             if (data.success) {
                 messageElement.textContent = "Fichier " + data.filename + " uploadé avec succès.";
                 messageElement.style.color = "green";
@@ -199,7 +190,7 @@ Un document en anglais et l'autre en français.
             messageElement.style.color = "red";
         }
     });
-
+    
     // Charger la liste des fichiers au chargement de la page
     fetchFiles();
 </script>

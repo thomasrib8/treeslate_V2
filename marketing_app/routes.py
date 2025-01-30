@@ -36,12 +36,8 @@ def main_menu():
 @marketing_bp.route('/marketing', methods=['GET'])
 def marketing_home():
     """Affiche la page d'upload des fichiers marketing"""
-    files = []
-    for filename in os.listdir(UPLOAD_FOLDER):
-        filepath = os.path.join(UPLOAD_FOLDER, filename)
-        if os.path.isfile(filepath):
-            files.append({'filename': filename, 'created_at': os.path.getctime(filepath)})
-    
+    files = get_uploaded_files_data()
+    print("DEBUG - Fichiers récupérés pour la page marketing :", files)  # Vérification en logs
     return render_template('marketing/upload.html', marketing_files=files)
     
 @marketing_bp.route('/marketing/upload', methods=['POST'])
@@ -62,14 +58,9 @@ def upload_marketing_file():
 @marketing_bp.route('/marketing/get_uploaded_files', methods=['GET'])
 def get_uploaded_files():
     """Renvoie la liste des fichiers uploadés en JSON"""
-    files = []
-    for filename in os.listdir(UPLOAD_FOLDER):
-        filepath = os.path.join(UPLOAD_FOLDER, filename)
-        if os.path.isfile(filepath):
-            files.append({"filename": filename, "created_at": os.path.getctime(filepath)})
-    
+    files = get_uploaded_files_data()
     return jsonify(files)
-
+    
 @marketing_bp.route('/marketing/files', methods=['GET'])
 def list_files():
     files = os.listdir(DOWNLOAD_FOLDER)
@@ -79,3 +70,16 @@ def list_files():
 def download_file(filename):
     """Permet de télécharger un fichier depuis le dossier upload"""
     return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
+
+def get_uploaded_files_data():
+    """Récupère les fichiers avec leur date de création"""
+    files = []
+    for filename in os.listdir(UPLOAD_FOLDER):
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        if os.path.isfile(filepath):
+            files.append({
+                "filename": filename,
+                "created_at": os.path.getctime(filepath)
+            })
+    print("DEBUG - Liste des fichiers récupérés :", files)  # Vérification en logs
+    return files

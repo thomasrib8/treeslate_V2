@@ -54,10 +54,11 @@ SHOPIFY_PROMPT = """
    - Développe une introduction engageante en une ou deux phrases, précisant l'objectif principal du livre et les thèmes abordés.
 
 3. **Résumé des Chapitres** :
-   - Résume chaque chapitre de manière détaillée en expliquant :
-     - Les effets magiques décrits (sans dévoiler les secrets techniques).
-     - Le contexte ou la philosophie de chaque chapitre.
-     - Comment ces effets ou réflexions aident les magiciens dans leur pratique.
+   - Décris chaque chapitre ou tour de magie présenté dans le livre. Pour chaque chapitre :
+     - Donne un titre s'il est mentionné.
+     - Résume en quelques phrases le contenu du chapitre ou du tour (sans dévoiler les secrets).
+     - Décris les effets magiques tels qu'ils sont perçus par les spectateurs, leur originalité, et leur impact.
+     - Mentionne en quoi ce tour est adapté pour des magiciens débutants ou confirmés.
 
 4. **Description des Effets Magiques** :
    - Décris les tours de magie et leurs effets sur les spectateurs.

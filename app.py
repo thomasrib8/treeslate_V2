@@ -169,6 +169,10 @@ def set_status(status):
         return jsonify({"message": "Statut mis à jour avec succès."})
     return jsonify({"message": "Statut invalide."}), 400
 
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
 @app.route("/download/<filename>")
 @auth.login_required
 def download_file(filename):

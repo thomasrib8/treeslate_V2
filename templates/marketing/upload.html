@@ -133,62 +133,62 @@ Un document en anglais et l'autre en français.
     }
 
     // Fonction pour récupérer et afficher les fichiers uploadés
-    async function fetchFiles() {
-        try {
-            const response = await fetch("/marketing/get_uploaded_files");
-            if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
-    
-            const files = await response.json();
-            const list = document.getElementById('file-list');
-            list.innerHTML = "";
-    
-            if (files.length === 0) {
-                list.innerHTML = "<p>Aucun fichier disponible.</p>";
-            } else {
-                files.forEach(file => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `<a href="/marketing/download/${file.filename}" download>${file.filename}</a>`;
-                    list.appendChild(li);
-                });
-            }
-        } catch (error) {
-            console.error("Erreur lors de la récupération des fichiers :", error);
-        }
-    }
-    
-    // Gestion de l'upload avec mise à jour automatique
-    document.getElementById("upload-form").addEventListener("submit", async function(event) {
-        event.preventDefault();
-    
-        var formData = new FormData(this);
-        try {
-            const response = await fetch("/marketing/upload", {
-                method: "POST",
-                body: formData
+async function fetchFiles() {
+    try {
+        const response = await fetch("/marketing/get_uploaded_files");
+        if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
+
+        const files = await response.json();
+        const list = document.getElementById('file-list');
+        list.innerHTML = "";
+
+        if (files.length === 0) {
+            list.innerHTML = "<p>Aucun fichier disponible.</p>";
+        } else {
+            files.forEach(file => {
+                const li = document.createElement('li');
+                li.innerHTML = `<a href="/marketing/download/${file.filename}" download>${file.filename}</a>`;
+                list.appendChild(li);
             });
-    
-            if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
-            
-            const data = await response.json();
-            let messageElement = document.getElementById("upload-message");
-            messageElement.style.display = "block";
-    
-            if (data.success) {
-                messageElement.textContent = "Fichier " + data.filename + " uploadé avec succès.";
-                messageElement.style.color = "green";
-                fetchFiles(); // Met à jour la liste après l'upload
-            } else {
-                messageElement.textContent = "Erreur : " + data.error;
-                messageElement.style.color = "red";
-            }
-        } catch (error) {
-            console.error("Erreur lors de l'upload :", error);
         }
-    });
-    
-    // Charger la liste des fichiers au chargement de la page
-    fetchFiles();
-    </script>
+    } catch (error) {
+        console.error("Erreur lors de la récupération des fichiers :", error);
+    }
+}
+
+// Gestion de l'upload avec mise à jour automatique
+document.getElementById("upload-form").addEventListener("submit", async function(event) {
+    event.preventDefault();
+
+    var formData = new FormData(this);
+    try {
+        const response = await fetch("/marketing/upload", {  // CORRECTION DE L'URL
+            method: "POST",
+            body: formData
+        });
+
+        if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
+        
+        const data = await response.json();
+        let messageElement = document.getElementById("upload-message");
+        messageElement.style.display = "block";
+
+        if (data.success) {
+            messageElement.textContent = "Fichier " + data.filename + " uploadé avec succès.";
+            messageElement.style.color = "green";
+            fetchFiles(); // Met à jour la liste après l'upload
+        } else {
+            messageElement.textContent = "Erreur : " + data.error;
+            messageElement.style.color = "red";
+        }
+    } catch (error) {
+        console.error("Erreur lors de l'upload :", error);
+    }
+});
+
+// Charger la liste des fichiers au chargement de la page
+fetchFiles();
+</script>
 
 </body>
 </html>

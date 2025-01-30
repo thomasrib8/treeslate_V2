@@ -5,8 +5,8 @@ from datetime import datetime
 marketing_bp = Blueprint('marketing', __name__)
 marketing_bp = Blueprint('marketing', __name__, url_prefix='/marketing')
 
-DOWNLOAD_FOLDER = 'marketing/download'  # Assurez-vous que ce dossier existe bien
-UPLOAD_FOLDER = "marketing/download"
+UPLOAD_FOLDER = "marketing_app/uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Assure que le dossier existe
 
 # Vérifier si le dossier de téléchargement existe, sinon le créer
 if not os.path.exists(UPLOAD_FOLDER):
@@ -35,46 +35,39 @@ def main_menu():
 
 @marketing_bp.route('/marketing', methods=['GET'])
 def marketing_home():
-    """Affiche la page d'upload et liste les fichiers existants."""
+    """Affiche la page d'upload des fichiers marketing"""
     files = []
-    if os.path.exists(DOWNLOAD_FOLDER):
-        for filename in os.listdir(DOWNLOAD_FOLDER):
-            filepath = os.path.join(DOWNLOAD_FOLDER, filename)
-            files.append({
-                'filename': filename,
-                'created_at': datetime.fromtimestamp(os.path.getctime(filepath)).strftime('%Y-%m-%d %H:%M:%S')
-            })
+    for filename in os.listdir(UPLOAD_FOLDER):
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        if os.path.isfile(filepath):
+            files.append({'filename': filename, 'created_at': os.path.getctime(filepath)})
+    
     return render_template('marketing/upload.html', marketing_files=files)
     
 @marketing_bp.route('/marketing/upload', methods=['POST'])
 def upload_marketing_file():
-    """Gère l'upload des fichiers marketing."""
+    """Gère l'upload des fichiers"""
     if 'file' not in request.files:
-        return jsonify({'success': False, 'error': 'Aucun fichier sélectionné.'})
+        return jsonify({"success": False, "error": "Aucun fichier fourni"}), 400
     
     file = request.files['file']
     if file.filename == '':
-        return jsonify({'success': False, 'error': 'Nom de fichier invalide.'})
+        return jsonify({"success": False, "error": "Nom de fichier invalide"}), 400
 
-    if not os.path.exists(DOWNLOAD_FOLDER):
-        os.makedirs(DOWNLOAD_FOLDER)
-
-    file_path = os.path.join(DOWNLOAD_FOLDER, file.filename)
+    file_path = os.path.join(UPLOAD_FOLDER, file.filename)
     file.save(file_path)
+    
+    return jsonify({"success": True, "filename": file.filename})
 
-    return jsonify({'success': True, 'filename': file.filename})
-
-@marketing_bp.route('/get_uploaded_files')
+@marketing_bp.route('/marketing/get_uploaded_files', methods=['GET'])
 def get_uploaded_files():
-    """Renvoie la liste des fichiers marketing en JSON."""
+    """Renvoie la liste des fichiers uploadés en JSON"""
     files = []
-    if os.path.exists(DOWNLOAD_FOLDER):
-        for filename in os.listdir(DOWNLOAD_FOLDER):
-            filepath = os.path.join(DOWNLOAD_FOLDER, filename)
-            files.append({
-                'filename': filename,
-                'created_at': datetime.fromtimestamp(os.path.getctime(filepath)).strftime('%Y-%m-%d %H:%M:%S')
-            })
+    for filename in os.listdir(UPLOAD_FOLDER):
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        if os.path.isfile(filepath):
+            files.append({"filename": filename, "created_at": os.path.getctime(filepath)})
+    
     return jsonify(files)
 
 @marketing_bp.route('/marketing/files', methods=['GET'])
@@ -82,10 +75,7 @@ def list_files():
     files = os.listdir(DOWNLOAD_FOLDER)
     return jsonify(files)
 
-@marketing_bp.route('/download/<filename>')
+@marketing_bp.route('/marketing/download/<filename>', methods=['GET'])
 def download_file(filename):
-    """Télécharge un fichier marketing."""
-    file_path = os.path.join(DOWNLOAD_FOLDER, filename)
-    if os.path.exists(file_path):
-        return send_file(file_path, as_attachment=True)
-    return jsonify({'success': False, 'error': 'Fichier introuvable.'}), 404
+    """Permet de télécharger un fichier depuis le dossier upload"""
+    return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)

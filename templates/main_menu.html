@@ -118,23 +118,15 @@
         </table>
 
         <h2>Fichiers Marketing</h2>
+        <button onclick="fetchMarketingFiles()">🔄 Rafraîchir la liste</button>
         <table>
             <tr>
                 <th>Nom du fichier</th>
                 <th>Date de création</th>
                 <th>Actions</th>
             </tr>
-            {% if marketing_files %}
-                {% for file in marketing_files %}
-                <tr>
-                    <td>{{ file.filename }}</td>
-                    <td>{{ file.created_at }}</td>
-                    <td><a href="{{ url_for('marketing.download_file', filename=file.filename) }}">Télécharger</a></td>
-                </tr>
-                {% endfor %}
-            {% else %}
-                <tr><td colspan="3">Aucun fichier disponible</td></tr>
-            {% endif %}
+            <tbody id="marketing-files-table">
+            </tbody>
         </table>
 
         
@@ -144,3 +136,32 @@
     </div>
 </body>
 </html>
+
+<script>
+async function fetchMarketingFiles() {
+    try {
+        const response = await fetch("/marketing/get_uploaded_files");
+        const files = await response.json();
+        const tableBody = document.getElementById("marketing-files-table");
+        tableBody.innerHTML = "";  // Nettoie la table avant de l'actualiser
+
+        if (files.length === 0) {
+            tableBody.innerHTML = "<tr><td colspan='3'>Aucun fichier disponible</td></tr>";
+        } else {
+            files.forEach(file => {
+                let row = `<tr>
+                    <td>${file.filename}</td>
+                    <td>${new Date(file.created_at * 1000).toLocaleString()}</td>
+                    <td><a href="/marketing/download/${file.filename}">Télécharger</a></td>
+                </tr>`;
+                tableBody.innerHTML += row;
+            });
+        }
+    } catch (error) {
+        console.error("Erreur lors de la récupération des fichiers :", error);
+    }
+}
+
+// Charger la liste des fichiers au chargement de la page
+fetchMarketingFiles();
+</script>

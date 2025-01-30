@@ -78,6 +78,12 @@
             max-width: 150px;
             height: auto;
         }
+        .title-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -117,19 +123,24 @@
             </tbody>
         </table>
 
-        <h2>Fichiers Marketing</h2>
-        <button onclick="fetchMarketingFiles()">🔄 Rafraîchir la liste</button>
+        <!-- Conteneur titre + bouton refresh -->
+        <div class="title-container">
+            <h2>Fichiers Marketing</h2>
+            <button class="action-button" onclick="fetchMarketingFiles()">🔄 Rafraîchir</button>
+        </div>
+
         <table>
-            <tr>
-                <th>Nom du fichier</th>
-                <th>Date de création</th>
-                <th>Actions</th>
-            </tr>
+            <thead>
+                <tr>
+                    <th>Nom du fichier</th>
+                    <th>Date de création</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
             <tbody id="marketing-files-table">
             </tbody>
         </table>
 
-        
         <div class="footer">
             ©3 Monkeys Publishing, all rights reserved
         </div>
@@ -148,9 +159,12 @@
                 tableBody.innerHTML = "<tr><td colspan='3'>Aucun fichier disponible</td></tr>";
             } else {
                 files.forEach(file => {
+                    let formattedDate = new Date(file.created_at);
+                    formattedDate = isNaN(formattedDate) ? "Date non disponible" : formattedDate.toLocaleString('fr-FR');
+
                     let row = `<tr>
                         <td>${file.filename}</td>
-                        <td>${new Date(file.created_at * 1000).toLocaleString()}</td>
+                        <td>${formattedDate}</td>
                         <td><a href="/marketing/download/${file.filename}">Télécharger</a></td>
                     </tr>`;
                     tableBody.innerHTML += row;
@@ -160,8 +174,8 @@
             console.error("Erreur lors de la récupération des fichiers :", error);
         }
     }
-    
+
     // Charger la liste des fichiers au chargement de la page
     fetchMarketingFiles();
-    </script>
+</script>
 </html>

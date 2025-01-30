@@ -5,13 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>Calcule du coût de traduction</h1>
-        <form action="/" method="get">
-    <a href="{{ url_for('main_menu') }}" class="button">Menu Principal</a>
-</form>
         <form method="post" enctype="multipart/form-data">
             <label for="file">Téléverser un document word (.docx):</label>
             <input type="file" id="file" name="file" required>
@@ -36,8 +41,11 @@
                 <option value="TOBY+MIKE">TOBY+MIKE</option>
                 <option value="MIKE">MIKE</option>
             </select>
-            
-            <button type="submit" class="button">Calculer le coût de traduction</button>
+
+            <div class="button-container">
+                <button type="submit" class="menu-button">Calculer le coût de traduction</button>
+                <a href="{{ url_for('main_menu') }}" class="menu-button">Menu Principal</a>
+            </div>
         </form>
     </div>
 </body>

@@ -23,13 +23,14 @@
             <!-- Fiche Commerciale -->
             <div class="prompt-box">
                 <h2>Fiche Commerciale</h2>
+                <button class="action-button" onclick="copyToClipboard('commercialPrompt')">Copier</button>
                 <textarea id="commercialPrompt" readonly>
 À partir du fichier, génère une fiche commerciale détaillée de ce livre de magie avec les sections suivantes :
 
 1. **Titre et Auteur** :
    - Extrais le titre exact et le nom de l'auteur directement du texte analysé.
    
-2. **Présentation Générale** (pas de listes à puces ni de tirets) :
+2. **Présentation Générale** :
    - Présente le livre en précisant son titre, son auteur, et le contexte de création.
    - Développe l'objectif principal du livre et donne un aperçu des thématiques abordées.
    - Rédige une description commerciale approfondie du livre en mettant en avant son originalité et son contenu unique.
@@ -44,7 +45,7 @@
    - Détaille les effets magiques expliqués dans le livre sans révéler les secrets techniques.
    - Explique pourquoi ils captivent l’audience.
 
-5. **Points Forts** (liste à puces) :
+5. **Points Forts** :
    - Originalité des tours ou techniques.
    - Approche pédagogique et facilité de compréhension.
    - Adaptabilité des tours à différents contextes.
@@ -57,12 +58,12 @@
 Fais-moi un rendu sous la forme d'un document Word de type .docx.
 Le document devra être dans la langue anglaise.
                 </textarea>
-                <button onclick="copyToClipboard('commercialPrompt')">Copier</button>
             </div>
 
             <!-- Fiche Produit Shopify -->
             <div class="prompt-box">
                 <h2>Fiche Produit Shopify</h2>
+                <button class="action-button" onclick="copyToClipboard('shopifyPrompt')">Copier</button>
                 <textarea id="shopifyPrompt" readonly>
 À partir du fichier, génère une fiche produit détaillée d'un livre de magie pour un site internet :
 
@@ -81,7 +82,7 @@ Le document devra être dans la langue anglaise.
    - Décris les tours de magie et leurs effets sur les spectateurs.
    - Explique pourquoi ces effets se démarquent.
 
-5. **Points Forts** (liste à puces) :
+5. **Points Forts** :
    - Originalité et pertinence des effets magiques.
    - Accessibilité pour différents niveaux de magiciens.
    - Philosophie unique de l’auteur sur la magie.
@@ -93,12 +94,11 @@ Le document devra être dans la langue anglaise.
 Fais-moi un rendu sous la forme de 2 documents Word de type .docx.
 Un document en anglais et l'autre en français.
                 </textarea>
-                <button onclick="copyToClipboard('shopifyPrompt')">Copier</button>
             </div>
         </div>
 
         <!-- Lien vers ChatGPT -->
-        <a href="https://chatgpt.com/" target="_blank" class="button">Aller sur ChatGPT</a>
+        <a href="https://chatgpt.com/" target="_blank" class="menu-button">Aller sur ChatGPT</a>
 
         <!-- Section Upload -->
         <h2>Uploader un fichier :</h2>
@@ -106,15 +106,17 @@ Un document en anglais et l'autre en français.
             <input type="file" name="file" required>
             <button type="submit">Uploader</button>
         </form>
-        
+
         <!-- Message de confirmation -->
         <div id="upload-message" style="display: none; color: green; margin-top: 10px;"></div>
-        
-        <!-- Liste des fichiers disponibles -->
-        <h2>Fichiers disponibles :</h2>
-        <button onclick="fetchFiles()">🔄 Rafraîchir la liste</button>
-        <ul id="file-list"></ul>
 
+        <!-- Liste des fichiers disponibles -->
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="text-align: center; flex-grow: 1;">Fichiers disponibles</h2>
+            <button class="action-button" onclick="fetchFiles()">🔄 Rafraîchir la liste</button>
+        </div>
+
+        <ul id="file-list"></ul>
 
         <!-- Bouton Menu Principal -->
         <button class="menu-button" onclick="goToMainMenu()">Menu Principal</button>
@@ -132,63 +134,44 @@ Un document en anglais et l'autre en français.
         window.location.href = "/";
     }
 
-    // Fonction pour récupérer et afficher les fichiers uploadés
-async function fetchFiles() {
-    try {
-        const response = await fetch("/marketing/get_uploaded_files");
-        if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
+    async function fetchFiles() {
+        try {
+            const response = await fetch("/marketing/get_uploaded_files");
+            if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
 
-        const files = await response.json();
-        const list = document.getElementById('file-list');
-        list.innerHTML = "";
+            const files = await response.json();
+            const list = document.getElementById('file-list');
+            list.innerHTML = "";
 
-        if (files.length === 0) {
-            list.innerHTML = "<p>Aucun fichier disponible.</p>";
-        } else {
-            files.forEach(file => {
-                const li = document.createElement('li');
-                li.innerHTML = `<a href="/marketing/download/${file.filename}" download>${file.filename}</a>`;
-                list.appendChild(li);
-            });
+            if (files.length === 0) {
+                list.innerHTML = "<p>Aucun fichier disponible.</p>";
+            } else {
+                files.forEach(file => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<a href="/marketing/download/${file.filename}" download>${file.filename}</a>`;
+                    list.appendChild(li);
+                });
+            }
+        } catch (error) {
+            console.error("Erreur lors de la récupération des fichiers :", error);
         }
-    } catch (error) {
-        console.error("Erreur lors de la récupération des fichiers :", error);
     }
-}
 
-// Gestion de l'upload avec mise à jour automatique
-document.getElementById("upload-form").addEventListener("submit", async function(event) {
-    event.preventDefault();
-
-    var formData = new FormData(this);
-    try {
-        const response = await fetch("/marketing/upload", {  // CORRECTION DE L'URL
-            method: "POST",
-            body: formData
-        });
-
-        if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
-        
-        const data = await response.json();
-        let messageElement = document.getElementById("upload-message");
-        messageElement.style.display = "block";
-
-        if (data.success) {
-            messageElement.textContent = "Fichier " + data.filename + " uploadé avec succès.";
-            messageElement.style.color = "green";
-            fetchFiles(); // Met à jour la liste après l'upload
-        } else {
-            messageElement.textContent = "Erreur : " + data.error;
-            messageElement.style.color = "red";
+    document.getElementById("upload-form").addEventListener("submit", async function(event) {
+        event.preventDefault();
+        var formData = new FormData(this);
+        try {
+            const response = await fetch("/marketing/upload", { method: "POST", body: formData });
+            if (!response.ok) throw new Error(`Erreur HTTP : ${response.status}`);
+            const data = await response.json();
+            document.getElementById("upload-message").textContent = data.success ? `Fichier ${data.filename} uploadé avec succès.` : `Erreur : ${data.error}`;
+            fetchFiles();
+        } catch (error) {
+            console.error("Erreur lors de l'upload :", error);
         }
-    } catch (error) {
-        console.error("Erreur lors de l'upload :", error);
-    }
-});
+    });
 
-// Charger la liste des fichiers au chargement de la page
-fetchFiles();
-</script>
-
+    fetchFiles();
+    </script>
 </body>
 </html>

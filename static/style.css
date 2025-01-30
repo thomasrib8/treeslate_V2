@@ -126,6 +126,21 @@ form {
     text-align: center;
 }
 
+.action-button {
+    background-color: white;
+    border: 1px solid black;
+    border-radius: 5px;
+    color: black;
+    font-style: italic;
+    padding: 8px 15px;
+    cursor: pointer;
+    transition: background 0.3s, color 0.3s;
+}
+
+.action-button:hover {
+    background-color: black;
+    color: white;
+}
 /* Table styles */
 table {
     width: 100%;

@@ -118,27 +118,24 @@
         </table>
 
         <h2>Fichiers Marketing</h2>
-        
-        {% if marketing_files %}
-            <table>
-                <tr>
-                    <th>Nom du fichier</th>
-                    <th>Date de création</th>
-                    <th>Actions</th>
-                </tr>
+        <table>
+            <tr>
+                <th>Nom du fichier</th>
+                <th>Date de création</th>
+                <th>Actions</th>
+            </tr>
+            {% if marketing_files %}
                 {% for file in marketing_files %}
                 <tr>
                     <td>{{ file.filename }}</td>
-                    <td>{{ file.created_at if file.created_at else 'Inconnue' }}</td>
-                    <td>
-                        <a href="{{ url_for('marketing.download_file', filename=file.filename) }}" download>Télécharger</a>
-                    </td>
+                    <td>{{ file.created_at }}</td>
+                    <td><a href="{{ url_for('marketing.download_file', filename=file.filename) }}">Télécharger</a></td>
                 </tr>
                 {% endfor %}
-            </table>
-        {% else %}
-            <p>Aucun fichier marketing disponible pour le moment.</p>
-        {% endif %}
+            {% else %}
+                <tr><td colspan="3">Aucun fichier disponible</td></tr>
+            {% endif %}
+        </table>
 
         
         <div class="footer">

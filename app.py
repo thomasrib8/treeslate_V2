@@ -136,8 +136,8 @@ def main_menu():
 
     return render_template(
         'main_menu.html',
-        translated_files=translated_files,
-        marketing_files=marketing_files
+        translated_files=translated_files or [],  # 📌 Ajout d'une liste vide si aucun fichier
+        marketing_files=marketing_files or []    # 📌 Ajout d'une liste vide si aucun fichier
     )
 
 @app.route("/upload", methods=["POST"])

@@ -22,10 +22,12 @@ translation_bp = Blueprint("translation", __name__, template_folder="../template
 logger = logging.getLogger(__name__)
 
 # Création des dossiers nécessaires si non existants
-os.makedirs(current_app.config["UPLOAD_FOLDER"], exist_ok=True)
 os.makedirs(Config.DOWNLOAD_FOLDER, exist_ok=True)
 os.makedirs(PERSISTENT_STORAGE, exist_ok=True)
 os.makedirs(os.path.join(PERSISTENT_STORAGE, "translated_files"), exist_ok=True)
+
+with current_app.app_context():
+    os.makedirs(current_app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 # État global de la tâche
 task_status = {"status": "idle", "message": "Aucune tâche en cours.", "output_file_name": None}

@@ -496,3 +496,23 @@ def delete_translated_file(filename):
         logger.warning(f"⚠️ Tentative de suppression d'un fichier inexistant : {filename}")
         return jsonify({"success": False, "message": "Fichier introuvable."}), 404
 
+@translation_bp.route("/delete_glossary/<glossary_type>/<filename>", methods=["DELETE"])
+def delete_glossary(glossary_type, filename):
+    if glossary_type == "deepl":
+        folder = current_app.config["DEEPL_GLOSSARY_FOLDER"]
+    elif glossary_type == "gpt":
+        folder = current_app.config["GPT_GLOSSARY_FOLDER"]
+    else:
+        return jsonify({"success": False, "message": "Type de glossaire invalide."}), 400
+
+    file_path = os.path.join(folder, filename)
+
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        logger.info(f"🗑️ Glossaire supprimé : {file_path}")
+        return jsonify({"success": True, "message": f"Le glossaire {filename} a été supprimé."})
+    else:
+        logger.warning(f"⚠️ Tentative de suppression d'un glossaire inexistant : {filename}")
+        return jsonify({"success": False, "message": "Glossaire introuvable."}), 404
+
+

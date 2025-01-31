@@ -84,3 +84,16 @@ def get_uploaded_files_data():
                 "created_at": datetime.fromtimestamp(os.path.getctime(filepath)).isoformat()  # Format ISO
             })
     return files
+
+@marketing_bp.route("/delete/<filename>", methods=["DELETE"])
+def delete_marketing_file(filename):
+    marketing_folder = current_app.config["MARKETING_FOLDER"]
+    file_path = os.path.join(marketing_folder, filename)
+
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        logger.info(f"🗑️ Fichier marketing supprimé : {file_path}")
+        return jsonify({"success": True, "message": f"Le fichier {filename} a été supprimé."})
+    else:
+        logger.warning(f"⚠️ Tentative de suppression d'un fichier inexistant : {filename}")
+        return jsonify({"success": False, "message": "Fichier introuvable."}), 404

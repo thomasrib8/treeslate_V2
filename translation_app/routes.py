@@ -24,11 +24,10 @@ translation_bp = Blueprint("translation", __name__, template_folder="../template
 logger = logging.getLogger(__name__)
 
 # Création des dossiers nécessaires si non existants
-with current_app.app_context():
-    os.makedirs(current_app.config["DOWNLOAD_FOLDER"], exist_ok=True)
-
-if "UPLOAD_FOLDER" in current_app.config:
-    os.makedirs(current_app.config["UPLOAD_FOLDER"], exist_ok=True)
+def ensure_directories():
+    with current_app.app_context():
+        os.makedirs(current_app.config["DOWNLOAD_FOLDER"], exist_ok=True)
+        os.makedirs(current_app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 # État global de la tâche
 task_status = {"status": "idle", "message": "Aucune tâche en cours.", "output_file_name": None}
@@ -107,6 +106,10 @@ def verify_glossary_encoding(file_path):
     except UnicodeDecodeError:
         logger.error(f"Erreur de lecture du fichier {file_path} avec l'encodage détecté {encoding}.")
         return False
+
+@translation_bp.before_app_first_request
+def setup():
+    ensure_directories()
 
 @translation_bp.route("/")
 def index():

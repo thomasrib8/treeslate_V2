@@ -19,6 +19,10 @@ translation_bp = Blueprint("translation", __name__, template_folder="../template
 # Configuration des logs
 logger = logging.getLogger(__name__)
 
+# Création des dossiers nécessaires si non existants
+os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(Config.DOWNLOAD_FOLDER, exist_ok=True)
+
 # État global de la tâche
 task_status = {"status": "idle", "message": "Aucune tâche en cours.", "output_file_name": None}
 

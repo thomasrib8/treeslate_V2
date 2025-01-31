@@ -111,7 +111,8 @@
                 <tr>
                     <th>Nom du fichier</th>
                     <th>Date de création</th>
-                    <th>Action</th>
+                    <th>Actions</th>
+                    <th>Corbeille</th> <!-- 📌 Nouvelle colonne -->
                 </tr>
             </thead>
             <tbody>
@@ -123,6 +124,8 @@
                         <a href="{{ url_for('translation.download_file', filename=file.filename) }}" class="btn btn-primary">
                             Télécharger
                         </a>
+                    </td>
+                    <td>
                         <button onclick="deleteFile('{{ file.filename }}', 'translated')" class="btn btn-danger">
                             Supprimer
                         </button>
@@ -176,6 +179,8 @@
                         <td>${formattedDate}</td>
                         <td>
                             <a href="/marketing/download/${file.filename}" class="btn btn-primary">Télécharger</a>
+                        </td>
+                        <td>
                             <button onclick="deleteFile('${file.filename}', 'marketing')" class="btn btn-danger">Supprimer</button>
                         </td>
                     </tr>`;

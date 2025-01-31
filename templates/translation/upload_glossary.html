@@ -44,13 +44,26 @@
 
         <hr>
         <h2>Glossaires disponibles</h2>
+        
+        <h3>Glossaires DeepL</h3>
         <ul>
-            {% if glossaries %}
-                {% for glossary in glossaries %}
+            {% if deepl_glossaries %}
+                {% for glossary in deepl_glossaries %}
                     <li>{{ glossary }}</li>
                 {% endfor %}
             {% else %}
-                <li>Aucun glossaire disponible</li>
+                <li>Aucun glossaire DeepL disponible</li>
+            {% endif %}
+        </ul>
+        
+        <h3>Glossaires GPT</h3>
+        <ul>
+            {% if gpt_glossaries %}
+                {% for glossary in gpt_glossaries %}
+                    <li>{{ glossary }}</li>
+                {% endfor %}
+            {% else %}
+                <li>Aucun glossaire GPT disponible</li>
             {% endif %}
         </ul>
 

@@ -15,11 +15,7 @@ import logging
 from werkzeug.utils import secure_filename
 from config import Config
 
-try:
-    import config
-    PERSISTENT_STORAGE = getattr(config, "PERSISTENT_STORAGE", "/var/data/")
-except ImportError:
-    PERSISTENT_STORAGE = "/var/data/"
+PERSISTENT_STORAGE = Config.PERSISTENT_STORAGE
 
 # Création du Blueprint
 translation_bp = Blueprint("translation", __name__, template_folder="../templates/translation")
@@ -28,9 +24,10 @@ translation_bp = Blueprint("translation", __name__, template_folder="../template
 logger = logging.getLogger(__name__)
 
 # Création des dossiers nécessaires si non existants
-os.makedirs(Config.DOWNLOAD_FOLDER, exist_ok=True)
-
 with current_app.app_context():
+    os.makedirs(current_app.config["DOWNLOAD_FOLDER"], exist_ok=True)
+
+if "UPLOAD_FOLDER" in current_app.config:
     os.makedirs(current_app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 # État global de la tâche

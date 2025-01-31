@@ -1,6 +1,10 @@
 from flask import Blueprint, render_template, request, jsonify, send_from_directory, current_app
 import os
 from datetime import datetime
+import logging
+
+# 📌 Ajout du logger
+logger = logging.getLogger(__name__)
 
 marketing_bp = Blueprint('marketing', __name__)
 

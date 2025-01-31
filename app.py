@@ -35,7 +35,7 @@ users = {
 # Charger la configuration depuis config.py
 app.config.from_object(Config)
 
-app.config["PERSISTENT_STORAGE"] = PERSISTENT_STORAGE
+app.config["PERSISTENT_STORAGE"] = Config.PERSISTENT_STORAGE
 
 # Configuration des logs
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")

@@ -10,6 +10,7 @@ from calculator_app.routes import calculator_bp
 from datetime import datetime
 from config import Config
 from marketing_app.routes import marketing_bp
+from system_routes import system_bp
 
 # Initialisation de l'application Flask
 app = Flask(__name__)
@@ -54,6 +55,7 @@ logger = logging.getLogger(__name__)
 app.register_blueprint(translation_bp, url_prefix="/translation")
 app.register_blueprint(calculator_bp, url_prefix="/calculator")
 app.register_blueprint(marketing_bp, url_prefix="/marketing")
+app.register_blueprint(system_bp, url_prefix="/system")
 
 # Dictionnaire pour suivre le statut des tâches
 task_status = {

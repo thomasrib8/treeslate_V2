@@ -116,22 +116,22 @@
                 </tr>
             </thead>
             <tbody>
-                {% for file in translated_files %}
-                <tr>
-                    <td class="file-name">{{ file.filename }}</td>  <!-- 📌 Applique la classe -->
-                    <td>{{ file.created_at }}</td>
-                    <td>
-                        <a href="{{ url_for('translation.download_file', filename=file.filename) }}" class="dl-button">
-                            Télécharger 🚀
-                        </a>
-                    </td>
-                    <td>
-                        <button onclick="deleteFile('{{ file.filename }}', 'translated')" class="delete-button">
-                            Supprimer ❌
-                        </button>
-                    </td>
-                </tr>
-                {% endfor %}
+                {% if translated_files %}
+                    {% for file in translated_files %}
+                    <tr>
+                        <td class="file-name">{{ file.filename }}</td>
+                        <td>{{ file.created_at }}</td>
+                        <td>
+                            <a href="{{ url_for('translation.download_file', filename=file.filename) }}" class="dl-button">📥 Télécharger</a>
+                        </td>
+                        <td>
+                            <button onclick="deleteFile('{{ file.filename }}', 'translated')" class="delete-button">❌ Supprimer</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="4">Aucun fichier disponible</td></tr>
+                {% endif %}
             </tbody>
         </table>
 

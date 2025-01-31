@@ -12,9 +12,11 @@ from datetime import datetime
 from docx import Document
 import chardet
 import logging
+import config
 from werkzeug.utils import secure_filename
-from config import Config
-from config import PERSISTENT_STORAGE
+
+
+PERSISTENT_STORAGE = config.PERSISTENT_STORAGE
 
 # Création du Blueprint
 translation_bp = Blueprint("translation", __name__, template_folder="../templates/translation")
@@ -24,9 +26,6 @@ logger = logging.getLogger(__name__)
 
 # Création des dossiers nécessaires si non existants
 os.makedirs(Config.DOWNLOAD_FOLDER, exist_ok=True)
-
-PERSISTENT_STORAGE = os.getenv("PERSISTENT_STORAGE", "downloads/")
-os.makedirs(PERSISTENT_STORAGE, exist_ok=True)
 
 with current_app.app_context():
     os.makedirs(current_app.config["UPLOAD_FOLDER"], exist_ok=True)

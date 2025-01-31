@@ -1,21 +1,28 @@
-from flask import Blueprint, render_template, request, jsonify, send_from_directory
+from flask import Blueprint, render_template, request, jsonify, send_from_directory, current_app
 import os
 from datetime import datetime
 
-marketing_bp = Blueprint('marketing', __name__, url_prefix='/marketing')
-
-# Définition du dossier d'upload des fichiers
-UPLOAD_FOLDER = "/var/data/marketing_files"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # S'assure que le dossier existe
+marketing_bp = Blueprint('marketing', __name__)
 
 def allowed_file(filename):
     """ Vérifie si l'extension du fichier est autorisée (ici, DOCX et TXT). """
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'docx', 'txt'}
 
-@marketing_bp.route('/')
+@marketing_bp.route('/marketing')
 def marketing_home():
-    """Affiche la page d'upload des fichiers marketing"""
-    files = get_uploaded_files_data()
+    marketing_folder = current_app.config["MARKETING_FOLDER"]
+    files = []
+
+    if os.path.exists(marketing_folder):
+        for filename in os.listdir(marketing_folder):
+            file_path = os.path.join(marketing_folder, filename)
+            if os.path.isfile(file_path):
+                created_at = os.path.getctime(file_path)
+                files.append({
+                    "filename": filename,
+                    "created_at": datetime.fromtimestamp(created_at).strftime('%Y-%m-%d %H:%M:%S')
+                })
+
     return render_template('marketing/upload.html', marketing_files=files)
 
 @marketing_bp.route('/upload', methods=['POST'])
@@ -28,33 +35,45 @@ def upload_marketing_file():
     if file.filename == '':
         return jsonify({"success": False, "error": "Nom de fichier invalide"}), 400
 
-    file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    marketing_folder = current_app.config["MARKETING_FOLDER"]
+    file_path = os.path.join(marketing_folder, file.filename)
     file.save(file_path)
     
-    print(f"DEBUG - Fichier {file.filename} sauvegardé dans {UPLOAD_FOLDER}")  # Log pour voir l'upload
+    print(f"DEBUG - Fichier {file.filename} sauvegardé dans {MARKETING_FOLDER}")  # Log pour voir l'upload
 
     return jsonify({"success": True, "filename": file.filename})
 
 @marketing_bp.route('/get_uploaded_files', methods=['GET'])
 def get_uploaded_files():
-    """Renvoie la liste des fichiers uploadés en JSON"""
-    files = get_uploaded_files_data()
+    marketing_folder = current_app.config["MARKETING_FOLDER"]
+    files = []
+
+    if os.path.exists(marketing_folder):
+        for filename in os.listdir(marketing_folder):
+            file_path = os.path.join(marketing_folder, filename)
+            if os.path.isfile(file_path):
+                created_at = os.path.getctime(file_path)
+                files.append({
+                    "filename": filename,
+                    "created_at": datetime.fromtimestamp(created_at).strftime('%Y-%m-%d %H:%M:%S')
+                })
+
     return jsonify(files)
 
 @marketing_bp.route('/download/<filename>', methods=['GET'])
 def download_file(filename):
-    """Permet de télécharger un fichier depuis le dossier d'upload"""
-    file_path = os.path.join(UPLOAD_FOLDER, filename)
-    if os.path.exists(file_path):
-        return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
-    else:
-        return jsonify({"success": False, "error": "Fichier non trouvé"}), 404
+    marketing_folder = current_app.config["MARKETING_FOLDER"]
+
+    if not os.path.exists(os.path.join(marketing_folder, filename)):
+        return jsonify({"error": "Fichier non trouvé"}), 404
+
+    return send_from_directory(marketing_folder, filename, as_attachment=True)
 
 def get_uploaded_files_data():
     """Récupère les fichiers avec leur date de création"""
     files = []
-    for filename in os.listdir(UPLOAD_FOLDER):
-        filepath = os.path.join(UPLOAD_FOLDER, filename)
+    for filename in os.listdir(MARKETING_FOLDER):
+        filepath = os.path.join(MARKETING_FOLDER, filename)
         if os.path.isfile(filepath):
             files.append({
                 "filename": filename,

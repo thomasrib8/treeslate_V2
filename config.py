@@ -15,7 +15,7 @@ class Config:
     OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
 
     # Répertoire de stockage persistant sur Render
-    PERSISTENT_STORAGE = "/var/data/"
+    PERSISTENT_STORAGE = os.getenv("PERSISTENT_STORAGE", "/var/data/")
 
    # Dossiers pour les fichiers (utilisant le stockage persistant)
     UPLOAD_FOLDER = os.path.join(PERSISTENT_STORAGE, "uploads")

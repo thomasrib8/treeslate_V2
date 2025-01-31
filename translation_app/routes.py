@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 # Création des dossiers nécessaires si non existants
 os.makedirs(Config.DOWNLOAD_FOLDER, exist_ok=True)
 os.makedirs(PERSISTENT_STORAGE, exist_ok=True)
-os.makedirs(os.path.join(PERSISTENT_STORAGE, "translated_files"), exist_ok=True)
+os.makedirs(current_app.config["PERSISTENT_STORAGE"], exist_ok=True)
 
 with current_app.app_context():
     os.makedirs(current_app.config["UPLOAD_FOLDER"], exist_ok=True)

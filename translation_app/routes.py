@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(Config.DOWNLOAD_FOLDER, exist_ok=True)
 os.makedirs(PERSISTENT_STORAGE, exist_ok=True)
+os.makedirs(os.path.join(PERSISTENT_STORAGE, "translated_files"), exist_ok=True)
 
 # État global de la tâche
 task_status = {"status": "idle", "message": "Aucune tâche en cours.", "output_file_name": None}

@@ -228,21 +228,25 @@ def processing():
 @translation_bp.route("/done")
 def done():
     filename = request.args.get("filename")
-    
+
     if not filename:
         logger.error("Le nom du fichier n'est pas défini dans la requête.")
         return render_template("error.html", message="Nom du fichier non spécifié.")
 
-    # Chemin du fichier traduit dans le stockage persistant
-    file_path = os.path.join(PERSISTENT_STORAGE, "translated_files", filename)
+    translated_folder = os.path.join(PERSISTENT_STORAGE, "translated_files")
+
+    if not os.path.exists(translated_folder):
+        logger.error("Le dossier des fichiers traduits n'existe pas.")
+        return render_template("error.html", message="Aucun fichier traduit trouvé.")
+
+    file_path = os.path.join(translated_folder, filename)
 
     if not os.path.exists(file_path):
-        logger.error(f"Le fichier traduit {filename} est introuvable dans {file_path}.")
+        logger.error(f"Le fichier traduit {filename} est introuvable.")
         return render_template("error.html", message="Le fichier traduit est introuvable ou corrompu.")
 
     logger.info(f"Le fichier {filename} est prêt à être téléchargé.")
     return render_template("done.html", output_file_name=filename)
-
     
 @translation_bp.route("/process", methods=["POST"])
 def process():
@@ -405,9 +409,11 @@ def download_file(filename):
 @translation_bp.route("/main_menu")
 def main_menu():
     translated_files = []
-
-    # Définition du dossier de stockage persistant pour les fichiers traduits
     translated_folder = os.path.join(PERSISTENT_STORAGE, "translated_files")
+
+    if not os.path.exists(translated_folder):
+        logger.warning(f"Le dossier {translated_folder} n'existe pas. Création en cours...")
+        os.makedirs(translated_folder, exist_ok=True)
 
     if os.path.exists(translated_folder):
         for filename in os.listdir(translated_folder):
@@ -415,8 +421,7 @@ def main_menu():
             created_at = datetime.fromtimestamp(os.path.getctime(file_path)).strftime('%Y-%m-%d %H:%M:%S')
             translated_files.append({'filename': filename, 'created_at': created_at})
 
-    logger.info("Accès au menu principal - Liste des fichiers traduits chargée.")
-
+    logger.info(f"Nombre de fichiers traduits trouvés : {len(translated_files)}")
     return render_template("main_menu.html", translated_files=translated_files)
 
 

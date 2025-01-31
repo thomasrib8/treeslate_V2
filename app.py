@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 # Créer les dossiers nécessaires si non existants
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 os.makedirs(app.config["DOWNLOAD_FOLDER"], exist_ok=True)
+os.makedirs(app.config["MARKETING_FOLDER"], exist_ok=True)
 os.makedirs(app.config["DEEPL_GLOSSARY_FOLDER"], exist_ok=True)
 os.makedirs(app.config["GPT_GLOSSARY_FOLDER"], exist_ok=True)
 
@@ -97,7 +98,7 @@ def main_menu():
     translated_files = []
     marketing_files = []
     download_folder = current_app.config.get("DOWNLOAD_FOLDER")
-    marketing_folder = os.path.join(download_folder, "marketing")
+    marketing_folder = app.config["MARKETING_FOLDER"]
 
     # Fichiers pour la traduction
     if os.path.exists(download_folder):
@@ -111,8 +112,11 @@ def main_menu():
         for filename in os.listdir(marketing_folder):
             file_path = os.path.join(marketing_folder, filename)
             if os.path.isfile(file_path):
-                created_at = datetime.fromtimestamp(os.path.getctime(file_path)).strftime('%Y-%m-%d %H:%M:%S')
-                marketing_files.append({'filename': filename, 'created_at': created_at})
+                created_at = os.path.getctime(file_path)
+                marketing_files.append({
+                    "filename": filename,
+                    "created_at": datetime.fromtimestamp(created_at).strftime('%Y-%m-%d %H:%M:%S')
+                })
 
     return render_template(
         'main_menu.html',

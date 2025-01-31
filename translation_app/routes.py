@@ -141,8 +141,13 @@ def index():
 
 @translation_bp.route("/upload_glossary", methods=["GET", "POST"])
 def upload_glossary():
-    glossary_folder = os.path.join(PERSISTENT_STORAGE, "glossaries")
-    os.makedirs(glossary_folder, exist_ok=True)
+    # 📂 Définition des dossiers de stockage
+    deepl_folder = current_app.config["DEEPL_GLOSSARY_FOLDER"]
+    gpt_folder = current_app.config["GPT_GLOSSARY_FOLDER"]
+
+    # Assurer que les dossiers existent
+    os.makedirs(deepl_folder, exist_ok=True)
+    os.makedirs(gpt_folder, exist_ok=True)
 
     temp_xlsx_path = None
     csv_path = None
@@ -157,33 +162,40 @@ def upload_glossary():
                 flash("Aucun fichier sélectionné.", "danger")
                 return redirect(url_for('translation.upload_glossary'))
 
-            if glossary_type not in ["deepl", "chatgpt"]:
+            # 📌 Correction du choix du dossier en fonction du type de glossaire
+            if glossary_type == "deepl":
+                save_folder = deepl_folder
+            elif glossary_type == "chatgpt":
+                save_folder = gpt_folder
+            else:
                 flash("Type de glossaire invalide.", "danger")
                 return redirect(url_for('translation.upload_glossary'))
 
-            file_path = os.path.join(glossary_folder, glossary_file.filename)
+            os.makedirs(save_folder, exist_ok=True)  # S'assurer que le dossier existe
+
+            file_path = os.path.join(save_folder, glossary_file.filename)
 
             allowed_extensions = {".csv", ".xlsx", ".docx"}
             if not glossary_file.filename.lower().endswith(tuple(allowed_extensions)):
                 flash("Format de fichier non autorisé.", "danger")
                 return redirect(url_for('translation.upload_glossary'))
 
+            # 📂 📌 Correction : Stockage dans le bon dossier
             if glossary_file.filename.lower().endswith('.docx'):
                 glossary_file.save(file_path)
-                logger.info(f"✅ Fichier DOCX {glossary_file.filename} sauvegardé.")
+                logger.info(f"✅ Fichier DOCX {glossary_file.filename} sauvegardé sous {file_path}.")
 
             elif glossary_file.filename.lower().endswith('.xlsx'):
-                temp_xlsx_path = os.path.join(glossary_folder, "temp_" + glossary_file.filename)
+                temp_xlsx_path = os.path.join(save_folder, "temp_" + glossary_file.filename)
                 glossary_file.save(temp_xlsx_path)
 
                 csv_filename = glossary_file.filename.replace(".xlsx", ".csv")
-                csv_path = os.path.join(glossary_folder, csv_filename)
+                csv_path = os.path.join(save_folder, csv_filename)
 
                 convert_excel_to_csv(temp_xlsx_path, csv_path)
 
                 with open(csv_path, 'r', encoding='utf-8-sig') as f:
                     content = f.read()
-
                 with open(csv_path, 'w', encoding='utf-8') as f:
                     f.write(content)
 
@@ -203,7 +215,7 @@ def upload_glossary():
                     return redirect(url_for('translation.upload_glossary'))
 
             elif glossary_file.filename.lower().endswith('.csv'):
-                temp_path = os.path.join(glossary_folder, "temp_" + glossary_file.filename)
+                temp_path = os.path.join(save_folder, "temp_" + glossary_file.filename)
                 glossary_file.save(temp_path)
 
                 if not detect_and_convert_to_utf8(temp_path):
@@ -231,12 +243,14 @@ def upload_glossary():
                 os.remove(csv_path)
                 logger.info(f"🗑️ Fichier CSV problématique supprimé : {csv_path}")
 
-    # 📌 **Récupérer la liste des glossaires après upload**
-    glossaries = [f for f in os.listdir(glossary_folder) if f.endswith((".csv", ".xlsx", ".docx"))]
-    logger.info(f"📂 Liste actuelle des glossaires : {glossaries}")
+    # 📌 **Mise à jour des listes de glossaires après upload**
+    deepl_glossaries = [f for f in os.listdir(deepl_folder) if f.lower().endswith(".csv")]
+    gpt_glossaries = [f for f in os.listdir(gpt_folder) if f.lower().endswith(".docx")]
 
-    return render_template("upload_glossary.html", glossaries=glossaries)
+    logger.info(f"📂 Liste actuelle des glossaires Deepl : {deepl_glossaries}")
+    logger.info(f"📂 Liste actuelle des glossaires GPT : {gpt_glossaries}")
 
+    return render_template("upload_glossary.html", deepl_glossaries=deepl_glossaries, gpt_glossaries=gpt_glossaries)
 
 
 @translation_bp.route("/processing")

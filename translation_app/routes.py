@@ -12,7 +12,6 @@ from datetime import datetime
 from docx import Document
 import chardet
 import logging
-from config import PERSISTENT_STORAGE
 from werkzeug.utils import secure_filename
 
 # Création du Blueprint
@@ -398,13 +397,14 @@ def download_file(filename):
         flash("Accès non autorisé.", "danger")
         return redirect(url_for('translation.upload_glossary'))
 
-    download_folder = os.path.join(PERSISTENT_STORAGE, "glossaries")
-    try:
-        return send_from_directory(download_folder, filename, as_attachment=True)
-    except FileNotFoundError:
+    download_folder = current_app.config["PERSISTENT_STORAGE"]
+    file_path = os.path.join(download_folder, filename)
+
+    if not os.path.exists(file_path):
         flash("Fichier introuvable.", "danger")
         return redirect(url_for('translation.upload_glossary'))
 
+    return send_from_directory(download_folder, filename, as_attachment=True)
 
 @translation_bp.route("/main_menu")
 def main_menu():

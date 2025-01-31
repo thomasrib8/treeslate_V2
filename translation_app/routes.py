@@ -482,3 +482,17 @@ def get_uploaded_glossaries():
         return jsonify({"glossaries": glossaries})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@translation_bp.route("/delete/<filename>", methods=["DELETE"])
+def delete_translated_file(filename):
+    translated_folder = current_app.config["DOWNLOAD_FOLDER"]
+    file_path = os.path.join(translated_folder, filename)
+
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        logger.info(f"🗑️ Fichier supprimé : {file_path}")
+        return jsonify({"success": True, "message": f"Le fichier {filename} a été supprimé."})
+    else:
+        logger.warning(f"⚠️ Tentative de suppression d'un fichier inexistant : {filename}")
+        return jsonify({"success": False, "message": "Fichier introuvable."}), 404
+

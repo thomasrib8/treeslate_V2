@@ -168,6 +168,7 @@ form {
     border-radius: 8px;       /* Angles arrondis */
     padding: 8px 12px;        /* Espacement interne */
     cursor: pointer;          /* Curseur interactif */
+    text-decoration: none;
     transition: all 0.3s ease-in-out; /* Animation fluide */
 }
 
@@ -175,6 +176,7 @@ form {
     border-color: green;  /* Bordure vert */
     color: green;         /* Texte vert */
     background-color: white;  /* Fond blanc */
+    text-decoration: none;
 }
 
 /* Table styles */

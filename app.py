@@ -15,6 +15,10 @@ from marketing_app.routes import marketing_bp
 app = Flask(__name__)
 auth = HTTPBasicAuth()
 
+# S'assurer que les dossiers existent
+with app.app_context():
+    Config.create_directories()
+
 print("Current working directory:", os.getcwd())
 print("Python path:", sys.path)
 import config
@@ -36,10 +40,6 @@ app.config["PERSISTENT_STORAGE"] = PERSISTENT_STORAGE
 # Configuration des logs
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
-
-# S'assurer que les dossiers existent
-with app.app_context():
-    Config.create_directories()
 
 # Créer les dossiers nécessaires si non existants
 #with app.app_context():

@@ -126,8 +126,8 @@
                         </a>
                     </td>
                     <td>
-                        <button onclick="deleteFile('{{ file.filename }}', 'translated')" class="btn btn-danger">
-                            Supprimer
+                        <button onclick="deleteFile('{{ file.filename }}', 'translated')" class="delete-button">
+                            Supprimer ❌
                         </button>
                     </td>
                 </tr>
@@ -181,7 +181,7 @@
                             <a href="/marketing/download/${file.filename}" class="btn btn-primary">Télécharger</a>
                         </td>
                         <td>
-                            <button onclick="deleteFile('${file.filename}', 'marketing')" class="btn btn-danger">Supprimer</button>
+                            <button onclick="deleteFile('${file.filename}', 'marketing')" class="delete-button">Supprimer ❌</button>
                         </td>
                     </tr>`;
                     tableBody.innerHTML += row;

@@ -30,11 +30,13 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Créer les dossiers nécessaires si non existants
-os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
-os.makedirs(app.config["DOWNLOAD_FOLDER"], exist_ok=True)
-os.makedirs(app.config["MARKETING_FOLDER"], exist_ok=True)
-os.makedirs(app.config["DEEPL_GLOSSARY_FOLDER"], exist_ok=True)
-os.makedirs(app.config["GPT_GLOSSARY_FOLDER"], exist_ok=True)
+with app.app_context():
+    os.makedirs(app.config["PERSISTENT_STORAGE"], exist_ok=True)
+    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+    os.makedirs(app.config["DOWNLOAD_FOLDER"], exist_ok=True)
+    os.makedirs(app.config["MARKETING_FOLDER"], exist_ok=True)
+    os.makedirs(app.config["DEEPL_GLOSSARY_FOLDER"], exist_ok=True)
+    os.makedirs(app.config["GPT_GLOSSARY_FOLDER"], exist_ok=True)
 
 # Enregistrer les blueprints
 app.register_blueprint(translation_bp, url_prefix="/translation")

@@ -5,7 +5,8 @@ system_bp = Blueprint('system', __name__)
 
 @system_bp.route("/disk_usage", methods=["GET"])
 def get_disk_usage():
-    total, used, free = shutil.disk_usage("/")  # 📌 Récupère l'espace disque total, utilisé et libre
+    var_data_path = "/var/data"  # 📌 Spécifie le dossier utilisé par Render
+    total, used, free = shutil.disk_usage(var_data_path)  # ✅ Utilise le bon chemin
 
     disk_info = {
         "total": f"{total // (1024**3)} GB",
@@ -14,3 +15,4 @@ def get_disk_usage():
     }
 
     return jsonify(disk_info)
+

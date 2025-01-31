@@ -157,6 +157,7 @@ form {
 .delete-button:hover {
     border-color: red;  /* Bordure rouge */
     color: red;         /* Texte rouge */
+    background-color: white;  /* Fond blanc */
 }
 
 /* Table styles */

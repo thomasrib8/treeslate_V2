@@ -154,6 +154,14 @@
             </tbody>
         </table>
 
+        <div id="disk-info">
+            <h4>📊 Espace disque disponible</h4>
+            <p><strong>Total :</strong> <span id="total-space"></span></p>
+            <p><strong>Utilisé :</strong> <span id="used-space"></span></p>
+            <p><strong>Libre :</strong> <span id="free-space"></span></p>
+        </div>
+
+
         <div class="footer">
             ©3 Monkeys Publishing, all rights reserved
         </div>
@@ -214,8 +222,23 @@
             alert("Une erreur est survenue.");
         }
     }
+
+     async function fetchDiskUsage() {
+            try {
+                const response = await fetch("/system/disk_usage");
+                const data = await response.json();
     
-    // Charger la liste des fichiers au chargement de la page
-    fetchMarketingFiles();
+                document.getElementById("total-space").innerText = data.total;
+                document.getElementById("used-space").innerText = data.used;
+                document.getElementById("free-space").innerText = data.free;
+            } catch (error) {
+                console.error("Erreur lors de la récupération de l’espace disque :", error);
+            }
+        }
+    
+        // 📌 Charger l’information disque au chargement de la page
+        fetchDiskUsage();
+        // Charger la liste des fichiers au chargement de la page
+        fetchMarketingFiles();
 </script>
 </html>

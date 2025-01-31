@@ -270,19 +270,19 @@ def done():
         logger.error("Le nom du fichier n'est pas défini dans la requête.")
         return render_template("error.html", message="Nom du fichier non spécifié.")
 
-    # 📂 Correction : Assurer que le dossier des fichiers traduits existe
-    translated_folder = os.path.join(PERSISTENT_STORAGE, "translated_files")
+    # 📂 Correction : Assurer que le dossier de téléchargement est bien utilisé
+    translated_folder = current_app.config["DOWNLOAD_FOLDER"]  # Utilisation du bon chemin
     os.makedirs(translated_folder, exist_ok=True)
 
     file_path = os.path.join(translated_folder, filename)
 
     if not os.path.exists(file_path):
-        logger.error(f"❌ Le fichier traduit {filename} est introuvable.")
+        logger.error(f"❌ Le fichier traduit {filename} est introuvable dans {translated_folder}.")
         return render_template("error.html", message="Le fichier traduit est introuvable ou corrompu.")
 
     logger.info(f"✅ Le fichier {filename} est prêt à être téléchargé.")
     return render_template("done.html", output_file_name=filename)
-    
+
 @translation_bp.route("/process", methods=["POST"])
 def process():
     try:

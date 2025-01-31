@@ -46,26 +46,56 @@
         <h2>Glossaires disponibles</h2>
         
         <h3>Glossaires DeepL</h3>
-        <ul>
-            {% if deepl_glossaries %}
-                {% for glossary in deepl_glossaries %}
-                    <li>{{ glossary }}</li>
-                {% endfor %}
-            {% else %}
-                <li>Aucun glossaire DeepL disponible</li>
-            {% endif %}
-        </ul>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nom du fichier</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if deepl_glossaries %}
+                    {% for glossary in deepl_glossaries %}
+                        <tr>
+                            <td>{{ glossary }}</td>
+                            <td>
+                                <button onclick="deleteGlossary('{{ glossary }}', 'deepl')" class="btn btn-danger">
+                                    Supprimer
+                                </button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="2">Aucun glossaire DeepL disponible</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
         
         <h3>Glossaires GPT</h3>
-        <ul>
-            {% if gpt_glossaries %}
-                {% for glossary in gpt_glossaries %}
-                    <li>{{ glossary }}</li>
-                {% endfor %}
-            {% else %}
-                <li>Aucun glossaire GPT disponible</li>
-            {% endif %}
-        </ul>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nom du fichier</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if gpt_glossaries %}
+                    {% for glossary in gpt_glossaries %}
+                        <tr>
+                            <td>{{ glossary }}</td>
+                            <td>
+                                <button onclick="deleteGlossary('{{ glossary }}', 'gpt')" class="btn btn-danger">
+                                    Supprimer
+                                </button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="2">Aucun glossaire GPT disponible</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
 
         <hr>
         
@@ -88,6 +118,29 @@
                 }
             });
         });
+
+        async function deleteGlossary(filename, type) {
+            if (!confirm(`Voulez-vous vraiment supprimer ${filename} ?`)) return;
+    
+            let url = type === 'deepl'
+                ? `/translation/delete_glossary/deepl/${filename}`
+                : `/translation/delete_glossary/gpt/${filename}`;
+    
+            try {
+                const response = await fetch(url, { method: 'DELETE' });
+                const result = await response.json();
+    
+                alert(result.message);
+    
+                if (result.success) {
+                    location.reload();  // Rafraîchir la page pour mettre à jour la liste
+                }
+            } catch (error) {
+                console.error("Erreur lors de la suppression :", error);
+                alert("Une erreur est survenue.");
+            }
+        }
+    
     </script>
 </body>
 </html>

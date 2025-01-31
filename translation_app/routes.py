@@ -404,14 +404,18 @@ def download_file(filename):
 
 @translation_bp.route("/main_menu")
 def main_menu():
-    download_folder = current_app.config["DOWNLOAD_FOLDER"]
     translated_files = []
 
-    if os.path.exists(download_folder):
-        for filename in os.listdir(download_folder):
-            file_path = os.path.join(download_folder, filename)
+    # Définition du dossier de stockage persistant pour les fichiers traduits
+    translated_folder = os.path.join(PERSISTENT_STORAGE, "translated_files")
+
+    if os.path.exists(translated_folder):
+        for filename in os.listdir(translated_folder):
+            file_path = os.path.join(translated_folder, filename)
             created_at = datetime.fromtimestamp(os.path.getctime(file_path)).strftime('%Y-%m-%d %H:%M:%S')
             translated_files.append({'filename': filename, 'created_at': created_at})
+
+    logger.info("Accès au menu principal - Liste des fichiers traduits chargée.")
 
     return render_template("main_menu.html", translated_files=translated_files)
 

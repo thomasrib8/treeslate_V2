@@ -141,7 +141,7 @@ def index():
 
 @translation_bp.route("/upload_glossary", methods=["GET", "POST"])
 def upload_glossary():
-    # 📂 Définition des dossiers de stockage
+    # Définition des dossiers de stockage
     deepl_folder = current_app.config["DEEPL_GLOSSARY_FOLDER"]
     gpt_folder = current_app.config["GPT_GLOSSARY_FOLDER"]
 
@@ -243,8 +243,8 @@ def upload_glossary():
                 os.remove(csv_path)
                 logger.info(f"🗑️ Fichier CSV problématique supprimé : {csv_path}")
 
-    # 📌 **Mise à jour des listes de glossaires après upload**
-    deepl_glossaries = [f for f in os.listdir(deepl_folder) if f.lower().endswith(".csv")]
+    # 📌 **Correction : Récupérer les glossaires séparément**
+    deepl_glossaries = [f for f in os.listdir(deepl_folder) if f.lower().endswith((".csv", ".xlsx"))]
     gpt_glossaries = [f for f in os.listdir(gpt_folder) if f.lower().endswith(".docx")]
 
     logger.info(f"📂 Liste actuelle des glossaires Deepl : {deepl_glossaries}")

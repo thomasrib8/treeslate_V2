@@ -14,6 +14,7 @@ import chardet
 import logging
 from werkzeug.utils import secure_filename
 from config import Config
+from config import PERSISTENT_STORAGE
 
 # Création du Blueprint
 translation_bp = Blueprint("translation", __name__, template_folder="../templates/translation")

@@ -3,6 +3,7 @@ from flask_httpauth import HTTPBasicAuth
 import os
 import threading
 import logging
+import sys
 from translation_app.utils import translate_docx_with_deepl
 from translation_app.routes import translation_bp
 from calculator_app.routes import calculator_bp
@@ -13,6 +14,11 @@ from marketing_app.routes import marketing_bp
 # Initialisation de l'application Flask
 app = Flask(__name__)
 auth = HTTPBasicAuth()
+
+print("Current working directory:", os.getcwd())
+print("Python path:", sys.path)
+import config
+print("Config attributes:", dir(config))
 
 # Exemple d'utilisateurs autorisés
 users = {

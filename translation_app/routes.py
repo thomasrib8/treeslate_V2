@@ -132,6 +132,9 @@ def index():
 
 @translation_bp.route("/upload_glossary", methods=["GET", "POST"])
 def upload_glossary():
+    glossary_folder = os.path.join(PERSISTENT_STORAGE, "glossaries")
+    os.makedirs(glossary_folder, exist_ok=True)
+
     temp_xlsx_path = None
     csv_path = None
     e = None
@@ -149,10 +152,7 @@ def upload_glossary():
                 flash("Type de glossaire invalide.", "danger")
                 return redirect(url_for('translation.upload_glossary'))
 
-            save_folder = os.path.join(PERSISTENT_STORAGE, "glossaries")
-            os.makedirs(save_folder, exist_ok=True)
-
-            file_path = os.path.join(save_folder, glossary_file.filename)
+            file_path = os.path.join(glossary_folder, glossary_file.filename)
 
             allowed_extensions = {".csv", ".xlsx", ".docx"}
             if not glossary_file.filename.lower().endswith(tuple(allowed_extensions)):
@@ -161,14 +161,14 @@ def upload_glossary():
 
             if glossary_file.filename.lower().endswith('.docx'):
                 glossary_file.save(file_path)
-                logger.info(f"Fichier DOCX {glossary_file.filename} sauvegardé.")
+                logger.info(f"✅ Fichier DOCX {glossary_file.filename} sauvegardé.")
 
             elif glossary_file.filename.lower().endswith('.xlsx'):
-                temp_xlsx_path = os.path.join(save_folder, "temp_" + glossary_file.filename)
+                temp_xlsx_path = os.path.join(glossary_folder, "temp_" + glossary_file.filename)
                 glossary_file.save(temp_xlsx_path)
 
                 csv_filename = glossary_file.filename.replace(".xlsx", ".csv")
-                csv_path = os.path.join(save_folder, csv_filename)
+                csv_path = os.path.join(glossary_folder, csv_filename)
 
                 convert_excel_to_csv(temp_xlsx_path, csv_path)
 
@@ -187,14 +187,14 @@ def upload_glossary():
                 if os.path.exists(csv_path):
                     os.remove(temp_xlsx_path)
                     file_path = csv_path
-                    logger.info(f"Glossaire {glossary_file.filename} converti en CSV et sauvegardé sous {file_path}")
+                    logger.info(f"✅ Glossaire {glossary_file.filename} converti en CSV et sauvegardé sous {file_path}")
                 else:
                     flash("Erreur lors de la conversion en CSV.", "danger")
                     os.remove(temp_xlsx_path)
                     return redirect(url_for('translation.upload_glossary'))
 
             elif glossary_file.filename.lower().endswith('.csv'):
-                temp_path = os.path.join(save_folder, "temp_" + glossary_file.filename)
+                temp_path = os.path.join(glossary_folder, "temp_" + glossary_file.filename)
                 glossary_file.save(temp_path)
 
                 if not detect_and_convert_to_utf8(temp_path):
@@ -203,27 +203,31 @@ def upload_glossary():
                     return redirect(url_for('translation.upload_glossary'))
 
                 os.rename(temp_path, file_path)
-                logger.info(f"Fichier CSV {glossary_file.filename} sauvegardé après conversion en UTF-8.")
+                logger.info(f"✅ Fichier CSV {glossary_file.filename} sauvegardé après conversion en UTF-8.")
 
-            flash("Glossaire uploadé avec succès !", "success")
-            return redirect(url_for('translation.upload_glossary')) 
+            flash("✅ Glossaire uploadé avec succès !", "success")
 
         except Exception as err:
             e = err
-            flash("Une erreur est survenue lors de l'upload.", "danger")
+            flash("❌ Une erreur est survenue lors de l'upload.", "danger")
             logger.error(f"Erreur lors de l'upload du glossaire: {e}")
             return redirect(url_for('translation.upload_glossary'))
 
         finally:
             if temp_xlsx_path and os.path.exists(temp_xlsx_path):
                 os.remove(temp_xlsx_path)
-                logger.info(f"Fichier temporaire supprimé : {temp_xlsx_path}")
+                logger.info(f"🗑️ Fichier temporaire supprimé : {temp_xlsx_path}")
 
             if csv_path and os.path.exists(csv_path) and e is not None:
                 os.remove(csv_path)
-                logger.info(f"Fichier CSV problématique supprimé : {csv_path}")
+                logger.info(f"🗑️ Fichier CSV problématique supprimé : {csv_path}")
 
-    return render_template("upload_glossary.html")
+    # 📌 **Récupérer la liste des glossaires après upload**
+    glossaries = [f for f in os.listdir(glossary_folder) if f.endswith((".csv", ".xlsx", ".docx"))]
+    logger.info(f"📂 Liste actuelle des glossaires : {glossaries}")
+
+    return render_template("upload_glossary.html", glossaries=glossaries)
+
 
 
 @translation_bp.route("/processing")

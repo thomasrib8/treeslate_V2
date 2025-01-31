@@ -28,12 +28,14 @@ class Config:
     GPT_GLOSSARY_FOLDER = os.path.join(GLOSSARY_FOLDER, "chatgpt")
 
     # Création des répertoires s'ils n'existent pas
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-    os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
-    os.makedirs(MARKETING_FOLDER, exist_ok=True)
-    os.makedirs(GLOSSARY_FOLDER, exist_ok=True)
-    os.makedirs(DEEPL_GLOSSARY_FOLDER, exist_ok=True)
-    os.makedirs(GPT_GLOSSARY_FOLDER, exist_ok=True)
+    @staticmethod
+    def create_directories():
+        os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
+        os.makedirs(Config.DOWNLOAD_FOLDER, exist_ok=True)
+        os.makedirs(Config.MARKETING_FOLDER, exist_ok=True)
+        os.makedirs(Config.GLOSSARY_FOLDER, exist_ok=True)
+        os.makedirs(Config.DEEPL_GLOSSARY_FOLDER, exist_ok=True)
+        os.makedirs(Config.GPT_GLOSSARY_FOLDER, exist_ok=True)
 
     # Configuration des sessions
     SESSION_TYPE = "filesystem"

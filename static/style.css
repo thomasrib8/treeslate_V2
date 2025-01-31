@@ -160,6 +160,23 @@ form {
     background-color: white;  /* Fond blanc */
 }
 
+.dl-button {
+    font-weight: bold;        /* Texte en gras */
+    color: black;             /* Texte noir */
+    background-color: white;  /* Fond blanc */
+    border: 2px solid white;  /* Bordure blanche */
+    border-radius: 8px;       /* Angles arrondis */
+    padding: 8px 12px;        /* Espacement interne */
+    cursor: pointer;          /* Curseur interactif */
+    transition: all 0.3s ease-in-out; /* Animation fluide */
+}
+
+.dl-button:hover {
+    border-color: green;  /* Bordure vert */
+    color: green;         /* Texte vert */
+    background-color: white;  /* Fond blanc */
+}
+
 /* Table styles */
 table {
     width: 100%;

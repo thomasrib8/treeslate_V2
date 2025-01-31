@@ -5,7 +5,7 @@ from datetime import datetime
 marketing_bp = Blueprint('marketing', __name__, url_prefix='/marketing')
 
 # Définition du dossier d'upload des fichiers
-UPLOAD_FOLDER = os.path.join(os.getcwd(), "marketing", "download")
+UPLOAD_FOLDER = "/var/data/marketing_files"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # S'assure que le dossier existe
 
 def allowed_file(filename):

@@ -8,7 +8,7 @@ from translation_app.utils import translate_docx_with_deepl
 from translation_app.routes import translation_bp
 from calculator_app.routes import calculator_bp
 from datetime import datetime
-from config import DevelopmentConfig
+from config import Config
 from marketing_app.routes import marketing_bp
 
 # Initialisation de l'application Flask
@@ -29,7 +29,7 @@ users = {
 }
 
 # Charger la configuration depuis config.py
-app.config.from_object("config.Config")
+app.config.from_object(Config)
 
 app.config["PERSISTENT_STORAGE"] = PERSISTENT_STORAGE
 
@@ -37,14 +37,18 @@ app.config["PERSISTENT_STORAGE"] = PERSISTENT_STORAGE
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-# Créer les dossiers nécessaires si non existants
+# S'assurer que les dossiers existent
 with app.app_context():
-    os.makedirs(app.config["PERSISTENT_STORAGE"], exist_ok=True)
-    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
-    os.makedirs(app.config["DOWNLOAD_FOLDER"], exist_ok=True)
-    os.makedirs(app.config["MARKETING_FOLDER"], exist_ok=True)
-    os.makedirs(app.config["DEEPL_GLOSSARY_FOLDER"], exist_ok=True)
-    os.makedirs(app.config["GPT_GLOSSARY_FOLDER"], exist_ok=True)
+    Config.create_directories()
+
+# Créer les dossiers nécessaires si non existants
+#with app.app_context():
+ #   os.makedirs(app.config["PERSISTENT_STORAGE"], exist_ok=True)
+  #  os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+   # os.makedirs(app.config["DOWNLOAD_FOLDER"], exist_ok=True)
+    #os.makedirs(app.config["MARKETING_FOLDER"], exist_ok=True)
+    #os.makedirs(app.config["DEEPL_GLOSSARY_FOLDER"], exist_ok=True)
+    #os.makedirs(app.config["GPT_GLOSSARY_FOLDER"], exist_ok=True)
 
 # Enregistrer les blueprints
 app.register_blueprint(translation_bp, url_prefix="/translation")

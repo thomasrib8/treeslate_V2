@@ -13,6 +13,7 @@ from docx import Document
 import chardet
 import logging
 from werkzeug.utils import secure_filename
+from config import Config
 
 # Création du Blueprint
 translation_bp = Blueprint("translation", __name__, template_folder="../templates/translation")
@@ -21,7 +22,7 @@ translation_bp = Blueprint("translation", __name__, template_folder="../template
 logger = logging.getLogger(__name__)
 
 # Création des dossiers nécessaires si non existants
-os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(current_app.config["UPLOAD_FOLDER"], exist_ok=True)
 os.makedirs(Config.DOWNLOAD_FOLDER, exist_ok=True)
 os.makedirs(PERSISTENT_STORAGE, exist_ok=True)
 os.makedirs(os.path.join(PERSISTENT_STORAGE, "translated_files"), exist_ok=True)

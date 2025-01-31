@@ -12,11 +12,13 @@ from datetime import datetime
 from docx import Document
 import chardet
 import logging
-import config
 from werkzeug.utils import secure_filename
 
-
-PERSISTENT_STORAGE = config.PERSISTENT_STORAGE
+try:
+    import config
+    PERSISTENT_STORAGE = getattr(config, "PERSISTENT_STORAGE", "/var/data/")
+except ImportError:
+    PERSISTENT_STORAGE = "/var/data/"
 
 # Création du Blueprint
 translation_bp = Blueprint("translation", __name__, template_folder="../templates/translation")

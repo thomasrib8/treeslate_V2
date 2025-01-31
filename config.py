@@ -14,13 +14,12 @@ class Config:
     # Répertoire de stockage persistant sur Render
     PERSISTENT_STORAGE = "/var/data/"
 
-    # Dossiers pour les fichiers
-    BASE_DIR = os.getcwd()
-    UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
-    DOWNLOAD_FOLDER = os.path.join(BASE_DIR, "downloads")
+   # Dossiers pour les fichiers (utilisant le stockage persistant)
+    UPLOAD_FOLDER = os.path.join(PERSISTENT_STORAGE, "uploads")
+    DOWNLOAD_FOLDER = os.path.join(PERSISTENT_STORAGE, "downloads")
 
     # Dossiers pour les glossaires
-    GLOSSARY_FOLDER = os.path.join(BASE_DIR, "glossaries")
+    GLOSSARY_FOLDER = os.path.join(PERSISTENT_STORAGE, "glossaries")
     DEEPL_GLOSSARY_FOLDER = os.path.join(GLOSSARY_FOLDER, "deepl")
     GPT_GLOSSARY_FOLDER = os.path.join(GLOSSARY_FOLDER, "chatgpt")
 

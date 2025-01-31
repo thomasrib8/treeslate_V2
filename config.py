@@ -1,5 +1,8 @@
 import os
 
+# Définir le répertoire de base
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
 class Config:
     """
     Classe principale de configuration pour Flask.
@@ -34,7 +37,7 @@ class Config:
 
     # Configuration des sessions
     SESSION_TYPE = "filesystem"
-    SESSION_FILE_DIR = os.path.join(BASE_DIR, ".flask_session")
+    SESSION_FILE_DIR = os.path.join(BASE_DIR, ".flask_session")  
     SESSION_PERMANENT = False
     SESSION_USE_SIGNER = True
 

@@ -429,18 +429,18 @@ def process():
 
 @translation_bp.route("/download/<filename>")
 def download_file(filename):
-    if ".." in filename or filename.startswith("/") or filename.startswith("\\"):
-        flash("Accès non autorisé.", "danger")
-        return redirect(url_for('translation.upload_glossary'))
+    # 📂 Correction : Utilisation du bon dossier pour récupérer le fichier
+    translated_folder = current_app.config["DOWNLOAD_FOLDER"]
 
-    download_folder = current_app.config["PERSISTENT_STORAGE"]
-    file_path = os.path.join(download_folder, filename)
+    file_path = os.path.join(translated_folder, filename)
 
     if not os.path.exists(file_path):
-        flash("Fichier introuvable.", "danger")
-        return redirect(url_for('translation.upload_glossary'))
+        logger.error(f"❌ Le fichier {filename} est introuvable dans {translated_folder}.")
+        flash("Le fichier demandé est introuvable.", "danger")
+        return redirect(url_for("translation.done", filename=filename))  # Redirige vers la page précédente
 
-    return send_from_directory(download_folder, filename, as_attachment=True)
+    logger.info(f"📂 Téléchargement du fichier : {file_path}")
+    return send_from_directory(translated_folder, filename, as_attachment=True)
 
 @translation_bp.route("/main_menu")
 def main_menu():

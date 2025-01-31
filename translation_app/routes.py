@@ -107,7 +107,7 @@ def verify_glossary_encoding(file_path):
         logger.error(f"Erreur de lecture du fichier {file_path} avec l'encodage détecté {encoding}.")
         return False
 
-@translation_bp.before_app_first_request
+@translation_bp.before_app_request
 def setup():
     ensure_directories()
 

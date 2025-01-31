@@ -11,6 +11,9 @@ class Config:
     DEEPL_API_KEY = os.environ.get('DEEPL_API_KEY', '')
     OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
 
+    # Répertoire de stockage persistant sur Render
+    PERSISTENT_STORAGE = "/var/data/"
+
     # Dossiers pour les fichiers
     BASE_DIR = os.getcwd()
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")

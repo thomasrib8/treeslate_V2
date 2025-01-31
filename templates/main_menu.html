@@ -118,7 +118,7 @@
             <tbody>
                 {% for file in translated_files %}
                 <tr>
-                    <td>{{ file.filename }}</td>
+                    <td class="file-name">{{ file.filename }}</td>  <!-- 📌 Applique la classe -->
                     <td>{{ file.created_at }}</td>
                     <td>
                         <a href="{{ url_for('translation.download_file', filename=file.filename) }}" class="dl-button">
@@ -184,7 +184,7 @@
                     formattedDate = isNaN(formattedDate) ? "Date non disponible" : formattedDate.toLocaleString('fr-FR');
 
                     let row = `<tr>
-                        <td>${file.filename}</td>
+                        <td class="file-name">{{ file.filename }}</td>  <!-- 📌 Applique la classe -->
                         <td>${formattedDate}</td>
                         <td>
                             <a href="/marketing/download/${file.filename}" class="dl-button">Télécharger 🚀</a>

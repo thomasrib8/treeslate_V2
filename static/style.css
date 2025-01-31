@@ -150,7 +150,7 @@ form {
     background-color: white;  /* Fond blanc */
     border: 2px solid white;  /* Bordure blanche */
     border-radius: 8px;       /* Angles arrondis */
-    padding: 8px 12px;        /* Espacement interne */
+    padding: 6px 10px;        /* Espacement interne */
     cursor: pointer;          /* Curseur interactif */
     transition: all 0.3s ease-in-out; /* Animation fluide */
 }
@@ -168,7 +168,7 @@ form {
     background-color: white;  /* Fond blanc */
     border: 2px solid white;  /* Bordure blanche */
     border-radius: 8px;       /* Angles arrondis */
-    padding: 8px 12px;        /* Espacement interne */
+    padding: 6px 10px;        /* Espacement interne */
     cursor: pointer;          /* Curseur interactif */
     text-decoration: none;
     transition: all 0.3s ease-in-out; /* Animation fluide */

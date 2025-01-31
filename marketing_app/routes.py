@@ -33,23 +33,33 @@ def marketing_home():
 
     return render_template('marketing/upload.html', marketing_files=files)
 
-@marketing_bp.route('/upload', methods=['POST'])
+@marketing_bp.route("/upload", methods=["POST"])
 def upload_marketing_file():
-    """Gère l'upload des fichiers"""
-    if 'file' not in request.files:
-        return jsonify({"success": False, "error": "Aucun fichier fourni"}), 400
-    
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({"success": False, "error": "Nom de fichier invalide"}), 400
-
     marketing_folder = current_app.config["MARKETING_FOLDER"]
-    file_path = os.path.join(marketing_folder, file.filename)
-    file.save(file_path)
-    
-    print(f"DEBUG - Fichier {file.filename} sauvegardé dans {MARKETING_FOLDER}")  # Log pour voir l'upload
+    os.makedirs(marketing_folder, exist_ok=True)  # 📌 Assurer que le dossier existe
 
-    return jsonify({"success": True, "filename": file.filename})
+    if "file" not in request.files:
+        return jsonify({"success": False, "message": "Aucun fichier sélectionné."}), 400
+
+    file = request.files["file"]
+    if file.filename == "":
+        return jsonify({"success": False, "message": "Nom de fichier invalide."}), 400
+
+    # 📌 Ajouter un timestamp pour éviter les conflits de nom de fichier
+    filename, ext = os.path.splitext(file.filename)
+    new_filename = f"{filename}_{int(time.time())}{ext}"
+    file_path = os.path.join(marketing_folder, new_filename)
+
+    # 📌 Sauvegarde du fichier
+    file.save(file_path)
+
+    # 📌 Vérifier si le fichier est bien sauvegardé
+    if os.path.exists(file_path):
+        logger.info(f"✅ Fichier marketing {new_filename} sauvegardé dans {marketing_folder}")
+        return jsonify({"success": True, "message": f"Fichier {new_filename} uploadé avec succès."})
+    else:
+        logger.error(f"❌ Erreur : Le fichier {new_filename} n'a pas pu être sauvegardé.")
+        return jsonify({"success": False, "message": "Erreur lors de l'enregistrement du fichier."}), 500
 
 @marketing_bp.route('/get_uploaded_files', methods=['GET'])
 def get_uploaded_files():

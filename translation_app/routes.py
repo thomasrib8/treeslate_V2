@@ -13,6 +13,7 @@ from docx import Document
 import chardet
 import logging
 from werkzeug.utils import secure_filename
+from config import Config
 
 try:
     import config

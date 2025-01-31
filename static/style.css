@@ -143,6 +143,22 @@ form {
     color: white;
 }
 
+.delete-button {
+    font-weight: bold;        /* Texte en gras */
+    color: black;             /* Texte noir */
+    background-color: white;  /* Fond blanc */
+    border: 2px solid white;  /* Bordure blanche */
+    border-radius: 8px;       /* Angles arrondis */
+    padding: 8px 12px;        /* Espacement interne */
+    cursor: pointer;          /* Curseur interactif */
+    transition: all 0.3s ease-in-out; /* Animation fluide */
+}
+
+.delete-button:hover {
+    border-color: red;  /* Bordure rouge */
+    color: red;         /* Texte rouge */
+}
+
 /* Table styles */
 table {
     width: 100%;

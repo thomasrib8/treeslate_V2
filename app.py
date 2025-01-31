@@ -23,7 +23,7 @@ users = {
 }
 
 # Charger la configuration depuis config.py
-app.config.from_object(DevelopmentConfig)
+app.config.from_object("config.Config")
 
 # Configuration des logs
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")

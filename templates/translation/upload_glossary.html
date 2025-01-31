@@ -42,11 +42,26 @@
             <button type="submit" name="submit_gpt" class="upload-btn">Uploader Glossaire ChatGPT</button>
         </form>
 
+        <hr>
+        <h2>Glossaires disponibles</h2>
+        <ul>
+            {% if glossaries %}
+                {% for glossary in glossaries %}
+                    <li>{{ glossary }}</li>
+                {% endfor %}
+            {% else %}
+                <li>Aucun glossaire disponible</li>
+            {% endif %}
+        </ul>
+
+        <hr>
+        
         <!-- Bouton retour -->
         <div class="button-container">
             <a href="{{ url_for('main_menu') }}" class="menu-button">Menu Principal</a>
         </div>
     </div>
+
 
     <script>
         // Vérification avant soumission pour éviter un upload vide

@@ -115,11 +115,20 @@ def setup():
 def index():
     logger.info("Affichage de la page d'accueil de la traduction.")
     try:
-        os.makedirs(current_app.config["DEEPL_GLOSSARY_FOLDER"], exist_ok=True)
-        os.makedirs(current_app.config["GPT_GLOSSARY_FOLDER"], exist_ok=True)
+        # Définir les chemins des glossaires
+        deepl_folder = current_app.config["DEEPL_GLOSSARY_FOLDER"]
+        gpt_folder = current_app.config["GPT_GLOSSARY_FOLDER"]
 
-        deepl_glossaries = [f for f in os.listdir(current_app.config["DEEPL_GLOSSARY_FOLDER"]) if f.lower().endswith('.csv')]
-        gpt_glossaries = [f for f in os.listdir(current_app.config["GPT_GLOSSARY_FOLDER"]) if f.lower().endswith('.docx')]
+        # Vérifier l'existence des dossiers
+        os.makedirs(deepl_folder, exist_ok=True)
+        os.makedirs(gpt_folder, exist_ok=True)
+
+        # Lister les fichiers dans les dossiers respectifs
+        deepl_glossaries = [f for f in os.listdir(deepl_folder) if f.lower().endswith('.csv')]
+        gpt_glossaries = [f for f in os.listdir(gpt_folder) if f.lower().endswith('.docx')]
+
+        logger.info(f"📂 Glossaires Deepl trouvés : {deepl_glossaries}")
+        logger.info(f"📂 Glossaires GPT trouvés : {gpt_glossaries}")
 
         return render_template(
             "index.html",
@@ -127,7 +136,7 @@ def index():
             gpt_glossaries=gpt_glossaries
         )
     except Exception as e:
-        logger.error(f"Erreur inattendue: {e}")
+        logger.error(f"Erreur lors du chargement des glossaires : {e}")
         return "Erreur interne du serveur", 500
 
 @translation_bp.route("/upload_glossary", methods=["GET", "POST"])

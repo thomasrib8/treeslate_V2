@@ -145,6 +145,7 @@ form {
 
 .delete-button {
     font-weight: bold;        /* Texte en gras */
+    font-size: 14px;
     color: black;             /* Texte noir */
     background-color: white;  /* Fond blanc */
     border: 2px solid white;  /* Bordure blanche */
@@ -162,6 +163,7 @@ form {
 
 .dl-button {
     font-weight: bold;        /* Texte en gras */
+    font-size: 14px;
     color: black;             /* Texte noir */
     background-color: white;  /* Fond blanc */
     border: 2px solid white;  /* Bordure blanche */

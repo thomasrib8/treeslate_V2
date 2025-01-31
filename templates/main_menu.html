@@ -123,6 +123,9 @@
                         <a href="{{ url_for('translation.download_file', filename=file.filename) }}" class="btn btn-primary">
                             Télécharger
                         </a>
+                        <button onclick="deleteFile('{{ file.filename }}', 'translated')" class="btn btn-danger">
+                            Supprimer
+                        </button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -171,7 +174,10 @@
                     let row = `<tr>
                         <td>${file.filename}</td>
                         <td>${formattedDate}</td>
-                        <td><a href="/marketing/download/${file.filename}">Télécharger</a></td>
+                        <td>
+                            <a href="/marketing/download/${file.filename}" class="btn btn-primary">Télécharger</a>
+                            <button onclick="deleteFile('${file.filename}', 'marketing')" class="btn btn-danger">Supprimer</button>
+                        </td>
                     </tr>`;
                     tableBody.innerHTML += row;
                 });
@@ -181,6 +187,28 @@
         }
     }
 
+    async function deleteFile(filename, type) {
+        if (!confirm(`Voulez-vous vraiment supprimer ${filename} ?`)) return;
+
+        let url = type === 'translated'
+            ? `/translation/delete/${filename}`
+            : `/marketing/delete/${filename}`;
+
+        try {
+            const response = await fetch(url, { method: 'DELETE' });
+            const result = await response.json();
+
+            alert(result.message);
+
+            if (result.success) {
+                location.reload();  // Rafraîchir la page pour mettre à jour la liste
+            }
+        } catch (error) {
+            console.error("Erreur lors de la suppression :", error);
+            alert("Une erreur est survenue.");
+        }
+    }
+    
     // Charger la liste des fichiers au chargement de la page
     fetchMarketingFiles();
 </script>

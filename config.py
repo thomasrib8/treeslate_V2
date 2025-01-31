@@ -17,6 +17,7 @@ class Config:
    # Dossiers pour les fichiers (utilisant le stockage persistant)
     UPLOAD_FOLDER = os.path.join(PERSISTENT_STORAGE, "uploads")
     DOWNLOAD_FOLDER = os.path.join(PERSISTENT_STORAGE, "downloads")
+    MARKETING_FOLDER = os.path.join(DOWNLOAD_FOLDER, "marketing")
 
     # Dossiers pour les glossaires
     GLOSSARY_FOLDER = os.path.join(PERSISTENT_STORAGE, "glossaries")
@@ -26,6 +27,7 @@ class Config:
     # Création des répertoires s'ils n'existent pas
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
+    os.makedirs(MARKETING_FOLDER, exist_ok=True)
     os.makedirs(GLOSSARY_FOLDER, exist_ok=True)
     os.makedirs(DEEPL_GLOSSARY_FOLDER, exist_ok=True)
     os.makedirs(GPT_GLOSSARY_FOLDER, exist_ok=True)

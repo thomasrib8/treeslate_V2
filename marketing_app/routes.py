@@ -8,12 +8,16 @@ def allowed_file(filename):
     """ Vérifie si l'extension du fichier est autorisée (ici, DOCX et TXT). """
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'docx', 'txt'}
 
+def get_marketing_folder():
+    with current_app.app_context():
+        return current_app.config["MARKETING_FOLDER"]
+
 @marketing_bp.route('/marketing')
 def marketing_home():
-    marketing_folder = current_app.config["MARKETING_FOLDER"]
+    marketing_folder = get_marketing_folder()
     files = []
 
-    if os.path.exists(marketing_folder):
+    if "MARKETING_FOLDER" in current_app.config and os.path.exists(marketing_folder):
         for filename in os.listdir(marketing_folder):
             file_path = os.path.join(marketing_folder, filename)
             if os.path.isfile(file_path):

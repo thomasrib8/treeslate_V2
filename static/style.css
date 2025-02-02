@@ -17,7 +17,7 @@ body {
     border-radius: 10px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     padding: 20px 40px;
-    max-width: 800px;
+    max-width: 900px;
     width: 100%;
     text-align: center;
 }
@@ -109,6 +109,7 @@ form {
     color: #000000;
     border: none;
     padding: 12px 20px;
+    width: 100%; /* 📌 Prend toute la largeur sur mobile */
     font-size: 16px;
     border-radius: 4px;
     cursor: pointer;
@@ -203,10 +204,16 @@ tr:nth-child(even) {
     background-color: #f9f9f9;
 }
 
+/* 📌 Amélioration des tableaux pour les rendre responsifs */
+.table-container {
+    overflow-x: auto; /* 📌 Permet de scroller horizontalement si le tableau est trop large */
+    width: 100%;
+}
+
 /* Réduction de la taille de la police pour les noms de fichiers */
 td.file-name {
     font-size: 14px;  /* Réduction de la police */
-    max-width: 250px; /* Largeur maximale */
+    max-width: 200px; /* Largeur maximale */
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap; /* Empêche le retour à la ligne */

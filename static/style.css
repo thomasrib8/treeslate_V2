@@ -109,7 +109,6 @@ form {
     color: #000000;
     border: none;
     padding: 12px 20px;
-    width: 100%; /* 📌 Prend toute la largeur sur mobile */
     font-size: 16px;
     border-radius: 4px;
     cursor: pointer;

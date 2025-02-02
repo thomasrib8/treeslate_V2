@@ -233,33 +233,62 @@ td.file-name {
     }
 }
 
-/* Responsive Design */
+/* 📌 Amélioration de la disposition des boutons menu pour le mobile */
 @media (max-width: 768px) {
-    .container {
-        padding: 20px;
-        width: 95%;
-    }
-
     .buttons {
-        flex-direction: column;
+        flex-direction: column;  /* Affichage vertical sur mobile */
         gap: 10px;
     }
 
+    .buttons a {
+        width: 100%;  /* Chaque bouton prend toute la largeur */
+        text-align: center;
+    }
+
+    .container {
+        padding: 15px; /* Réduction des marges pour éviter les débordements */
+        width: 95%;
+    }
+
     .table-container {
-        overflow-x: auto;
+        overflow-x: auto; /* Permet un défilement horizontal si besoin */
     }
 
     table th, table td {
-        font-size: 14px;
-        padding: 8px;
+        font-size: 14px; /* Réduction de la taille du texte */
+        padding: 6px; /* Moins d'espace pour mieux s'adapter au mobile */
     }
 
     .title-container {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center; /* Centre les titres */
     }
+}
 
-    .button, .menu-button, .action-button {
+/* 📌 Ajustement des boutons menu */
+.menu-button {
+    display: block;
+    width: 100%; /* Le bouton occupe toute la largeur sur mobile */
+    padding: 12px;
+    font-size: 14px;
+    text-align: center;
+}
+
+/* 📌 Amélioration du tableau des fichiers marketing */
+td.file-name {
+    font-size: 14px;  /* Réduction de la police */
+    max-width: 200px; /* Limite la largeur */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 📌 Ajustement des boutons pour qu'ils restent sur une ligne */
+.dl-button, .delete-button {
+    padding: 6px 10px; /* Réduit la taille des boutons */
+    font-size: 14px;
+    display: inline-block;
+}
         width: 100%;
         text-align: center;
     }

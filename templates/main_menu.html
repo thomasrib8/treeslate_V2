@@ -106,34 +106,36 @@
             <h2 style="margin: 0;">Historique des fichiers traduits</h2>
         </div>
         
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Nom du fichier</th>
-                    <th>Création</th>
-                    <th>Actions</th>
-                    <th>Corbeille</th> <!-- 📌 Nouvelle colonne -->
-                </tr>
-            </thead>
-            <tbody>
-                {% if translated_files %}
-                    {% for file in translated_files %}
+        <div class="table-container">
+            <table class="table">
+                <thead>
                     <tr>
-                        <td class="file-name">{{ file.filename }}</td>
-                        <td>{{ file.created_at }}</td>
-                        <td>
-                            <a href="{{ url_for('translation.download_file', filename=file.filename) }}" class="dl-button">📥 Télécharger</a>
-                        </td>
-                        <td>
-                            <button onclick="deleteFile('{{ file.filename }}', 'translated')" class="delete-button">❌ Supprimer</button>
-                        </td>
+                        <th>Nom du fichier</th>
+                        <th>Création</th>
+                        <th>Actions</th>
+                        <th>Corbeille</th> <!-- 📌 Nouvelle colonne -->
                     </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr><td colspan="4">Aucun fichier disponible</td></tr>
-                {% endif %}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    {% if translated_files %}
+                        {% for file in translated_files %}
+                        <tr>
+                            <td class="file-name">{{ file.filename }}</td>
+                            <td>{{ file.created_at }}</td>
+                            <td>
+                                <a href="{{ url_for('translation.download_file', filename=file.filename) }}" class="dl-button">📥 Télécharger</a>
+                            </td>
+                            <td>
+                                <button onclick="deleteFile('{{ file.filename }}', 'translated')" class="delete-button">❌ Supprimer</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr><td colspan="4">Aucun fichier disponible</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+         </div>
 
         <!-- Conteneur titre + bouton refresh -->
         <div class="title-container">
@@ -141,18 +143,20 @@
             <button class="action-button" onclick="fetchMarketingFiles()">🔄 Rafraîchir</button>
         </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Nom du fichier</th>
-                    <th>Création</th>
-                    <th>Actions</th>
-                    <th>Corbeille</th>
-                </tr>
-            </thead>
-            <tbody id="marketing-files-table">
-            </tbody>
-        </table>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nom du fichier</th>
+                        <th>Création</th>
+                        <th>Actions</th>
+                        <th>Corbeille</th>
+                    </tr>
+                </thead>
+                <tbody id="marketing-files-table">
+                </tbody>
+            </table>
+        </div>
 
         <div id="disk-info">
             <h4>📊 Espace disque disponible</h4>

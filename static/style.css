@@ -274,7 +274,6 @@ td.file-name {
 /* 📌 Ajustement des boutons menu */
 .menu-button {
     display: block;
-    width: 100%; /* Le bouton occupe toute la largeur sur mobile */
     padding: 12px;
     font-size: 14px;
     text-align: center;
